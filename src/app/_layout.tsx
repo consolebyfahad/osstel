@@ -9,8 +9,9 @@ import {
   ThemeProvider as NavigationThemeProvider,
 } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
+import CustomLoading from "@/components/CustomLoading";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
@@ -68,7 +69,7 @@ export default function RootLayout() {
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
           >
-            <ActivityIndicator size="large" />
+            <CustomLoading size="lg" />
           </View>
         }
         persistor={persistor}

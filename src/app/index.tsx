@@ -13,6 +13,8 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store/store";
 
 const LETTERS = ["V", "A", "A", "S"] as const;
 const FIRST_LETTER_DELAY_MS = 500;
@@ -56,14 +58,35 @@ function AnimatedLetter({ letter }: { letter: string }) {
 }
 
 export default function Splash() {
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
+  const hasSeenWelcome = useSelector(
+    (state: RootState) => state.auth.hasSeenWelcome,
+  );
+  const isInitialized = useSelector(
+    (state: RootState) => state.auth.isInitialized,
+  );
   const [visibleCount, setVisibleCount] = useState(0);
   const [zooming, setZooming] = useState(false);
   const containerScale = useSharedValue(1);
   const containerOpacity = useSharedValue(1);
 
-  const goToWelcome = useCallback(() => {
+  const navigateAfterSplash = useCallback(() => {
+    if (!isInitialized) return;
+
+    if (isAuthenticated) {
+      router.replace("/(tabs)/home");
+      return;
+    }
+
+    if (hasSeenWelcome) {
+      router.replace("/auth/signin");
+      return;
+    }
+
     router.replace("/welcome");
-  }, []);
+  }, [isAuthenticated, hasSeenWelcome, isInitialized]);
 
   useEffect(() => {
     if (visibleCount >= LETTERS.length) return;
@@ -87,7 +110,7 @@ export default function Splash() {
         },
         (finished) => {
           if (finished) {
-            runOnJS(goToWelcome)();
+            runOnJS(navigateAfterSplash)();
           }
         },
       );
@@ -98,7 +121,7 @@ export default function Splash() {
     }, HOLD_AFTER_COMPLETE_MS);
 
     return () => clearTimeout(zoomTimer);
-  }, [visibleCount, containerScale, containerOpacity, goToWelcome]);
+  }, [visibleCount, containerScale, containerOpacity, navigateAfterSplash]);
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,

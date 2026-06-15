@@ -34,7 +34,15 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow VAAS to access your photos to update your profile picture."
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

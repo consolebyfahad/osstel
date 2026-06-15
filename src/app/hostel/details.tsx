@@ -1,11 +1,11 @@
 import CustomButton from "@/components/CustomButton";
-import { getHostelDetails, saveHostelDetails } from "@/services/hostel";
+import { useCreateHostelMutation } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -25,6 +25,7 @@ import {
 } from "react-native-safe-area-context";
 
 export default function HostelDetailsScreen() {
+  const [createHostel, { isLoading: isSaving }] = useCreateHostelMutation();
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(
@@ -36,17 +37,6 @@ export default function HostelDetailsScreen() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    getHostelDetails().then((details) => {
-      if (!details) return;
-      setName(details.name);
-      setAddress(details.address);
-      setCity(details.city);
-      setContactPhone(details.contactPhone);
-    });
-  }, []);
 
   const isValid =
     name.trim().length > 0 &&
@@ -56,20 +46,32 @@ export default function HostelDetailsScreen() {
   const handleSave = async () => {
     if (!isValid || isSaving) return;
     Keyboard.dismiss();
-    setIsSaving(true);
 
     try {
-      await saveHostelDetails({
+      await createHostel({
         name: name.trim(),
         address: address.trim(),
         city: city.trim(),
         contactPhone: contactPhone.trim(),
-      });
+      }).unwrap();
+
       router.back();
-    } catch {
-      Alert.alert("Error", "Could not save hostel details. Please try again.");
-    } finally {
-      setIsSaving(false);
+    } catch (error) {
+      const err = error as {
+        data?: { message?: string; errors?: { msg: string }[] } | string;
+      };
+
+      let message = "Could not create hostel. Please try again.";
+
+      if (typeof err.data === "string") {
+        message = err.data;
+      } else if (err.data?.errors?.length) {
+        message = err.data.errors.map((e) => e.msg).join("\n");
+      } else if (err.data?.message) {
+        message = err.data.message;
+      }
+
+      Alert.alert("Error", message);
     }
   };
 
@@ -94,7 +96,7 @@ export default function HostelDetailsScreen() {
                   color={colors.text}
                 />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Hostel Details</Text>
+              <Text style={styles.headerTitle}>Add Hostel</Text>
               <View style={styles.headerSpacer} />
             </View>
 
@@ -104,8 +106,8 @@ export default function HostelDetailsScreen() {
               contentContainerStyle={styles.scrollContent}
             >
               <Text style={styles.subtitle}>
-                Add your hostel information. This appears on receipts and
-                tenant communications.
+                Create a new hostel. This information appears on receipts and
+                resident communications.
               </Text>
 
               <View style={styles.field}>
@@ -134,7 +136,7 @@ export default function HostelDetailsScreen() {
                 <Text style={styles.label}>City</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g. Islamabad"
+                  placeholder="e.g. Lahore"
                   placeholderTextColor={colors.gray100}
                   value={city}
                   onChangeText={setCity}
@@ -142,10 +144,10 @@ export default function HostelDetailsScreen() {
               </View>
 
               <View style={styles.field}>
-                <Text style={styles.label}>Contact Phone (optional)</Text>
+                <Text style={styles.label}>Contact Phone</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g. 0300 1234567"
+                  placeholder="e.g. +92421234567"
                   placeholderTextColor={colors.gray100}
                   value={contactPhone}
                   onChangeText={setContactPhone}
@@ -156,7 +158,7 @@ export default function HostelDetailsScreen() {
 
             <View style={styles.footer}>
               <CustomButton
-                title={isSaving ? "Saving..." : "Save Details"}
+                title={isSaving ? "Creating..." : "Create Hostel"}
                 onPress={handleSave}
                 disabled={!isValid || isSaving}
               />

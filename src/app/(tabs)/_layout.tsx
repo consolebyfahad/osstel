@@ -2,8 +2,13 @@ import CustomTabBar from "@/components/CustomTabBar";
 import { Tabs } from "expo-router";
 import { useEffect } from "react";
 import { BackHandler } from "react-native";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../store/store";
 
 export default function TabLayout() {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isManager = user?.role === "manager";
+
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -23,7 +28,10 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />
-      <Tabs.Screen name="rooms" options={{ title: "Rooms" }} />
+      <Tabs.Screen
+        name="hostels"
+        options={{ title: "Hostels", href: isManager ? "/hostels" : null }}
+      />
       <Tabs.Screen name="rent" options={{ title: "Rent" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>

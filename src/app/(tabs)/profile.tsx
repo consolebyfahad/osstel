@@ -1,13 +1,17 @@
-import SubscriptionPlanCard from "@/components/SubscriptionPlanCard";
-import { getHostelDetails } from "@/services/hostel";
-import { getRooms } from "@/services/rooms";
 import {
-  getSubscriptionPlan,
-  setSubscriptionPlan,
-} from "@/services/subscription";
+  api,
+  useGetDashboardQuery,
+  useGetHostelsQuery,
+  useGetMeQuery,
+  useLogoutMutation,
+} from "../../../store/api";
+import { aggregateDashboard } from "@/types/dashboard";
+import { formatDateOfBirth, meToAuthProfile } from "@/types/auth";
+import { formatCnic } from "@/utils/cnic";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import { USER_ROLES, type UserRole } from "@/types/role";
 import {
-  SUBSCRIPTION_PLANS,
+  getPlanDisplayName,
   type SubscriptionPlanId,
 } from "@/types/subscription";
 import type { AppColors } from "@constants/colors";
@@ -15,20 +19,20 @@ import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import {
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutUser, updateAuthUser } from "../../../store/reducers/authSlice";
+import { logout, updateUser } from "../../../store/reducers/authSlice";
 import type { AppDispatch, RootState } from "../../../store/store";
+import { persistor } from "../../../store/store";
 
 type ProfileStyles = ReturnType<typeof createStyles>;
 
@@ -53,7 +57,10 @@ function MenuRow({
 }: MenuRowProps) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
+      style={({ pressed }) => [
+        styles.menuRow,
+        pressed && styles.menuRowPressed,
+      ]}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -84,18 +91,6 @@ function MenuRow({
   );
 }
 
-function getInitials(name: string, phone: string) {
-  const trimmed = name.trim();
-  if (trimmed) {
-    const parts = trimmed.split(" ").filter(Boolean);
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return trimmed.slice(0, 2).toUpperCase();
-  }
-  return phone.slice(-2);
-}
-
 export default function Profile() {
   const dispatch = useDispatch<AppDispatch>();
   const { colors, fonts, isDark } = useTheme();
@@ -104,93 +99,66 @@ export default function Profile() {
     [colors, fonts, isDark],
   );
   const user = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
 
-  const [roomCount, setRoomCount] = useState(0);
-  const [bedCount, setBedCount] = useState(0);
-  const [monthlyRent, setMonthlyRent] = useState(0);
-  const [hostelName, setHostelName] = useState<string | null>(null);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState(user?.name ?? "");
-  const [activePlanId, setActivePlanId] =
-    useState<SubscriptionPlanId>("free");
+  const { data: meData, refetch: refetchMe } = useGetMeQuery(undefined, {
+    skip: !isAuthenticated,
+  });
+  const [logoutApi] = useLogoutMutation();
 
-  const displayName = user?.name?.trim() || "Guest User";
-  const phone = user?.phone ?? "—";
-  const role: UserRole = user?.role ?? "tenant";
-  const roleLabel = USER_ROLES[role].label;
-  const isBusinessOwner = role === "business_owner";
+  useEffect(() => {
+    if (meData?.user) {
+      dispatch(updateUser(meToAuthProfile(meData.user)));
+    }
+  }, [meData, dispatch]);
 
   useFocusEffect(
     useCallback(() => {
-      setNameDraft(user?.name ?? "");
-      getHostelDetails().then((details) => {
-        setHostelName(details?.name?.trim() || null);
-      });
-      getRooms().then((rooms) => {
-        setRoomCount(rooms.length);
-        const beds = rooms.reduce((sum, r) => sum + r.totalBeds, 0);
-        const rent = rooms.reduce(
-          (sum, r) => sum + r.totalBeds * r.monthlyRentPerBed,
-          0,
-        );
-        setBedCount(beds);
-        setMonthlyRent(rent);
-      });
-      if (isBusinessOwner) {
-        getSubscriptionPlan().then(setActivePlanId);
+      if (isAuthenticated) {
+        refetchMe();
       }
-    }, [user?.name, isBusinessOwner]),
+    }, [isAuthenticated, refetchMe]),
   );
 
-  const activePlan =
-    SUBSCRIPTION_PLANS.find((p) => p.id === activePlanId) ??
-    SUBSCRIPTION_PLANS[0];
+  const displayName = meData?.user.name?.trim() || user?.name?.trim() || "Guest User";
+  const phone = meData?.user.phone ?? user?.phone ?? "—";
+  const email = meData?.user.email?.trim() || user?.email?.trim() || "Not added";
+  const address = meData?.user.address?.trim() || user?.address?.trim() || "Not added";
+  const dateOfBirth =
+    formatDateOfBirth(meData?.user.dateOfBirth ?? user?.dateOfBirth) ||
+    "Not added";
+  const cnicRaw = meData?.user.cnic?.trim() || user?.cnic?.trim() || "";
+  const cnic = cnicRaw ? formatCnic(cnicRaw) : "Not added";
+  const userId =
+    meData?.user.userId?.trim() || user?.userId?.trim() || "Not assigned";
+  const profileImage = meData?.user.profileImage ?? user?.profileImage ?? null;
+  const role: UserRole = user?.role ?? "resident";
+  const roleLabel = USER_ROLES[role].label;
+  const isManager = role === "manager";
+  const activePlanId: SubscriptionPlanId = user?.subscriptionPlan ?? "free";
 
-  const handleSelectPlan = (planId: SubscriptionPlanId) => {
-    if (planId === activePlanId) return;
+  const { data: hostelsData } = useGetHostelsQuery(undefined, {
+    skip: !isManager,
+  });
+  const { data: dashboardData } = useGetDashboardQuery(undefined, {
+    skip: !isManager,
+  });
+  const hostelCount =
+    user?.hostels?.length ?? hostelsData?.hostels?.length ?? 0;
+  const dashboardSummary = useMemo(
+    () => aggregateDashboard(dashboardData?.hostels ?? []),
+    [dashboardData?.hostels],
+  );
+  const roomCount = dashboardSummary.totalRooms;
+  const bedCount = dashboardSummary.totalBedrooms;
+  const monthlyRent = dashboardSummary.expected;
 
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId);
-    if (!plan) return;
-
-    if (plan.price > 0) {
-      Alert.alert(
-        `Upgrade to ${plan.name}`,
-        `Payment integration is coming soon. You can preview the ${plan.name} plan for now.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Continue",
-            onPress: async () => {
-              await setSubscriptionPlan(planId);
-              setActivePlanId(planId);
-            },
-          },
-        ],
-      );
-      return;
-    }
-
-    Alert.alert(
-      "Switch to Free",
-      "You will lose access to paid plan features.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Switch",
-          onPress: async () => {
-            await setSubscriptionPlan(planId);
-            setActivePlanId(planId);
-          },
-        },
-      ],
-    );
-  };
-
-  const handleSaveName = () => {
-    const trimmed = nameDraft.trim();
-    dispatch(updateAuthUser({ name: trimmed || undefined }));
-    setIsEditingName(false);
-  };
+  const residentHostelLabel = user?.hostel?.name ?? "Not assigned";
+  const residentRoomLabel = user?.room
+    ? `Room ${user.room.roomNumber} · Rs ${user.room.rent.toLocaleString()}/mo`
+    : "Not assigned";
 
   const handleLogout = () => {
     Alert.alert("Log out", "Are you sure you want to log out of VAAS?", [
@@ -199,9 +167,17 @@ export default function Profile() {
         text: "Log out",
         style: "destructive",
         onPress: async () => {
-          await dispatch(logoutUser());
+          try {
+            await logoutApi(undefined).unwrap();
+          } catch {
+            // Clear local session even if server logout fails
+          }
+
+          dispatch(logout());
+          dispatch(api.util.resetApiState());
+          await persistor.purge();
           if (router.canDismiss()) router.dismissAll();
-          router.replace("/welcome");
+          router.replace("/auth/signin");
         },
       },
     ]);
@@ -219,78 +195,76 @@ export default function Profile() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.heroCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {getInitials(displayName, phone)}
-            </Text>
-          </View>
+          <ProfileAvatar
+            name={displayName}
+            phone={phone}
+            imageUri={profileImage}
+            size={vs(80)}
+          />
 
-          {isEditingName ? (
-            <View style={styles.nameEditRow}>
-              <TextInput
-                style={styles.nameInput}
-                value={nameDraft}
-                onChangeText={setNameDraft}
-                placeholder="Your name"
-                placeholderTextColor={colors.gray100}
-                autoFocus
-                maxLength={40}
-              />
-              <Pressable style={styles.nameSaveBtn} onPress={handleSaveName}>
-                <Ionicons name="checkmark" size={vs(18)} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          ) : (
+          <View style={styles.nameRow}>
+            <Text style={styles.heroName}>{displayName}</Text>
             <Pressable
-              style={styles.nameRow}
-              onPress={() => setIsEditingName(true)}
+              style={styles.editProfileBtn}
+              onPress={() => router.push("/profile/edit")}
             >
-              <Text style={styles.heroName}>{displayName}</Text>
               <Ionicons
                 name="create-outline"
                 size={vs(16)}
                 color={colors.primary}
               />
             </Pressable>
-          )}
+          </View>
 
           <Text style={styles.heroPhone}>{phone}</Text>
 
           <View style={styles.badgeRow}>
             <View style={styles.roleBadge}>
               <Ionicons
-                name={isBusinessOwner ? "business-outline" : "person-outline"}
+                name={isManager ? "business-outline" : "person-outline"}
                 size={vs(13)}
                 color={colors.primary}
               />
               <Text style={styles.roleBadgeText}>{roleLabel}</Text>
             </View>
 
-            {isBusinessOwner ? (
-              <View
-                style={[
-                  styles.statusBadge,
-                  user?.isVerified
-                    ? styles.statusVerified
-                    : styles.statusPending,
-                ]}
-              >
-                <Text
+            {isManager ? (
+              <>
+                <View style={styles.planBadge}>
+                  <Ionicons
+                    name="diamond-outline"
+                    size={vs(13)}
+                    color={colors.success}
+                  />
+                  <Text style={styles.planBadgeText}>
+                    {getPlanDisplayName(activePlanId)}
+                  </Text>
+                </View>
+                <View
                   style={[
-                    styles.statusText,
+                    styles.statusBadge,
                     user?.isVerified
-                      ? styles.statusTextVerified
-                      : styles.statusTextPending,
+                      ? styles.statusVerified
+                      : styles.statusPending,
                   ]}
                 >
-                  {user?.isVerified ? "Verified" : "Pending"}
-                </Text>
-              </View>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      user?.isVerified
+                        ? styles.statusTextVerified
+                        : styles.statusTextPending,
+                    ]}
+                  >
+                    {user?.isVerified ? "Verified" : "Pending"}
+                  </Text>
+                </View>
+              </>
             ) : null}
           </View>
         </View>
 
-        {isBusinessOwner ? (
+        {isManager ? (
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{roomCount}</Text>
@@ -302,61 +276,72 @@ export default function Profile() {
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>
-                {monthlyRent > 0
-                  ? `${Math.round(monthlyRent / 1000)}k`
-                  : "0"}
+                {monthlyRent > 0 ? `${Math.round(monthlyRent / 1000)}k` : "0"}
               </Text>
               <Text style={styles.statLabel}>Rent/mo</Text>
             </View>
           </View>
         ) : null}
 
-        {isBusinessOwner ? (
-          <>
-            <Text style={styles.sectionTitle}>Subscription</Text>
-            <View style={styles.subscriptionHeader}>
-              <View style={styles.currentPlanBadge}>
-                <Ionicons
-                  name="diamond-outline"
-                  size={vs(14)}
-                  color={colors.primary}
-                />
-                <Text style={styles.currentPlanText}>
-                  {activePlan.name} Plan
-                </Text>
-              </View>
-              <Text style={styles.currentPlanPrice}>
-                {activePlan.price === 0
-                  ? "Free forever"
-                  : `${activePlan.priceLabel}/month`}
-              </Text>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.plansScroll}
-              decelerationRate="fast"
-              snapToInterval={vs(212)}
-            >
-              {SUBSCRIPTION_PLANS.map((plan) => (
-                <SubscriptionPlanCard
-                  key={plan.id}
-                  plan={plan}
-                  isActive={activePlanId === plan.id}
-                  onSelect={() => handleSelectPlan(plan.id)}
-                />
-              ))}
-            </ScrollView>
-          </>
-        ) : null}
-
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.sectionCard}>
+          <MenuRow
+            icon="person-outline"
+            label="Edit Profile"
+            value="Name, photo, email, address"
+            onPress={() => router.push("/profile/edit")}
+            styles={styles}
+            colors={colors}
+          />
+          <View style={styles.divider} />
+          {!isManager ? (
+            <>
+              <MenuRow
+                icon="id-card-outline"
+                label="User ID"
+                value={userId}
+                styles={styles}
+                colors={colors}
+              />
+              <View style={styles.divider} />
+            </>
+          ) : null}
           <MenuRow
             icon="call-outline"
             label="Phone Number"
             value={phone}
+            styles={styles}
+            colors={colors}
+          />
+          <View style={styles.divider} />
+          <MenuRow
+            icon="mail-outline"
+            label="Email"
+            value={email}
+            styles={styles}
+            colors={colors}
+          />
+          <View style={styles.divider} />
+          <MenuRow
+            icon="location-outline"
+            label="Address"
+            value={address}
+            styles={styles}
+            colors={colors}
+          />
+          <View style={styles.divider} />
+          <MenuRow
+            icon="calendar-outline"
+            label="Date of Birth"
+            value={dateOfBirth}
+            styles={styles}
+            colors={colors}
+          />
+          <View style={styles.divider} />
+          <MenuRow
+            icon="card-outline"
+            label="CNIC"
+            value={cnic}
             styles={styles}
             colors={colors}
           />
@@ -368,27 +353,72 @@ export default function Profile() {
             styles={styles}
             colors={colors}
           />
+          {isManager ? (
+            <>
+              <View style={styles.divider} />
+              <MenuRow
+                icon="diamond-outline"
+                label="Subscription"
+                value={`${getPlanDisplayName(activePlanId)} plan`}
+                onPress={() => router.push("/subscription")}
+                styles={styles}
+                colors={colors}
+              />
+            </>
+          ) : null}
         </View>
 
         <Text style={styles.sectionTitle}>
-          {isBusinessOwner ? "Hostel" : "My Stay"}
+          {isManager ? "Hostel" : "My Stay"}
         </Text>
         <View style={styles.sectionCard}>
-          {isBusinessOwner ? (
-            <MenuRow
-              icon="business-outline"
-              label="Hostel Details"
-              value={hostelName ?? "Set up your hostel"}
-              onPress={() => router.push("/hostel/details")}
-              styles={styles}
-              colors={colors}
-            />
+          {isManager ? (
+            <>
+              <MenuRow
+                icon="business-outline"
+                label="My Hostels"
+                value={
+                  hostelCount > 0
+                    ? `${hostelCount} hostel${hostelCount === 1 ? "" : "s"}`
+                    : "Add your first hostel"
+                }
+                onPress={() => router.push("/(tabs)/hostels")}
+                styles={styles}
+                colors={colors}
+              />
+              <View style={styles.divider} />
+              <MenuRow
+                icon="people-outline"
+                label="All Residents"
+                value="View resident list"
+                onPress={() => router.push("/residents")}
+                styles={styles}
+                colors={colors}
+              />
+              <View style={styles.divider} />
+              <MenuRow
+                icon="document-attach-outline"
+                label="Reports"
+                value="Rent, residents & tenant PDFs"
+                onPress={() => router.push("/reports")}
+                styles={styles}
+                colors={colors}
+              />
+            </>
           ) : (
             <>
               <MenuRow
+                icon="business-outline"
+                label="My Hostel"
+                value={residentHostelLabel}
+                styles={styles}
+                colors={colors}
+              />
+              <View style={styles.divider} />
+              <MenuRow
                 icon="bed-outline"
                 label="My Room"
-                value="Not assigned"
+                value={residentRoomLabel}
                 styles={styles}
                 colors={colors}
               />
@@ -396,7 +426,8 @@ export default function Profile() {
               <MenuRow
                 icon="receipt-outline"
                 label="Payment History"
-                value="No payments yet"
+                value="View rent & download report"
+                onPress={() => router.push("/(tabs)/rent")}
                 styles={styles}
                 colors={colors}
               />
@@ -409,7 +440,7 @@ export default function Profile() {
           <MenuRow
             icon="help-circle-outline"
             label="Help & Support"
-            onPress={() => Alert.alert("Help", "Contact support@vaas.app")}
+            onPress={() => router.push("/support")}
             styles={styles}
             colors={colors}
           />
@@ -417,9 +448,7 @@ export default function Profile() {
           <MenuRow
             icon="document-text-outline"
             label="Privacy Policy"
-            onPress={() =>
-              Alert.alert("Privacy", "Privacy policy will be available soon.")
-            }
+            onPress={() => router.push("/privacy")}
             styles={styles}
             colors={colors}
           />
@@ -427,9 +456,7 @@ export default function Profile() {
           <MenuRow
             icon="information-circle-outline"
             label="Terms of Service"
-            onPress={() =>
-              Alert.alert("Terms", "Terms of service will be available soon.")
-            }
+            onPress={() => router.push("/terms")}
             styles={styles}
             colors={colors}
           />
@@ -461,11 +488,7 @@ export default function Profile() {
   );
 }
 
-function createStyles(
-  colors: AppColors,
-  fonts: typeof FONTS,
-  isDark: boolean,
-) {
+function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -497,57 +520,24 @@ function createStyles(
       borderWidth: 1,
       borderColor: isDark ? colors.white200 : colors.primary200,
     },
-    avatar: {
-      width: vs(80),
-      height: vs(80),
-      borderRadius: vs(40),
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: vs(14),
-    },
-    avatarText: {
-      fontSize: FONT_SIZES.xxl,
-      fontFamily: fonts.bold,
-      color: "#FFFFFF",
-    },
     nameRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(8),
       marginBottom: vs(4),
     },
+    editProfileBtn: {
+      width: vs(32),
+      height: vs(32),
+      borderRadius: vs(16),
+      backgroundColor: colors.white,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     heroName: {
       fontSize: FONT_SIZES.xxl,
       fontFamily: fonts.bold,
       color: colors.text,
-    },
-    nameEditRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(8),
-      marginBottom: vs(4),
-      width: "100%",
-    },
-    nameInput: {
-      flex: 1,
-      height: vs(44),
-      borderRadius: vs(12),
-      backgroundColor: colors.white,
-      borderWidth: 1,
-      borderColor: colors.white100,
-      paddingHorizontal: vs(14),
-      fontSize: FONT_SIZES.lg,
-      fontFamily: fonts.medium,
-      color: colors.text,
-    },
-    nameSaveBtn: {
-      width: vs(44),
-      height: vs(44),
-      borderRadius: vs(12),
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
     },
     heroPhone: {
       fontSize: FONT_SIZES.md,
@@ -620,35 +610,19 @@ function createStyles(
       fontFamily: fonts.medium,
       color: colors.gray200,
     },
-    subscriptionHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: vs(12),
-      paddingHorizontal: vs(4),
-    },
-    currentPlanBadge: {
+    planBadge: {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(6),
-      backgroundColor: colors.primary100,
-      paddingHorizontal: vs(12),
+      backgroundColor: isDark ? colors.secondary100 : "#F0FDF4",
+      paddingHorizontal: vs(10),
       paddingVertical: vs(6),
       borderRadius: vs(20),
     },
-    currentPlanText: {
+    planBadgeText: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.semiBold,
-      color: colors.primary,
-    },
-    currentPlanPrice: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-    },
-    plansScroll: {
-      paddingBottom: vs(24),
-      paddingRight: vs(8),
+      color: colors.success,
     },
     sectionTitle: {
       fontSize: FONT_SIZES.sm,

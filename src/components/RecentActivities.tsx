@@ -9,23 +9,27 @@ type RecentActivitiesProps = {
   title?: string;
   activities: RecentActivity[];
   emptyMessage?: string;
+  isLoading?: boolean;
 };
 
 export default function RecentActivities({
   title = "Recent Activities",
   activities,
   emptyMessage = "No recent activities",
+  isLoading = false,
 }: RecentActivitiesProps) {
   const { colors, fonts } = useTheme();
   const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
-  const isEmpty = activities.length === 0;
+  const isEmpty = !isLoading && activities.length === 0;
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
 
-      <View style={[styles.card, isEmpty && styles.cardEmpty]}>
-        {isEmpty ? (
+      <View style={[styles.card, (isEmpty || isLoading) && styles.cardEmpty]}>
+        {isLoading ? (
+          <Text style={styles.emptyText}>Loading activities...</Text>
+        ) : isEmpty ? (
           <Text style={styles.emptyText}>{emptyMessage}</Text>
         ) : (
           activities.map((activity, index) => (

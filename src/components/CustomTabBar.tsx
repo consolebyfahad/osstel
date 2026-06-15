@@ -23,16 +23,37 @@ const SPRING_CONFIG = { damping: 20, stiffness: 190, mass: 0.8 };
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const TABS = [
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store/store";
+
+const MANAGER_TABS = [
   {
     name: "home",
     icon: "home" as const,
     activeIcon: "home" as const,
   },
   {
-    name: "rooms",
+    name: "hostels",
     icon: "organization" as const,
     activeIcon: "organization" as const,
+  },
+  {
+    name: "rent",
+    icon: "credit-card" as const,
+    activeIcon: "credit-card" as const,
+  },
+  {
+    name: "profile",
+    icon: "person" as const,
+    activeIcon: "person" as const,
+  },
+];
+
+const RESIDENT_TABS = [
+  {
+    name: "home",
+    icon: "home" as const,
+    activeIcon: "home" as const,
   },
   {
     name: "rent",
@@ -66,16 +87,26 @@ export default function CustomTabBar({
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
-  const tabWidth = SCREEN_WIDTH / state.routes.length;
-  const centerX = useSharedValue(state.index * tabWidth + tabWidth / 2);
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isManager = user?.role === "manager";
+  const visibleRoutes = state.routes.filter(
+    (route) => isManager || route.name !== "hostels",
+  );
+  const tabWidth = SCREEN_WIDTH / visibleRoutes.length;
+  const activeRoute = state.routes[state.index];
+  const activeVisibleIndex = Math.max(
+    0,
+    visibleRoutes.findIndex((route) => route.key === activeRoute?.key),
+  );
+  const centerX = useSharedValue(activeVisibleIndex * tabWidth + tabWidth / 2);
   const totalHeight = TAB_BAR_HEIGHT + insets.bottom;
 
   useEffect(() => {
     centerX.value = withSpring(
-      state.index * tabWidth + tabWidth / 2,
+      activeVisibleIndex * tabWidth + tabWidth / 2,
       SPRING_CONFIG,
     );
-  }, [state.index, tabWidth, centerX]);
+  }, [activeVisibleIndex, tabWidth, centerX]);
 
   const animatedPathProps = useAnimatedProps(() => ({
     d: createTabBarPath(SCREEN_WIDTH, totalHeight, centerX.value),
@@ -88,9 +119,10 @@ export default function CustomTabBar({
     ],
   }));
 
-  const activeRouteName = state.routes[state.index]?.name ?? "home";
+  const tabConfig = isManager ? MANAGER_TABS : RESIDENT_TABS;
+  const activeRouteName = activeRoute?.name ?? "home";
   const activeTab =
-    TABS.find((item) => item.name === activeRouteName) ?? TABS[0];
+    tabConfig.find((item) => item.name === activeRouteName) ?? tabConfig[0];
 
   return (
     <View style={[styles.wrapper, { height: totalHeight + NOTCH_DEPTH }]}>
@@ -121,9 +153,10 @@ export default function CustomTabBar({
           { paddingBottom: insets.bottom, height: totalHeight },
         ]}
       >
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
-          const tab = TABS.find((item) => item.name === route.name) ?? TABS[0];
+        {visibleRoutes.map((route) => {
+          const isFocused = activeRoute?.key === route.key;
+          const tab =
+            tabConfig.find((item) => item.name === route.name) ?? tabConfig[0];
 
           const onPress = () => {
             const event = navigation.emit({

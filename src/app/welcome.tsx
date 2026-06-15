@@ -13,12 +13,16 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { useDispatch } from "react-redux";
+import { setHasSeenWelcome } from "../../store/reducers/authSlice";
+import type { AppDispatch } from "../../store/store";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
 export default function Welcome() {
+  const dispatch = useDispatch<AppDispatch>();
   const { colors, fonts, isDark } = useTheme();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -27,8 +31,9 @@ export default function Welcome() {
     [colors, fonts, height, insets.bottom],
   );
 
-  const handlePress = async () => {
-    router.push("/auth/role");
+  const handlePress = () => {
+    dispatch(setHasSeenWelcome());
+    router.push("/auth/signin");
   };
 
   return (

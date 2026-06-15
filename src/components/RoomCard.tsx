@@ -1,5 +1,5 @@
+import type { Resident } from "@/types/resident";
 import type { Room } from "@/types/room";
-import type { Tenant } from "@/types/tenant";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -9,8 +9,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type RoomCardProps = {
   room: Room;
-  tenants: Tenant[];
+  residents: Resident[];
   onAddTenant?: (roomId: string) => void;
+  onEdit?: (roomId: string) => void;
 };
 
 const AVATAR_COLORS = ["#5DB7DE", "#4EDCA3", "#7C6CF0", "#EDA12F"];
@@ -24,8 +25,9 @@ function getInitials(name: string): string {
 
 export default function RoomCard({
   room,
-  tenants,
+  residents,
   onAddTenant,
+  onEdit,
 }: RoomCardProps) {
   const { colors, fonts, isDark } = useTheme();
   const styles = useMemo(
@@ -33,8 +35,8 @@ export default function RoomCard({
     [colors, fonts, isDark],
   );
 
-  const occupied = tenants.length;
-  const available = Math.max(room.totalBeds - occupied, 0);
+  const occupied = residents.length;
+  const available = Math.max(room.capacity - occupied, 0);
   const isFull = available === 0;
 
   return (
@@ -51,7 +53,7 @@ export default function RoomCard({
           <View style={styles.headerText}>
             <Text style={styles.title}>Room {room.roomNumber}</Text>
             <Text style={styles.subtitle}>
-              {room.totalBeds} Beds · {available} Available
+              {room.capacity} Beds · Rs {room.rent.toLocaleString()}/mo
             </Text>
           </View>
         </View>
@@ -67,10 +69,20 @@ export default function RoomCard({
             <Text style={styles.badgeFullText}>Full</Text>
           </View>
         )}
+
+        {onEdit ? (
+          <Pressable
+            style={styles.editButton}
+            onPress={() => onEdit(room._id)}
+            hitSlop={8}
+          >
+            <Ionicons name="create-outline" size={vs(18)} color={colors.primary} />
+          </Pressable>
+        ) : null}
       </View>
 
       <View style={styles.progressBar}>
-        {Array.from({ length: room.totalBeds }).map((_, index) => (
+        {Array.from({ length: room.capacity }).map((_, index) => (
           <View
             key={index}
             style={[
@@ -83,23 +95,23 @@ export default function RoomCard({
 
       <View style={styles.footer}>
         <View style={styles.avatarRow}>
-          {tenants.map((tenant, index) => (
+          {residents.map((resident, index) => (
             <View
-              key={tenant.id}
+              key={resident.id}
               style={[
                 styles.avatar,
                 { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] },
                 index > 0 && styles.avatarOverlap,
               ]}
             >
-              <Text style={styles.avatarText}>{getInitials(tenant.name)}</Text>
+              <Text style={styles.avatarText}>{getInitials(resident.name)}</Text>
             </View>
           ))}
 
           {!isFull ? (
             <Pressable
-              style={[styles.addButton, tenants.length > 0 && styles.avatarOverlap]}
-              onPress={() => onAddTenant?.(room.id)}
+              style={[styles.addButton, residents.length > 0 && styles.avatarOverlap]}
+              onPress={() => onAddTenant?.(room._id)}
               hitSlop={8}
             >
               <Ionicons name="add" size={vs(18)} color={colors.primary} />
@@ -108,7 +120,7 @@ export default function RoomCard({
         </View>
 
         <Text style={styles.occupancy}>
-          {occupied}/{room.totalBeds} occupied
+          {occupied}/{room.capacity} occupied
         </Text>
       </View>
     </View>
@@ -189,6 +201,15 @@ function createStyles(
       fontSize: FONT_SIZES.xs,
       fontFamily: fonts.semiBold,
       color: colors.error,
+    },
+    editButton: {
+      marginLeft: vs(8),
+      width: vs(32),
+      height: vs(32),
+      borderRadius: vs(16),
+      backgroundColor: colors.primary100,
+      alignItems: "center",
+      justifyContent: "center",
     },
     progressBar: {
       flexDirection: "row",

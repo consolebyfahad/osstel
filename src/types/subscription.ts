@@ -1,49 +1,67 @@
 export type SubscriptionPlanId = "free" | "standard" | "premium";
 
-export interface SubscriptionPlan {
+export type PlanRequestStatus = "pending" | "approved" | "rejected" | string;
+
+export interface ApiPlan {
   id: SubscriptionPlanId;
   name: string;
   price: number;
-  priceLabel: string;
-  description: string;
   features: string[];
-  popular?: boolean;
 }
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-  {
-    id: "free",
-    name: "Free",
-    price: 0,
-    priceLabel: "Rs 0",
-    description: "Get started with the basics",
-    features: ["Up to 5 rooms", "Basic rent tracking", "1 admin user"],
-  },
-  {
-    id: "standard",
-    name: "Standard",
-    price: 999,
-    priceLabel: "Rs 999",
-    description: "For growing hostels",
-    features: [
-      "Up to 20 rooms",
-      "Tenant management",
-      "Rent reminders",
-      "Export reports",
-    ],
-    popular: true,
-  },
-  {
-    id: "premium",
-    name: "Premium",
-    price: 1999,
-    priceLabel: "Rs 1,999",
-    description: "Full power for large hostels",
-    features: [
-      "Unlimited rooms",
-      "Advanced analytics",
-      "Multi-admin access",
-      "Priority support",
-    ],
-  },
-];
+export interface PlansResponse {
+  plans: ApiPlan[];
+}
+
+export interface PlanUpgradeRequest {
+  id: string;
+  currentPlan: SubscriptionPlanId;
+  requestedPlan: SubscriptionPlanId;
+  status: PlanRequestStatus;
+  note?: string;
+  createdAt: string;
+}
+
+export interface PlanRequestResponse {
+  currentPlan: SubscriptionPlanId;
+  request: PlanUpgradeRequest | null;
+}
+
+export interface SubmitPlanRequestBody {
+  plan: SubscriptionPlanId;
+  note?: string;
+}
+
+export interface SubmitPlanRequestResponse {
+  request: PlanUpgradeRequest;
+}
+
+export const PLAN_ORDER: Record<SubscriptionPlanId, number> = {
+  free: 0,
+  standard: 1,
+  premium: 2,
+};
+
+export function canUpgradeTo(
+  currentPlan: SubscriptionPlanId,
+  targetPlan: SubscriptionPlanId,
+): boolean {
+  return PLAN_ORDER[targetPlan] > PLAN_ORDER[currentPlan];
+}
+
+export function getPlanDisplayName(planId: SubscriptionPlanId): string {
+  if (planId === "free") return "Free";
+  if (planId === "standard") return "Standard";
+  return "Premium";
+}
+
+export function formatPlanPrice(price: number): string {
+  if (price === 0) return "Free";
+  return `Rs ${price.toLocaleString()}/month`;
+}
+
+export type PlanCardVariant = "free" | "standard" | "premium";
+
+export function getPlanVariant(planId: SubscriptionPlanId): PlanCardVariant {
+  return planId;
+}

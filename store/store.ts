@@ -1,8 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore, createListenerMiddleware } from "@reduxjs/toolkit";
 import { persistReducer, persistStore } from "redux-persist";
-import authReducer from "./reducers/authSlice";
+import authReducer, { logout } from "./reducers/authSlice";
 import { api } from "./api";
+
+const listenerMiddleware = createListenerMiddleware();
+
+listenerMiddleware.startListening({
+  actionCreator: logout,
+  effect: (_action, listenerApi) => {
+    listenerApi.dispatch(api.util.resetApiState());
+  },
+});
 
 const persistConfig = {
   key: "root",
@@ -31,7 +40,7 @@ export const store = configureStore({
           "persist/REGISTER",
         ],
       },
-    }).concat(api.middleware),
+    }).concat(api.middleware, listenerMiddleware.middleware),
 });
 
 export const persistor = persistStore(store);

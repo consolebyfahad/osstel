@@ -1,10 +1,10 @@
 import CustomButton from "@/components/CustomButton";
-import { addRoom } from "@/services/rooms";
+import { useCreateHostelRoomMutation } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Alert,
@@ -25,6 +25,8 @@ import {
 } from "react-native-safe-area-context";
 
 export default function AddRoom() {
+  const { hostelId } = useLocalSearchParams<{ hostelId: string }>();
+  const [createRoom, { isLoading: isSaving }] = useCreateHostelRoomMutation();
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(
@@ -33,33 +35,76 @@ export default function AddRoom() {
   );
 
   const [roomNumber, setRoomNumber] = useState("");
-  const [totalBeds, setTotalBeds] = useState("");
-  const [monthlyRent, setMonthlyRent] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [capacity, setCapacity] = useState("");
+  const [rent, setRent] = useState("");
 
   const isValid =
     roomNumber.trim().length > 0 &&
-    Number(totalBeds) > 0 &&
-    Number(monthlyRent) > 0;
+    Number(capacity) > 0 &&
+    Number(rent) > 0;
 
   const handleSave = async () => {
-    if (!isValid || isSaving) return;
+    if (!isValid || isSaving || !hostelId) return;
     Keyboard.dismiss();
-    setIsSaving(true);
 
     try {
-      await addRoom({
+      await createRoom({
+        hostelId,
         roomNumber: roomNumber.trim(),
-        totalBeds: Number(totalBeds),
-        monthlyRentPerBed: Number(monthlyRent),
-      });
+        capacity: Number(capacity),
+        rent: Number(rent),
+      }).unwrap();
       router.back();
-    } catch {
-      Alert.alert("Error", "Could not save room. Please try again.");
-    } finally {
-      setIsSaving(false);
+    } catch (error) {
+      const err = error as {
+        data?: { message?: string; errors?: { msg: string }[] } | string;
+      };
+
+      let message = "Could not save room. Please try again.";
+      if (typeof err.data === "string") {
+        message = err.data;
+      } else if (err.data?.errors?.length) {
+        message = err.data.errors.map((e) => e.msg).join("\n");
+      } else if (err.data?.message) {
+        message = err.data.message;
+      }
+
+      Alert.alert("Error", message);
     }
   };
+
+  if (!hostelId) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.inner}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+              hitSlop={12}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={vs(24)}
+                color={colors.text}
+              />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Add Room</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+          <View style={styles.missingHostelWrap}>
+            <Text style={styles.missingHostelText}>
+              Open a hostel first, then add a room from there.
+            </Text>
+            <CustomButton
+              title="Go to Hostels"
+              onPress={() => router.replace("/(tabs)/hostels")}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -108,14 +153,14 @@ export default function AddRoom() {
               </View>
 
               <View style={styles.field}>
-                <Text style={styles.label}>Total Beds</Text>
+                <Text style={styles.label}>Capacity (Beds)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g. 4"
+                  placeholder="e.g. 2"
                   placeholderTextColor={colors.gray100}
-                  value={totalBeds}
+                  value={capacity}
                   onChangeText={(text) =>
-                    setTotalBeds(text.replace(/[^0-9]/g, ""))
+                    setCapacity(text.replace(/[^0-9]/g, ""))
                   }
                   keyboardType="number-pad"
                   maxLength={2}
@@ -123,28 +168,23 @@ export default function AddRoom() {
               </View>
 
               <View style={styles.field}>
-                <Text style={styles.label}>Monthly Rent per Bed (Rs)</Text>
+                <Text style={styles.label}>Monthly Rent (Rs)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="e.g. 8000"
+                  placeholder="e.g. 15000"
                   placeholderTextColor={colors.gray100}
-                  value={monthlyRent}
-                  onChangeText={(text) =>
-                    setMonthlyRent(text.replace(/[^0-9]/g, ""))
-                  }
+                  value={rent}
+                  onChangeText={(text) => setRent(text.replace(/[^0-9]/g, ""))}
                   keyboardType="number-pad"
                   maxLength={7}
                 />
               </View>
 
-              {totalBeds && monthlyRent ? (
+              {rent ? (
                 <View style={styles.summaryCard}>
-                  <Text style={styles.summaryLabel}>Total monthly rent</Text>
+                  <Text style={styles.summaryLabel}>Monthly rent</Text>
                   <Text style={styles.summaryValue}>
-                    Rs{" "}
-                    {(
-                      Number(totalBeds) * Number(monthlyRent)
-                    ).toLocaleString()}
+                    Rs {Number(rent).toLocaleString()}
                   </Text>
                 </View>
               ) : null}
@@ -258,6 +298,19 @@ function createStyles(
       borderTopWidth: 1,
       borderTopColor: colors.white100,
       backgroundColor: colors.background,
+    },
+    missingHostelWrap: {
+      flex: 1,
+      justifyContent: "center",
+      paddingHorizontal: vs(32),
+      gap: vs(20),
+    },
+    missingHostelText: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      textAlign: "center",
+      lineHeight: vs(22),
     },
   });
 }

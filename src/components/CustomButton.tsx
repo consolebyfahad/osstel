@@ -1,7 +1,7 @@
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS } from "@constants/fonts";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 export default function CustomButton({
@@ -9,7 +9,7 @@ export default function CustomButton({
   onPress,
   disabled = false,
 }: {
-  title: string;
+  title: string | ReactNode;
   onPress: () => void | Promise<void>;
   disabled?: boolean;
 }) {
