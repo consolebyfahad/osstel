@@ -153,7 +153,7 @@ export default function RentReportScreen() {
     try {
       const html = buildRentCollectionHtml(reportData);
       const fileName = sanitizeFileName(
-        `vaas-rent-${year}-${month}-${scopeLabel}`,
+        `osstel-rent-${year}-${month}-${scopeLabel}`,
       );
       await downloadReportPdf(html, fileName);
     } catch {
@@ -224,7 +224,7 @@ export default function RentReportScreen() {
             <View key={section.hostelId} style={previewStyles.sectionCard}>
               <Text style={previewStyles.sectionTitle}>{section.hostelName}</Text>
               <Text style={previewStyles.sectionMeta}>
-                {section.records.length} tenant
+                {section.records.length} resident
                 {section.records.length === 1 ? "" : "s"}
               </Text>
 

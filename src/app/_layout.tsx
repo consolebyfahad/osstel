@@ -1,4 +1,5 @@
 import AuthProvider from "@/context/AuthProvider";
+import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { ThemeProvider, useTheme } from "@constants/constant";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -75,10 +76,12 @@ export default function RootLayout() {
         persistor={persistor}
       >
         <AuthProvider>
-          <ThemeProvider>
-            <AppContent />
-            <Toast />
-          </ThemeProvider>
+          <PushNotificationProvider>
+            <ThemeProvider>
+              <AppContent />
+              <Toast />
+            </ThemeProvider>
+          </PushNotificationProvider>
         </AuthProvider>
       </PersistGate>
     </Provider>

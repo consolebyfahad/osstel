@@ -1,22 +1,19 @@
 import CustomButton from "@/components/CustomButton";
+import CustomInput from "@/components/CustomInput";
+import CustomLoading from "@/components/CustomLoading";
+import ScreenHeader from "@/components/ScreenHeader";
 import { useCreateHostelMutation } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   Alert,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import {
@@ -77,95 +74,67 @@ export default function HostelDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.inner}>
-            <View style={styles.header}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => router.back()}
-                hitSlop={12}
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={vs(24)}
-                  color={colors.text}
-                />
-              </TouchableOpacity>
-              <Text style={styles.headerTitle}>Add Hostel</Text>
-              <View style={styles.headerSpacer} />
-            </View>
+      <View style={styles.inner}>
+        <ScreenHeader title="Add Hostel" showBack />
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.scrollContent}
-            >
-              <Text style={styles.subtitle}>
-                Create a new hostel. This information appears on receipts and
-                resident communications.
-              </Text>
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerStyle={styles.scrollContent}
+        >
+          <Text style={styles.subtitle}>
+            Create a new hostel. This information appears on receipts and
+            resident communications.
+          </Text>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Hostel Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Sunrise Hostel"
-                  placeholderTextColor={colors.gray100}
-                  value={name}
-                  onChangeText={setName}
-                />
-              </View>
+          <CustomInput
+            label="Hostel Name"
+            placeholder="e.g. Sunrise Hostel"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+          />
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Address</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Street address"
-                  placeholderTextColor={colors.gray100}
-                  value={address}
-                  onChangeText={setAddress}
-                />
-              </View>
+          <CustomInput
+            label="Address"
+            placeholder="Street address"
+            value={address}
+            onChangeText={setAddress}
+            autoCapitalize="words"
+          />
 
-              <View style={styles.field}>
-                <Text style={styles.label}>City</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Lahore"
-                  placeholderTextColor={colors.gray100}
-                  value={city}
-                  onChangeText={setCity}
-                />
-              </View>
+          <CustomInput
+            label="City"
+            placeholder="e.g. Lahore"
+            value={city}
+            onChangeText={setCity}
+            autoCapitalize="words"
+          />
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Contact Phone</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. +92421234567"
-                  placeholderTextColor={colors.gray100}
-                  value={contactPhone}
-                  onChangeText={setContactPhone}
-                  keyboardType="phone-pad"
-                />
-              </View>
-            </ScrollView>
+          <CustomInput
+            label="Contact Phone"
+            placeholder="e.g. +92421234567"
+            maxLength={13}
+            value={contactPhone}
+            onChangeText={setContactPhone}
+            keyboardType="phone-pad"
+            returnKeyType="done"
+            onSubmitEditing={Keyboard.dismiss}
+          />
 
-            <View style={styles.footer}>
-              <CustomButton
-                title={isSaving ? "Creating..." : "Create Hostel"}
-                onPress={handleSave}
-                disabled={!isValid || isSaving}
-              />
-            </View>
+          <View style={styles.buttonWrap}>
+            <CustomButton
+              title={isSaving ? <CustomLoading size="sm" /> : "Create Hostel"}
+              onPress={handleSave}
+              disabled={!isValid || isSaving}
+            />
           </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -180,38 +149,16 @@ function createStyles(
       flex: 1,
       backgroundColor: colors.background,
     },
-    keyboardView: {
-      flex: 1,
-    },
     inner: {
       flex: 1,
     },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: vs(16),
-      paddingVertical: vs(12),
-    },
-    backButton: {
-      width: vs(40),
-      height: vs(40),
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    headerTitle: {
+    scroll: {
       flex: 1,
-      fontSize: FONT_SIZES.xl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      textAlign: "center",
-    },
-    headerSpacer: {
-      width: vs(40),
     },
     scrollContent: {
       paddingHorizontal: vs(20),
       paddingTop: vs(8),
-      paddingBottom: vs(24),
+      paddingBottom: Math.max(bottomInset, vs(24)),
     },
     subtitle: {
       fontSize: FONT_SIZES.md,
@@ -220,33 +167,8 @@ function createStyles(
       lineHeight: vs(22),
       marginBottom: vs(24),
     },
-    field: {
-      marginBottom: vs(20),
-    },
-    label: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.text,
-      marginBottom: vs(8),
-    },
-    input: {
-      height: vs(52),
-      borderRadius: vs(14),
-      backgroundColor: colors.white,
-      borderWidth: 1,
-      borderColor: colors.white100,
-      paddingHorizontal: vs(16),
-      fontSize: FONT_SIZES.lg,
-      fontFamily: fonts.medium,
-      color: colors.text,
-    },
-    footer: {
-      paddingHorizontal: vs(20),
-      paddingTop: vs(12),
-      paddingBottom: Math.max(bottomInset, vs(20)),
-      borderTopWidth: 1,
-      borderTopColor: colors.white100,
-      backgroundColor: colors.background,
+    buttonWrap: {
+      marginTop: vs(8),
     },
   });
 }

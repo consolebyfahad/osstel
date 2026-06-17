@@ -1,8 +1,12 @@
+import EmptyState from "@/components/EmptyState";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import HostelDropdown from "@/components/HostelDropdown";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import type { Hostel } from "@/types/hostel";
 import type { Resident } from "@/types/resident";
 import { formatCnic } from "@/utils/cnic";
+import { getResidentMonthlyRent } from "@/utils/room";
 import {
   useGetHostelsQuery,
   useGetResidentsQuery,
@@ -49,6 +53,7 @@ function ResidentCard({
 }: ResidentCardProps) {
   const metaParts = [
     `Room ${resident.roomNumber}`,
+    `Rs ${getResidentMonthlyRent(resident).toLocaleString()}/mo`,
     resident.phone,
     showHostel && resident.hostelName ? resident.hostelName : null,
   ].filter(Boolean);
@@ -255,65 +260,55 @@ export default function ResidentsScreen() {
 
   if (!isManager) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.noAccessWrap}>
-          <Text style={styles.emptyTitle}>Residents</Text>
-          <Text style={styles.emptyDescription}>
-            Resident lists are available for managers only.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.noAccessWrap}>
+            <Text style={styles.emptyTitle}>Residents</Text>
+            <Text style={styles.emptyDescription}>
+              Resident lists are available for managers only.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   if (hostelOptions.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-          </Pressable>
-          <Text style={styles.title}>Residents</Text>
-          <View style={styles.backBtn} />
-        </View>
-        <View style={styles.noAccessWrap}>
-          <View style={styles.emptyIconWrap}>
-            <MaterialCommunityIcons
-              name="office-building-outline"
-              size={vs(36)}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={styles.emptyTitle}>No hostels yet</Text>
-          <Text style={styles.emptyDescription}>
-            Add a hostel first to view residents.
-          </Text>
-          <Pressable
-            style={styles.emptyAction}
-            onPress={() => router.push("/(tabs)/hostels")}
-          >
-            <Text style={styles.emptyActionText}>Go to Hostels</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ScreenHeader title="Residents" showBack />
+          <EmptyState
+            title="No hostels yet"
+            description="Add a hostel first to view residents."
+            actionLabel="Go to Hostels"
+            onAction={() => router.push("/(tabs)/hostels")}
+          />
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.staticHeader}>
-        <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-          </Pressable>
-          <Text style={styles.title}>Residents</Text>
-          <Pressable
-            style={styles.addBtn}
-            onPress={() => router.push("/tenants/add")}
-          >
-            <Ionicons name="person-add-outline" size={vs(22)} color={colors.primary} />
-          </Pressable>
-        </View>
+        <ScreenHeader
+          title="Residents"
+          showBack
+          rightSlot={
+            <Pressable
+              style={styles.addBtn}
+              onPress={() => router.push("/residents/add")}
+            >
+              <Ionicons
+                name="person-add-outline"
+                size={vs(22)}
+                color={colors.primary}
+              />
+            </Pressable>
+          }
+        />
 
         <HostelDropdown
           hostels={hostelOptions}
@@ -374,27 +369,21 @@ export default function ResidentsScreen() {
           }
         >
           {isEmpty ? (
-            <View style={styles.emptyWrap}>
-              <View style={styles.emptyIconWrap}>
-                <Ionicons name="people-outline" size={vs(36)} color={colors.primary} />
-              </View>
-              <Text style={styles.emptyTitle}>
-                {searchQuery.trim() ? "No matches found" : "No residents yet"}
-              </Text>
-              <Text style={styles.emptyDescription}>
-                {searchQuery.trim()
+            <EmptyState
+              title={searchQuery.trim() ? "No matches found" : "No residents yet"}
+              description={
+                searchQuery.trim()
                   ? "Try a different name, phone number, or room."
-                  : "Add your first resident to start tracking occupancy."}
-              </Text>
-              {!searchQuery.trim() ? (
-                <Pressable
-                  style={styles.emptyAction}
-                  onPress={() => router.push("/tenants/add")}
-                >
-                  <Text style={styles.emptyActionText}>Add Resident</Text>
-                </Pressable>
-              ) : null}
-            </View>
+                  : "Add your first resident to start tracking occupancy."
+              }
+              actionLabel={searchQuery.trim() ? undefined : "Add Resident"}
+              onAction={
+                searchQuery.trim()
+                  ? undefined
+                  : () => router.push("/residents/add")
+              }
+              size="sm"
+            />
           ) : (
             filteredResidents.map((resident) => (
               <ResidentCard
@@ -405,7 +394,7 @@ export default function ResidentsScreen() {
                 colors={colors}
                 onPress={() =>
                   router.push({
-                    pathname: "/reports/tenant",
+                    pathname: "/reports/resident-profile",
                     params: {
                       tenancyId: resident.tenancyId,
                       hostelId: resident.hostelId,
@@ -414,7 +403,7 @@ export default function ResidentsScreen() {
                 }
                 onGenerateReport={() =>
                   router.push({
-                    pathname: "/reports/tenant",
+                    pathname: "/reports/resident-profile",
                     params: {
                       tenancyId: resident.tenancyId,
                       hostelId: resident.hostelId,
@@ -426,7 +415,8 @@ export default function ResidentsScreen() {
           )}
         </ScrollView>
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -434,7 +424,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     staticHeader: {
       paddingHorizontal: vs(20),

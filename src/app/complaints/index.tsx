@@ -1,3 +1,6 @@
+import EmptyState from "@/components/EmptyState";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import HostelDropdown from "@/components/HostelDropdown";
 import type { Hostel } from "@/types/hostel";
 import {
@@ -251,60 +254,40 @@ export default function ComplaintsScreen() {
 
   if (!isManager) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.noAccessWrap}>
-          <Text style={styles.emptyTitle}>Complaints</Text>
-          <Text style={styles.emptyDescription}>
-            Complaint management is available for managers only.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.noAccessWrap}>
+            <Text style={styles.emptyTitle}>Complaints</Text>
+            <Text style={styles.emptyDescription}>
+              Complaint management is available for managers only.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   if (hostelOptions.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-          </Pressable>
-          <Text style={styles.title}>Complaints</Text>
-          <View style={styles.backBtn} />
-        </View>
-        <View style={styles.noAccessWrap}>
-          <View style={styles.emptyIconWrap}>
-            <MaterialCommunityIcons
-              name="office-building-outline"
-              size={vs(36)}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={styles.emptyTitle}>No hostels yet</Text>
-          <Text style={styles.emptyDescription}>
-            Add a hostel first to view complaints.
-          </Text>
-          <Pressable
-            style={styles.emptyAction}
-            onPress={() => router.push("/(tabs)/hostels")}
-          >
-            <Text style={styles.emptyActionText}>Go to Hostels</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ScreenHeader title="Complaints" showBack />
+          <EmptyState
+            title="No hostels yet"
+            description="Add a hostel first to view complaints."
+            actionLabel="Go to Hostels"
+            onAction={() => router.push("/(tabs)/hostels")}
+          />
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.staticHeader}>
-        <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-          </Pressable>
-          <Text style={styles.title}>Complaints</Text>
-          <View style={styles.backBtn} />
-        </View>
+        <ScreenHeader title="Complaints" showBack />
 
         <HostelDropdown
           hostels={hostelOptions}
@@ -374,17 +357,11 @@ export default function ComplaintsScreen() {
           ]}
         >
           {isEmpty ? (
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIconWrap}>
-                <MaterialCommunityIcons
-                  name="message-alert-outline"
-                  size={vs(36)}
-                  color={colors.warning}
-                />
-              </View>
-              <Text style={styles.emptyTitle}>No complaints</Text>
-              <Text style={styles.emptyDescription}>{emptyMessage}</Text>
-            </View>
+            <EmptyState
+              title="No complaints"
+              description={emptyMessage}
+              size="sm"
+            />
           ) : (
             complaints.map((complaint) => (
               <ComplaintCard
@@ -399,7 +376,8 @@ export default function ComplaintsScreen() {
           )}
         </ScrollView>
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -411,7 +389,10 @@ function createStyles(
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     staticHeader: {
       paddingHorizontal: vs(20),

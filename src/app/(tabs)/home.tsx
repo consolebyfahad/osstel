@@ -14,6 +14,7 @@ import {
   type QuickAction,
 } from "@/types/dashboard";
 import { getTimeGreeting } from "@/utils/greeting";
+import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
 import {
   useGetDashboardActivitiesQuery,
   useGetDashboardQuery,
@@ -21,10 +22,12 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
-import { FONT_SIZES, FONTS } from "@constants/fonts";
+import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CustomLoading from "@/components/CustomLoading";
 import {
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -51,10 +54,15 @@ const MONTH_NAMES = [
 ];
 
 export default function Home() {
-  const { colors, fonts } = useTheme();
-  const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
+  const { colors, fonts, isDark } = useTheme();
+  const styles = useMemo(
+    () => createStyles(colors, fonts, isDark),
+    [colors, fonts, isDark],
+  );
   const user = useSelector((state: RootState) => state.auth.user);
   const isManager = user?.role === "manager";
+  const { data: unreadData } = useUnreadNotificationCount(!user?.accessToken);
+  const unreadCount = unreadData?.unreadCount ?? 0;
 
   const { data, isLoading, isFetching, refetch } = useGetDashboardQuery(
     undefined,
@@ -152,16 +160,16 @@ export default function Home() {
         title: "Total Rooms",
         value: summary.totalRooms,
         iconName: "home-outline",
-        iconColor: "#F97316",
-        iconBackgroundColor: "#FFEDD5",
+        iconColor: isDark ? "#FB923C" : "#F97316",
+        iconBackgroundColor: isDark ? "#3D2518" : "#FFEDD5",
       },
       {
         id: "total-beds",
         title: "Total Beds",
         value: summary.totalBedrooms,
         iconName: "bed-outline",
-        iconColor: "#7C3AED",
-        iconBackgroundColor: "#EDE9FE",
+        iconColor: isDark ? "#A78BFA" : "#7C3AED",
+        iconBackgroundColor: isDark ? "#2D2640" : "#EDE9FE",
       },
       {
         id: "occupied",
@@ -169,7 +177,7 @@ export default function Home() {
         value: summary.occupiedBeds,
         iconName: "trending-up-outline",
         iconColor: colors.success,
-        iconBackgroundColor: "#DCFCE7",
+        iconBackgroundColor: isDark ? "#1A3020" : "#DCFCE7",
       },
       {
         id: "vacant",
@@ -177,10 +185,10 @@ export default function Home() {
         value: summary.vacantBeds,
         iconName: "bed-outline",
         iconColor: colors.warning,
-        iconBackgroundColor: "#FEF3C7",
+        iconBackgroundColor: isDark ? "#302818" : "#FEF3C7",
       },
     ],
-    [colors.success, colors.warning, summary],
+    [colors.success, colors.warning, isDark, summary],
   );
 
   const collectionData: CollectionBannerData = useMemo(() => {
@@ -196,9 +204,11 @@ export default function Home() {
       pendingAmount: summary.pending,
       complaintsOpen: summary.complaintsOpen,
       currency: "Rs",
-      gradientColors: [colors.primary, colors.primary200],
+      gradientColors: isDark
+        ? ([colors.primary500, colors.primary300] as [string, string])
+        : ([colors.primary, colors.primary200] as [string, string]),
     };
-  }, [colors.primary, colors.primary200, summary]);
+  }, [colors.primary, colors.primary200, colors.primary300, colors.primary500, isDark, summary]);
 
   const quickActions: QuickAction[] = useMemo(
     () =>
@@ -208,26 +218,26 @@ export default function Home() {
               id: "add-room",
               label: "Add Room",
               iconName: "add",
-              iconColor: "#C2410C",
-              iconBackgroundColor: "#FFEDD5",
+              iconColor: isDark ? "#FB923C" : "#C2410C",
+              iconBackgroundColor: isDark ? "#3D2518" : "#FFEDD5",
             },
             {
-              id: "add-tenant",
-              label: "Add Tenant",
+              id: "add-resident",
+              label: "Add Resident",
               iconName: "person-add-outline",
-              iconColor: "#15803D",
-              iconBackgroundColor: "#DCFCE7",
+              iconColor: isDark ? "#4EDCA3" : "#15803D",
+              iconBackgroundColor: isDark ? "#1A3020" : "#DCFCE7",
             },
             {
               id: "reports",
               label: "Reports",
               iconName: "download-outline",
-              iconColor: "#6D28D9",
-              iconBackgroundColor: "#EDE9FE",
+              iconColor: isDark ? "#A78BFA" : "#6D28D9",
+              iconBackgroundColor: isDark ? "#2D2640" : "#EDE9FE",
             },
           ]
         : [],
-    [isManager],
+    [isDark, isManager],
   );
 
   const handleQuickAction = (actionId: string) => {
@@ -235,8 +245,8 @@ export default function Home() {
       router.push("/(tabs)/hostels");
       return;
     }
-    if (actionId === "add-tenant") {
-      router.push("/tenants/add");
+    if (actionId === "add-resident") {
+      router.push("/residents/add");
       return;
     }
     if (actionId === "reports") {
@@ -267,8 +277,29 @@ export default function Home() {
           }
         >
           <View style={styles.header}>
-            <Text style={styles.greeting}>{greeting},</Text>
-            <Text style={styles.userName}>{userName}</Text>
+            <View style={styles.headerText}>
+              <Text style={styles.greeting}>{greeting},</Text>
+              <Text style={styles.userName}>{userName}</Text>
+            </View>
+            <Pressable
+              style={styles.notificationBtn}
+              onPress={() => router.push("/notifications")}
+              accessibilityLabel="Notifications"
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={vs(24)}
+                color={colors.text}
+              />
+              {unreadCount > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
           </View>
 
           {isManager && !isLoading && hostelOptions.length > 0 ? (
@@ -342,7 +373,11 @@ export default function Home() {
   );
 }
 
-function createStyles(colors: AppColors, fonts: typeof FONTS) {
+function createStyles(
+  colors: AppColors,
+  fonts: typeof FONTS,
+  isDark: boolean,
+) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -357,7 +392,38 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       paddingBottom: 110,
     },
     header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 24,
+    },
+    headerText: {
+      flex: 1,
+    },
+    notificationBtn: {
+      width: vs(44),
+      height: vs(44),
+      borderRadius: vs(22),
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? colors.white200 : colors.primary100,
+    },
+    notificationBadge: {
+      position: "absolute",
+      top: vs(4),
+      right: vs(4),
+      minWidth: vs(18),
+      height: vs(18),
+      borderRadius: vs(9),
+      paddingHorizontal: vs(4),
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.error,
+    },
+    notificationBadgeText: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: fonts.bold,
+      color: "#FFFFFF",
     },
     greeting: {
       fontSize: FONT_SIZES.lg,

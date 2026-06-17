@@ -1,5 +1,7 @@
 import CustomButton from "@/components/CustomButton";
 import CustomLoading from "@/components/CustomLoading";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import { meToAuthProfile, toIsoDateString } from "@/types/auth";
 import {
@@ -34,7 +36,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import {
@@ -224,41 +225,32 @@ export default function EditProfileScreen() {
 
   if (isLoading && !meData) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.loadingWrap}>
-          <CustomLoading size="lg" />
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.loadingWrap}>
+            <CustomLoading size="lg" />
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={styles.keyboardView}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
+        >
           <View style={styles.inner}>
-            <View style={styles.header}>
-              <Pressable
-                style={styles.backButton}
-                onPress={() => router.back()}
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={vs(24)}
-                  color={colors.text}
-                />
-              </Pressable>
-              <Text style={styles.headerTitle}>Edit Profile</Text>
-              <View style={styles.headerSpacer} />
-            </View>
+            <ScreenHeader title="Edit Profile" showBack />
 
             <ScrollView
+              style={styles.scroll}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               contentContainerStyle={styles.scrollContent}
             >
               <ProfileAvatar
@@ -426,9 +418,9 @@ export default function EditProfileScreen() {
               />
             </View>
           </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -440,7 +432,10 @@ function createStyles(
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     keyboardView: {
       flex: 1,
@@ -474,6 +469,9 @@ function createStyles(
     },
     headerSpacer: {
       width: vs(40),
+    },
+    scroll: {
+      flex: 1,
     },
     scrollContent: {
       paddingHorizontal: vs(20),
@@ -623,7 +621,7 @@ function createStyles(
       paddingBottom: Math.max(bottomInset, vs(20)),
       borderTopWidth: 1,
       borderTopColor: colors.white100,
-      backgroundColor: colors.background,
+      backgroundColor: "transparent",
     },
   });
 }

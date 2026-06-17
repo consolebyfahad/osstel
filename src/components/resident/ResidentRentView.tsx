@@ -1,7 +1,10 @@
 import CustomButton from "@/components/CustomButton";
+import EmptyState from "@/components/EmptyState";
+import GradientBackground from "@/components/GradientBackground";
 import ImageUploadField, {
   type UploadedImageValue,
 } from "@/components/ImageUploadField";
+import ScreenHeader from "@/components/ScreenHeader";
 import type { RentRecord, RentStatus } from "@/types/rent";
 import { isRentDueWindow, rentDueDateLabel } from "@/utils/rent";
 import {
@@ -322,7 +325,7 @@ export default function ResidentRentView() {
       const html = buildResidentRentHistoryHtml(reportData);
       await downloadReportPdf(
         html,
-        sanitizeFileName(`vaas-my-rent-${year}-${profile.name}`),
+        sanitizeFileName(`osstel-my-rent-${year}-${profile.name}`),
       );
     } catch {
       Alert.alert("Download failed", "Could not generate your rent report.");
@@ -334,15 +337,14 @@ export default function ResidentRentView() {
   const refreshing = (currentFetching && !currentLoading) || historyFetching;
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Rent</Text>
-        <Text style={styles.subtitle}>
-          {hostel?.name ?? "Hostel"} · Room {room?.roomNumber ?? "—"}
-        </Text>
-      </View>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader
+          title="My Rent"
+          subtitle={`${hostel?.name ?? "Hostel"} · Room ${room?.roomNumber ?? "—"}`}
+        />
 
-      <ScrollView
+        <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -450,7 +452,11 @@ export default function ResidentRentView() {
         {historyLoading ? (
           <CustomLoading size="md" style={styles.loader} />
         ) : historyRecords.length === 0 ? (
-          <Text style={styles.emptyText}>No rent records for {year}.</Text>
+          <EmptyState
+            title="No rent records"
+            description={`No rent records for ${year}.`}
+            size="sm"
+          />
         ) : (
           historyRecords.map((record: RentRecord) => (
             <View key={record.id} style={styles.historyCard}>
@@ -535,7 +541,8 @@ export default function ResidentRentView() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -543,23 +550,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
     },
-    header: {
-      paddingHorizontal: vs(20),
-      paddingTop: vs(16),
-      paddingBottom: vs(8),
-    },
-    title: {
-      fontSize: FONT_SIZES.title,
-      fontFamily: fonts.bold,
-      color: colors.text,
-    },
-    subtitle: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-      marginTop: vs(4),
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     scroll: {
       flex: 1,
@@ -594,10 +588,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       lineHeight: vs(18),
     },
     currentCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      borderRadius: vs(18),
       borderWidth: 1,
-      borderColor: colors.white100,
+      borderColor: isDark ? colors.white200 : colors.white100,
       padding: vs(16),
       marginBottom: vs(20),
     },
@@ -772,12 +766,12 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       alignItems: "center",
       justifyContent: "space-between",
       gap: vs(10),
-      backgroundColor: colors.white,
-      borderRadius: vs(12),
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      borderRadius: vs(18),
       borderWidth: 1,
-      borderColor: colors.white100,
+      borderColor: isDark ? colors.white200 : colors.white100,
       padding: vs(14),
-      marginBottom: vs(8),
+      marginBottom: vs(12),
     },
     historyCardMain: {
       flex: 1,

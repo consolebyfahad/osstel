@@ -9,6 +9,8 @@ import { aggregateDashboard } from "@/types/dashboard";
 import { formatDateOfBirth, meToAuthProfile } from "@/types/auth";
 import { formatCnic } from "@/utils/cnic";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import { USER_ROLES, type UserRole } from "@/types/role";
 import {
   getPlanDisplayName,
@@ -20,6 +22,7 @@ import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
+import Fontisto from "@expo/vector-icons/Fontisto";
 import {
   Alert,
   Pressable,
@@ -122,10 +125,13 @@ export default function Profile() {
     }, [isAuthenticated, refetchMe]),
   );
 
-  const displayName = meData?.user.name?.trim() || user?.name?.trim() || "Guest User";
+  const displayName =
+    meData?.user.name?.trim() || user?.name?.trim() || "Guest User";
   const phone = meData?.user.phone ?? user?.phone ?? "—";
-  const email = meData?.user.email?.trim() || user?.email?.trim() || "Not added";
-  const address = meData?.user.address?.trim() || user?.address?.trim() || "Not added";
+  const email =
+    meData?.user.email?.trim() || user?.email?.trim() || "Not added";
+  const address =
+    meData?.user.address?.trim() || user?.address?.trim() || "Not added";
   const dateOfBirth =
     formatDateOfBirth(meData?.user.dateOfBirth ?? user?.dateOfBirth) ||
     "Not added";
@@ -161,7 +167,7 @@ export default function Profile() {
     : "Not assigned";
 
   const handleLogout = () => {
-    Alert.alert("Log out", "Are you sure you want to log out of VAAS?", [
+    Alert.alert("Log out", "Are you sure you want to log out of OSSTEL?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Log out",
@@ -184,52 +190,49 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.staticHeader}>
-        <Text style={styles.pageTitle}>Profile</Text>
-      </View>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader title="Profile" />
 
-      <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.heroCard}>
-          <ProfileAvatar
-            name={displayName}
-            phone={phone}
-            imageUri={profileImage}
-            size={vs(80)}
-          />
-
-          <View style={styles.nameRow}>
-            <Text style={styles.heroName}>{displayName}</Text>
-            <Pressable
-              style={styles.editProfileBtn}
-              onPress={() => router.push("/profile/edit")}
-            >
-              <Ionicons
-                name="create-outline"
-                size={vs(16)}
-                color={colors.primary}
-              />
-            </Pressable>
-          </View>
-
-          <Text style={styles.heroPhone}>{phone}</Text>
-
-          <View style={styles.badgeRow}>
-            <View style={styles.roleBadge}>
-              <Ionicons
-                name={isManager ? "business-outline" : "person-outline"}
-                size={vs(13)}
-                color={colors.primary}
-              />
-              <Text style={styles.roleBadgeText}>{roleLabel}</Text>
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.heroCard}>
+            <View style={styles.roleIconBadge}>
+              {isManager ? (
+                <Fontisto name="person" size={vs(18)} color={colors.primary} />
+              ) : (
+                <Ionicons name="person" size={24} color={colors.primary} />
+              )}
             </View>
 
+            <ProfileAvatar
+              name={displayName}
+              phone={phone}
+              imageUri={profileImage}
+              size={vs(80)}
+            />
+
+            <View style={styles.nameRow}>
+              <Text style={styles.heroName}>{displayName}</Text>
+              <Pressable
+                style={styles.editProfileBtn}
+                onPress={() => router.push("/profile/edit")}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={vs(16)}
+                  color={colors.primary}
+                />
+              </Pressable>
+            </View>
+
+            <Text style={styles.heroPhone}>{phone}</Text>
+
             {isManager ? (
-              <>
+              <View style={styles.badgeRow}>
                 <View style={styles.planBadge}>
                   <Ionicons
                     name="diamond-outline"
@@ -259,232 +262,204 @@ export default function Profile() {
                     {user?.isVerified ? "Verified" : "Pending"}
                   </Text>
                 </View>
+              </View>
+            ) : null}
+          </View>
+
+          {isManager ? (
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{roomCount}</Text>
+                <Text style={styles.statLabel}>Rooms</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{bedCount}</Text>
+                <Text style={styles.statLabel}>Beds</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>
+                  {monthlyRent > 0 ? `${Math.round(monthlyRent / 1000)}k` : "0"}
+                </Text>
+                <Text style={styles.statLabel}>Rent/mo</Text>
+              </View>
+            </View>
+          ) : null}
+
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.sectionCard}>
+            <MenuRow
+              icon="person-outline"
+              label="Edit Profile"
+              value="Name, photo, email, address"
+              onPress={() => router.push("/profile/edit")}
+              styles={styles}
+              colors={colors}
+            />
+            <View style={styles.divider} />
+            {!isManager ? (
+              <>
+                <MenuRow
+                  icon="id-card-outline"
+                  label="User ID"
+                  value={userId}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+              </>
+            ) : null}
+            <MenuRow
+              icon="call-outline"
+              label="Phone Number"
+              value={phone}
+              styles={styles}
+              colors={colors}
+            />
+            <View style={styles.divider} />
+            <MenuRow
+              icon="shield-checkmark-outline"
+              label="Account Role"
+              value={roleLabel}
+              styles={styles}
+              colors={colors}
+            />
+            {isManager ? (
+              <>
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="diamond-outline"
+                  label="Subscription"
+                  value={`${getPlanDisplayName(activePlanId)} plan`}
+                  onPress={() => router.push("/subscription")}
+                  styles={styles}
+                  colors={colors}
+                />
               </>
             ) : null}
           </View>
-        </View>
 
-        {isManager ? (
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{roomCount}</Text>
-              <Text style={styles.statLabel}>Rooms</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{bedCount}</Text>
-              <Text style={styles.statLabel}>Beds</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>
-                {monthlyRent > 0 ? `${Math.round(monthlyRent / 1000)}k` : "0"}
-              </Text>
-              <Text style={styles.statLabel}>Rent/mo</Text>
-            </View>
+          <Text style={styles.sectionTitle}>
+            {isManager ? "Hostel" : "My Stay"}
+          </Text>
+          <View style={styles.sectionCard}>
+            {isManager ? (
+              <>
+                <MenuRow
+                  icon="business-outline"
+                  label="My Hostels"
+                  value={
+                    hostelCount > 0
+                      ? `${hostelCount} hostel${hostelCount === 1 ? "" : "s"}`
+                      : "Add your first hostel"
+                  }
+                  onPress={() => router.push("/(tabs)/hostels")}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="people-outline"
+                  label="All Residents"
+                  value="View resident list"
+                  onPress={() => router.push("/residents")}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="document-attach-outline"
+                  label="Reports"
+                  value="Rent, residents & profile PDFs"
+                  onPress={() => router.push("/reports")}
+                  styles={styles}
+                  colors={colors}
+                />
+              </>
+            ) : (
+              <>
+                <MenuRow
+                  icon="business-outline"
+                  label="My Hostel"
+                  value={residentHostelLabel}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="bed-outline"
+                  label="My Room"
+                  value={residentRoomLabel}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="receipt-outline"
+                  label="Payment History"
+                  value="View rent & download report"
+                  onPress={() => router.push("/(tabs)/rent")}
+                  styles={styles}
+                  colors={colors}
+                />
+              </>
+            )}
           </View>
-        ) : null}
 
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.sectionCard}>
-          <MenuRow
-            icon="person-outline"
-            label="Edit Profile"
-            value="Name, photo, email, address"
-            onPress={() => router.push("/profile/edit")}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          {!isManager ? (
-            <>
-              <MenuRow
-                icon="id-card-outline"
-                label="User ID"
-                value={userId}
-                styles={styles}
-                colors={colors}
-              />
-              <View style={styles.divider} />
-            </>
-          ) : null}
-          <MenuRow
-            icon="call-outline"
-            label="Phone Number"
-            value={phone}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="mail-outline"
-            label="Email"
-            value={email}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="location-outline"
-            label="Address"
-            value={address}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="calendar-outline"
-            label="Date of Birth"
-            value={dateOfBirth}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="card-outline"
-            label="CNIC"
-            value={cnic}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="shield-checkmark-outline"
-            label="Account Role"
-            value={roleLabel}
-            styles={styles}
-            colors={colors}
-          />
-          {isManager ? (
-            <>
-              <View style={styles.divider} />
-              <MenuRow
-                icon="diamond-outline"
-                label="Subscription"
-                value={`${getPlanDisplayName(activePlanId)} plan`}
-                onPress={() => router.push("/subscription")}
-                styles={styles}
-                colors={colors}
-              />
-            </>
-          ) : null}
-        </View>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <View style={styles.sectionCard}>
+            <MenuRow
+              icon="help-circle-outline"
+              label="Help & Support"
+              onPress={() => router.push("/support")}
+              styles={styles}
+              colors={colors}
+            />
+            <View style={styles.divider} />
+            <MenuRow
+              icon="document-text-outline"
+              label="Privacy Policy"
+              onPress={() => router.push("/privacy")}
+              styles={styles}
+              colors={colors}
+            />
+            <View style={styles.divider} />
+            <MenuRow
+              icon="information-circle-outline"
+              label="Terms of Service"
+              onPress={() => router.push("/terms")}
+              styles={styles}
+              colors={colors}
+            />
+          </View>
 
-        <Text style={styles.sectionTitle}>
-          {isManager ? "Hostel" : "My Stay"}
-        </Text>
-        <View style={styles.sectionCard}>
-          {isManager ? (
-            <>
-              <MenuRow
-                icon="business-outline"
-                label="My Hostels"
-                value={
-                  hostelCount > 0
-                    ? `${hostelCount} hostel${hostelCount === 1 ? "" : "s"}`
-                    : "Add your first hostel"
-                }
-                onPress={() => router.push("/(tabs)/hostels")}
-                styles={styles}
-                colors={colors}
-              />
-              <View style={styles.divider} />
-              <MenuRow
-                icon="people-outline"
-                label="All Residents"
-                value="View resident list"
-                onPress={() => router.push("/residents")}
-                styles={styles}
-                colors={colors}
-              />
-              <View style={styles.divider} />
-              <MenuRow
-                icon="document-attach-outline"
-                label="Reports"
-                value="Rent, residents & tenant PDFs"
-                onPress={() => router.push("/reports")}
-                styles={styles}
-                colors={colors}
-              />
-            </>
-          ) : (
-            <>
-              <MenuRow
-                icon="business-outline"
-                label="My Hostel"
-                value={residentHostelLabel}
-                styles={styles}
-                colors={colors}
-              />
-              <View style={styles.divider} />
-              <MenuRow
-                icon="bed-outline"
-                label="My Room"
-                value={residentRoomLabel}
-                styles={styles}
-                colors={colors}
-              />
-              <View style={styles.divider} />
-              <MenuRow
-                icon="receipt-outline"
-                label="Payment History"
-                value="View rent & download report"
-                onPress={() => router.push("/(tabs)/rent")}
-                styles={styles}
-                colors={colors}
-              />
-            </>
-          )}
-        </View>
+          <Text style={styles.sectionTitle}>App</Text>
+          <View style={styles.sectionCard}>
+            <MenuRow
+              icon="phone-portrait-outline"
+              label="App Version"
+              value="1.0.0"
+              styles={styles}
+              colors={colors}
+            />
+          </View>
 
-        <Text style={styles.sectionTitle}>Support</Text>
-        <View style={styles.sectionCard}>
-          <MenuRow
-            icon="help-circle-outline"
-            label="Help & Support"
-            onPress={() => router.push("/support")}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="document-text-outline"
-            label="Privacy Policy"
-            onPress={() => router.push("/privacy")}
-            styles={styles}
-            colors={colors}
-          />
-          <View style={styles.divider} />
-          <MenuRow
-            icon="information-circle-outline"
-            label="Terms of Service"
-            onPress={() => router.push("/terms")}
-            styles={styles}
-            colors={colors}
-          />
-        </View>
-
-        <Text style={styles.sectionTitle}>App</Text>
-        <View style={styles.sectionCard}>
-          <MenuRow
-            icon="phone-portrait-outline"
-            label="App Version"
-            value="1.0.0"
-            styles={styles}
-            colors={colors}
-          />
-        </View>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.logoutButton,
-            pressed && styles.logoutPressed,
-          ]}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={vs(20)} color={colors.error} />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+          <Pressable
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed && styles.logoutPressed,
+            ]}
+            onPress={handleLogout}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={vs(20)}
+              color={colors.error}
+            />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -492,17 +467,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
     },
-    staticHeader: {
-      paddingHorizontal: vs(20),
-      paddingTop: vs(16),
-      paddingBottom: vs(8),
-    },
-    pageTitle: {
-      fontSize: FONT_SIZES.title,
-      fontFamily: fonts.bold,
-      color: colors.text,
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     scroll: {
       flex: 1,
@@ -519,6 +487,20 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginBottom: vs(20),
       borderWidth: 1,
       borderColor: isDark ? colors.white200 : colors.primary200,
+      position: "relative",
+    },
+    roleIconBadge: {
+      position: "absolute",
+      top: vs(14),
+      left: vs(14),
+      width: vs(36),
+      height: vs(36),
+      borderRadius: vs(18),
+      backgroundColor: isDark ? colors.white200 : colors.white,
+      borderWidth: 1,
+      borderColor: isDark ? colors.white300 : colors.primary200,
+      alignItems: "center",
+      justifyContent: "center",
     },
     nameRow: {
       flexDirection: "row",
@@ -548,21 +530,8 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     badgeRow: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: vs(8),
-    },
-    roleBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(6),
-      backgroundColor: colors.white,
-      paddingHorizontal: vs(12),
-      paddingVertical: vs(6),
-      borderRadius: vs(20),
-    },
-    roleBadgeText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.primary,
     },
     statusBadge: {
       paddingHorizontal: vs(10),

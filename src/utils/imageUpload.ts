@@ -304,3 +304,30 @@ export function pickImageFromCamera(
 ) {
   return pickImage({ ...options, source: "camera" });
 }
+
+export function pickImageWithSourceChoice(
+  options: Omit<PickImageOptions, "source"> = {},
+): Promise<PickedImage | null> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      "Add Photo",
+      "Choose how you want to add a photo",
+      [
+        {
+          text: "Take Photo",
+          onPress: () => {
+            void pickImage({ ...options, source: "camera" }).then(resolve);
+          },
+        },
+        {
+          text: "Choose from Gallery",
+          onPress: () => {
+            void pickImage({ ...options, source: "library" }).then(resolve);
+          },
+        },
+        { text: "Cancel", style: "cancel", onPress: () => resolve(null) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(null) },
+    );
+  });
+}

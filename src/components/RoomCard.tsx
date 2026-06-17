@@ -1,5 +1,6 @@
 import type { Resident } from "@/types/resident";
 import type { Room } from "@/types/room";
+import { getRoomTotalMonthlyRent } from "@/utils/room";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -10,7 +11,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 type RoomCardProps = {
   room: Room;
   residents: Resident[];
-  onAddTenant?: (roomId: string) => void;
+  onAddResident?: (roomId: string) => void;
   onEdit?: (roomId: string) => void;
 };
 
@@ -26,7 +27,7 @@ function getInitials(name: string): string {
 export default function RoomCard({
   room,
   residents,
-  onAddTenant,
+  onAddResident,
   onEdit,
 }: RoomCardProps) {
   const { colors, fonts, isDark } = useTheme();
@@ -38,6 +39,18 @@ export default function RoomCard({
   const occupied = residents.length;
   const available = Math.max(room.capacity - occupied, 0);
   const isFull = available === 0;
+  const roomTotalRent = getRoomTotalMonthlyRent(room, residents);
+  const hasCustomRates = residents.some(
+    (resident) =>
+      resident.monthlyRent != null && resident.monthlyRent !== room.rent,
+  );
+
+  const rentSubtitle =
+    occupied > 0
+      ? hasCustomRates || roomTotalRent !== room.rent * occupied
+        ? `Rs ${roomTotalRent.toLocaleString()}/mo total · Rs ${room.rent.toLocaleString()} default/bed`
+        : `${room.capacity} Beds · Rs ${room.rent.toLocaleString()}/mo each`
+      : `${room.capacity} Beds · Rs ${room.rent.toLocaleString()}/mo each`;
 
   return (
     <View style={styles.card}>
@@ -52,9 +65,7 @@ export default function RoomCard({
           </View>
           <View style={styles.headerText}>
             <Text style={styles.title}>Room {room.roomNumber}</Text>
-            <Text style={styles.subtitle}>
-              {room.capacity} Beds · Rs {room.rent.toLocaleString()}/mo
-            </Text>
+            <Text style={styles.subtitle}>{rentSubtitle}</Text>
           </View>
         </View>
 
@@ -111,7 +122,7 @@ export default function RoomCard({
           {!isFull ? (
             <Pressable
               style={[styles.addButton, residents.length > 0 && styles.avatarOverlap]}
-              onPress={() => onAddTenant?.(room._id)}
+              onPress={() => onAddResident?.(room._id)}
               hitSlop={8}
             >
               <Ionicons name="add" size={vs(18)} color={colors.primary} />

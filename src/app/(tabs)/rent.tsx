@@ -1,5 +1,8 @@
+import EmptyState from "@/components/EmptyState";
+import GradientBackground from "@/components/GradientBackground";
 import HostelDropdown from "@/components/HostelDropdown";
 import ResidentRentView from "@/components/resident/ResidentRentView";
+import ScreenHeader from "@/components/ScreenHeader";
 import type { Hostel } from "@/types/hostel";
 import type { RentFilter, RentRecord, RentStatus } from "@/types/rent";
 import { useGetHostelsQuery, useGetRentQuery, useUpdateRentStatusMutation } from "../../../store/api";
@@ -362,74 +365,62 @@ function ManagerRentView() {
 
   if (hostelOptions.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.noAccessWrap}>
-          <View style={styles.emptyIconWrap}>
-            <MaterialCommunityIcons
-              name="office-building-outline"
-              size={vs(36)}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={styles.emptyTitle}>No hostels yet</Text>
-          <Text style={styles.emptyDescription}>
-            Add a hostel first to manage rent records.
-          </Text>
-          <Pressable
-            style={styles.emptyAction}
-            onPress={() => router.push("/(tabs)/hostels")}
-          >
-            <Text style={styles.emptyActionText}>Go to Hostels</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ScreenHeader title="Rent Management" subtitle={monthLabel} />
+          <EmptyState
+            title="No hostels yet"
+            description="Add a hostel first to manage rent records."
+            actionLabel="Go to Hostels"
+            onAction={() => router.push("/(tabs)/hostels")}
+          />
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.staticHeader}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Rent Management</Text>
-          <Text style={styles.month}>{monthLabel}</Text>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader title="Rent Management" subtitle={monthLabel} />
+
+        <View style={styles.staticHeader}>
+          <HostelDropdown
+            hostels={hostelOptions}
+            value={selectedHostelId}
+            onChange={setSelectedHostelId}
+            showAllOption={false}
+          />
+
+          <View style={styles.summaryRow}>
+            <SummaryCard
+              label="EXPECTED"
+              value={formatAmount(summary?.expected ?? 0)}
+              variant="expected"
+              styles={styles}
+            />
+            <SummaryCard
+              label="COLLECTED"
+              value={formatAmount(summary?.collected ?? 0)}
+              variant="collected"
+              styles={styles}
+            />
+            <SummaryCard
+              label="PENDING"
+              value={formatAmount(summary?.pending ?? 0)}
+              variant="pending"
+              styles={styles}
+            />
+          </View>
+
+          <AnimatedFilterBar
+            activeFilter={activeFilter}
+            onFilterChange={setActiveFilter}
+            styles={styles}
+          />
         </View>
 
-        <HostelDropdown
-          hostels={hostelOptions}
-          value={selectedHostelId}
-          onChange={setSelectedHostelId}
-          showAllOption={false}
-        />
-
-        <View style={styles.summaryRow}>
-          <SummaryCard
-            label="EXPECTED"
-            value={formatAmount(summary?.expected ?? 0)}
-            variant="expected"
-            styles={styles}
-          />
-          <SummaryCard
-            label="COLLECTED"
-            value={formatAmount(summary?.collected ?? 0)}
-            variant="collected"
-            styles={styles}
-          />
-          <SummaryCard
-            label="PENDING"
-            value={formatAmount(summary?.pending ?? 0)}
-            variant="pending"
-            styles={styles}
-          />
-        </View>
-
-        <AnimatedFilterBar
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          styles={styles}
-        />
-      </View>
-
-      {isLoading ? (
+        {isLoading ? (
         <View style={styles.loadingWrap}>
           <CustomLoading size="lg" />
         </View>
@@ -455,17 +446,11 @@ function ManagerRentView() {
             exiting={FadeOut.duration(180)}
           >
             {isEmpty ? (
-              <View style={styles.emptyState}>
-                <View style={styles.emptyIconWrap}>
-                  <MaterialCommunityIcons
-                    name="cash"
-                    size={vs(36)}
-                    color={colors.warning}
-                  />
-                </View>
-                <Text style={styles.emptyTitle}>No records</Text>
-                <Text style={styles.emptyDescription}>{emptyMessage}</Text>
-              </View>
+              <EmptyState
+                title="No records"
+                description={emptyMessage}
+                size="sm"
+              />
             ) : (
               records.map((record: RentRecord) => (
                 <RentRecordCard
@@ -479,8 +464,9 @@ function ManagerRentView() {
             )}
           </Animated.View>
         </ScrollView>
-      )}
-    </SafeAreaView>
+        )}
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -492,11 +478,13 @@ function createStyles(
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     staticHeader: {
       paddingHorizontal: vs(20),
-      paddingTop: vs(16),
       paddingBottom: vs(4),
     },
     scroll: {
@@ -525,17 +513,6 @@ function createStyles(
     header: {
       marginBottom: vs(12),
     },
-    title: {
-      fontSize: FONT_SIZES.title,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      marginBottom: vs(4),
-    },
-    month: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-    },
     summaryRow: {
       flexDirection: "row",
       gap: vs(10),
@@ -554,8 +531,8 @@ function createStyles(
       elevation: 2,
     },
     summaryExpected: {
-      backgroundColor: colors.white,
-      borderColor: colors.white100,
+      backgroundColor: isDark ? colors.white200 : colors.white,
+      borderColor: isDark ? colors.white300 : colors.white100,
     },
     summaryCollected: {
       backgroundColor: isDark ? colors.secondary100 : "#F0FDF4",
@@ -595,11 +572,13 @@ function createStyles(
     },
     filterBar: {
       flexDirection: "row",
-      backgroundColor: colors.white100,
+      backgroundColor: isDark ? colors.white200 : colors.white100,
       borderRadius: vs(14),
       padding: vs(4),
       marginBottom: vs(12),
       position: "relative",
+      borderWidth: isDark ? 1 : 0,
+      borderColor: isDark ? colors.white300 : "transparent",
     },
     filterIndicator: {
       position: "absolute",
@@ -607,7 +586,7 @@ function createStyles(
       left: vs(4),
       bottom: vs(4),
       borderRadius: vs(10),
-      backgroundColor: colors.white,
+      backgroundColor: isDark ? colors.white300 : colors.white,
       shadowColor: colors.black,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.08,
@@ -670,12 +649,12 @@ function createStyles(
       color: colors.primary,
     },
     recordCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(14),
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      borderRadius: vs(18),
       padding: vs(16),
-      marginBottom: vs(10),
+      marginBottom: vs(12),
       borderWidth: 1,
-      borderColor: colors.white100,
+      borderColor: isDark ? colors.white200 : colors.white100,
     },
     recordHeader: {
       flexDirection: "row",

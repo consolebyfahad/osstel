@@ -1,9 +1,9 @@
 import CustomButton from "@/components/CustomButton";
+import ScreenHeader from "@/components/ScreenHeader";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useMemo, type ReactNode } from "react";
 import CustomLoading from "@/components/CustomLoading";
 import {
@@ -46,16 +46,7 @@ export default function ReportScaffold({
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.headerRow}>
-        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-        </Pressable>
-        <View style={styles.headerTextWrap}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
-        <View style={styles.iconBtn} />
-      </View>
+      <ScreenHeader title={title} subtitle={subtitle} showBack />
 
       {controls ? <View style={styles.controls}>{controls}</View> : null}
 

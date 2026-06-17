@@ -1,12 +1,12 @@
 import type { LegalDocument } from "@/content/legal";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useMemo } from "react";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,16 +28,9 @@ export default function LegalDocumentScreen({
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.headerRow}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-        </Pressable>
-        <Text style={styles.title} numberOfLines={1}>
-          {document.title}
-        </Text>
-        <View style={styles.backBtn} />
-      </View>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader title={document.title} showBack titleNumberOfLines={1} />
 
       <ScrollView
         style={styles.scroll}
@@ -78,7 +71,8 @@ export default function LegalDocumentScreen({
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -86,27 +80,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
     },
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: vs(16),
-      paddingVertical: vs(12),
-    },
-    backBtn: {
-      width: vs(40),
-      height: vs(40),
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    title: {
+    safeArea: {
       flex: 1,
-      fontSize: FONT_SIZES.title,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      textAlign: "center",
+      backgroundColor: "transparent",
     },
     scroll: {
       flex: 1,

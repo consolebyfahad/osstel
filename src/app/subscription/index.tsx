@@ -1,4 +1,6 @@
 import CustomButton from "@/components/CustomButton";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import PlanUpgradeCard from "@/components/PlanUpgradeCard";
 import { meToAuthProfile } from "@/types/auth";
 import {
@@ -45,7 +47,7 @@ import { persistor } from "../../../store/store";
 const PAYMENT_INSTRUCTIONS = `Transfer payment to:
 Bank: Meezan Bank
 Account: 1234567890
-Title: VAAS Services
+Title: OSSTEL Services
 
 Then submit your request. Admin will verify and activate your plan.`;
 
@@ -219,36 +221,33 @@ export default function SubscriptionScreen() {
 
   if (!isManager) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Subscription Plan</Text>
-          <View style={styles.backBtn} />
-        </View>
-        <View style={styles.centerWrap}>
-          <Text style={styles.centerText}>
-            Subscription plans are available for managers only.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ScreenHeader title="Subscription Plan" showBack />
+          <View style={styles.centerWrap}>
+            <Text style={styles.centerText}>
+              Subscription plans are available for managers only.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.headerRow}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Subscription Plan</Text>
-        <View style={styles.planBadge}>
-          <Text style={styles.planBadgeText}>
-            {getPlanDisplayName(currentPlanId)}
-          </Text>
-        </View>
-      </View>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <ScreenHeader
+        title="Subscription Plan"
+        showBack
+        rightSlot={
+          <View style={styles.planBadge}>
+            <Text style={styles.planBadgeText}>
+              {getPlanDisplayName(currentPlanId)}
+            </Text>
+          </View>
+        }
+      />
 
       {isLoading ? (
         <View style={styles.centerWrap}>
@@ -375,7 +374,8 @@ export default function SubscriptionScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -383,7 +383,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     headerRow: {
       flexDirection: "row",

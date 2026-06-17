@@ -1,5 +1,5 @@
 import type { ImageUploadPreset } from "@/utils/imageUpload";
-import { pickImageFromLibrary } from "@/utils/imageUpload";
+import { pickImageWithSourceChoice } from "@/utils/imageUpload";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -43,18 +43,21 @@ export default function ImageUploadField({
   variant = "card",
   style,
 }: ImageUploadFieldProps) {
-  const { colors, fonts } = useTheme();
-  const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
+  const { colors, fonts, isDark } = useTheme();
+  const styles = useMemo(
+    () => createStyles(colors, fonts, isDark),
+    [colors, fonts, isDark],
+  );
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePick = async () => {
     setIsProcessing(true);
     try {
-      const picked = await pickImageFromLibrary({
+      const picked = await pickImageWithSourceChoice({
         preset,
         allowsEditing: true,
         aspect,
-        permissionMessage: "Allow photo library access to upload this image.",
+        permissionMessage: "Allow access to your camera or photo library.",
       });
 
       if (!picked) return;
@@ -102,7 +105,7 @@ export default function ImageUploadField({
               size={vs(variant === "avatar" ? 28 : 24)}
               color={colors.gray200}
             />
-            <Text style={styles.placeholder}>Tap to upload</Text>
+            {/* <Text style={styles.placeholder}>Tap to add photo</Text> */}
           </>
         )}
       </Pressable>
@@ -118,7 +121,10 @@ export default function ImageUploadField({
   );
 }
 
-function createStyles(colors: AppColors, fonts: typeof FONTS) {
+function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
+  const surface = isDark ? colors.white100 : colors.white;
+  const border = isDark ? colors.white200 : colors.white100;
+
   return StyleSheet.create({
     wrap: {
       marginBottom: vs(4),
@@ -134,8 +140,8 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       height: vs(96),
       borderRadius: vs(48),
       borderWidth: 1,
-      borderColor: colors.white100,
-      backgroundColor: colors.white,
+      borderColor: border,
+      backgroundColor: surface,
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "center",
@@ -145,8 +151,8 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       height: vs(120),
       borderRadius: vs(14),
       borderWidth: 1,
-      borderColor: colors.white100,
-      backgroundColor: colors.white,
+      borderColor: border,
+      backgroundColor: surface,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",

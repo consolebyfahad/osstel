@@ -1,4 +1,5 @@
 import CustomButton from "@/components/CustomButton";
+import ScreenHeader from "@/components/ScreenHeader";
 import {
   useDeleteHostelMutation,
   useGetHostelQuery,
@@ -138,17 +139,7 @@ export default function EditHostelScreen() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.inner}>
-            <View style={styles.header}>
-              <Pressable style={styles.backButton} onPress={() => router.back()}>
-                <Ionicons
-                  name="chevron-back"
-                  size={vs(24)}
-                  color={colors.text}
-                />
-              </Pressable>
-              <Text style={styles.headerTitle}>Edit Hostel</Text>
-              <View style={styles.headerSpacer} />
-            </View>
+            <ScreenHeader title="Edit Hostel" showBack />
 
             <ScrollView
               showsVerticalScrollIndicator={false}

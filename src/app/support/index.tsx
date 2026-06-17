@@ -1,4 +1,7 @@
 import CustomButton from "@/components/CustomButton";
+import EmptyState from "@/components/EmptyState";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import {
   SUPPORT_CATEGORIES,
   SUPPORT_STATUS_LABELS,
@@ -96,7 +99,8 @@ function RequestCard({ request, styles, colors, isDark }: RequestCardProps) {
         <View style={styles.requestHeaderLeft}>
           <Text style={styles.requestSubject}>{request.subject}</Text>
           <Text style={styles.requestMeta}>
-            {getCategoryLabel(request.category)} · {formatDate(request.createdAt)}
+            {getCategoryLabel(request.category)} ·{" "}
+            {formatDate(request.createdAt)}
           </Text>
         </View>
         <View style={[styles.statusBadge, statusStyle]}>
@@ -118,7 +122,9 @@ function RequestCard({ request, styles, colors, isDark }: RequestCardProps) {
           <Text style={styles.replyLabel}>Admin reply</Text>
           <Text style={styles.replyText}>{request.adminReply}</Text>
           {request.repliedAt ? (
-            <Text style={styles.replyDate}>{formatDate(request.repliedAt)}</Text>
+            <Text style={styles.replyDate}>
+              {formatDate(request.repliedAt)}
+            </Text>
           ) : null}
         </View>
       ) : null}
@@ -164,9 +170,7 @@ export default function SupportScreen() {
   const trimmedSubject = subject.trim();
   const trimmedMessage = message.trim();
   const canSubmit =
-    trimmedSubject.length > 0 &&
-    trimmedMessage.length >= 10 &&
-    !isSubmitting;
+    trimmedSubject.length > 0 && trimmedMessage.length >= 10 && !isSubmitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -198,150 +202,143 @@ export default function SupportScreen() {
 
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.centerWrap}>
-          <Text style={styles.emptyTitle}>Help & Support</Text>
-          <Text style={styles.emptyDescription}>
-            Sign in to contact the VAAS support team.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.centerWrap}>
+            <Text style={styles.emptyTitle}>Help & Support</Text>
+            <Text style={styles.emptyDescription}>
+              Sign in to contact the OSSTEL support team.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-          </Pressable>
-          <Text style={styles.title}>Help & Support</Text>
-          <View style={styles.backBtn} />
-        </View>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScreenHeader title="Help & Support" showBack />
 
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={
-              <RefreshControl
-                refreshing={isFetching && !isLoading}
-                onRefresh={refetch}
-                tintColor={colors.primary}
-              />
-            }
-          >
-            <View style={styles.infoCard}>
-              <Ionicons
-                name="chatbubbles-outline"
-                size={vs(24)}
-                color={colors.primary}
-              />
-              <Text style={styles.infoTitle}>Contact VAAS Admin</Text>
-              <Text style={styles.infoText}>
-                Send a message and it will appear directly in the admin panel
-                for review.
-              </Text>
-            </View>
-
-            <Text style={styles.sectionTitle}>New message</Text>
-            <View style={styles.formCard}>
-              <Text style={styles.label}>Category</Text>
-              <View style={styles.categoryRow}>
-                {SUPPORT_CATEGORIES.map((item) => {
-                  const active = category === item.id;
-                  return (
-                    <Pressable
-                      key={item.id}
-                      style={[
-                        styles.categoryChip,
-                        active && styles.categoryChipActive,
-                      ]}
-                      onPress={() => setCategory(item.id)}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          active && styles.categoryChipTextActive,
-                        ]}
-                      >
-                        {item.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              <Text style={styles.label}>Subject</Text>
-              <TextInput
-                style={styles.input}
-                value={subject}
-                onChangeText={setSubject}
-                placeholder="Brief summary of your issue"
-                placeholderTextColor={colors.gray200}
-                maxLength={SUBJECT_MAX_LENGTH}
-              />
-
-              <Text style={styles.label}>Message</Text>
-              <TextInput
-                style={[styles.input, styles.messageInput]}
-                value={message}
-                onChangeText={setMessage}
-                placeholder="Describe your issue or question (min 10 characters)"
-                placeholderTextColor={colors.gray200}
-                multiline
-                textAlignVertical="top"
-                maxLength={MESSAGE_MAX_LENGTH}
-              />
-              <Text style={styles.charCount}>
-                {message.length}/{MESSAGE_MAX_LENGTH}
-              </Text>
-
-              <CustomButton
-                title={isSubmitting ? "Sending..." : "Send to Admin"}
-                onPress={handleSubmit}
-                disabled={!canSubmit}
-              />
-            </View>
-
-            <Text style={styles.sectionTitle}>Your messages</Text>
-            {isLoading ? (
-              <View style={styles.loadingWrap}>
-                <CustomLoading size="sm" />
-              </View>
-            ) : requests.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Ionicons
-                  name="mail-open-outline"
-                  size={vs(28)}
-                  color={colors.gray200}
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              refreshControl={
+                <RefreshControl
+                  refreshing={isFetching && !isLoading}
+                  onRefresh={refetch}
+                  tintColor={colors.primary}
                 />
-                <Text style={styles.emptyTitle}>No messages yet</Text>
-                <Text style={styles.emptyDescription}>
-                  Your submitted messages will appear here with status updates.
+              }
+            >
+              <View style={styles.infoCard}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={vs(24)}
+                  color={colors.primary}
+                />
+                <Text style={styles.infoTitle}>Contact OSSTEL Admin</Text>
+                <Text style={styles.infoText}>
+                  Send a message and it will appear directly in the admin panel
+                  for review.
                 </Text>
               </View>
-            ) : (
-              requests.map((request) => (
-                <RequestCard
-                  key={request.id}
-                  request={request}
-                  styles={styles}
-                  colors={colors}
-                  isDark={isDark}
+
+              <Text style={styles.sectionTitle}>New message</Text>
+              <View style={styles.formCard}>
+                <Text style={styles.label}>Category</Text>
+                <View style={styles.categoryRow}>
+                  {SUPPORT_CATEGORIES.map((item) => {
+                    const active = category === item.id;
+                    return (
+                      <Pressable
+                        key={item.id}
+                        style={[
+                          styles.categoryChip,
+                          active && styles.categoryChipActive,
+                        ]}
+                        onPress={() => setCategory(item.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryChipText,
+                            active && styles.categoryChipTextActive,
+                          ]}
+                        >
+                          {item.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.label}>Subject</Text>
+                <TextInput
+                  style={styles.input}
+                  value={subject}
+                  onChangeText={setSubject}
+                  placeholder="Brief summary of your issue"
+                  placeholderTextColor={colors.gray200}
+                  maxLength={SUBJECT_MAX_LENGTH}
                 />
-              ))
-            )}
-          </ScrollView>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+                <Text style={styles.label}>Message</Text>
+                <TextInput
+                  style={[styles.input, styles.messageInput]}
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder="Describe your issue or question (min 10 characters)"
+                  placeholderTextColor={colors.gray200}
+                  multiline
+                  textAlignVertical="top"
+                  maxLength={MESSAGE_MAX_LENGTH}
+                />
+                <Text style={styles.charCount}>
+                  {message.length}/{MESSAGE_MAX_LENGTH}
+                </Text>
+
+                <CustomButton
+                  title={isSubmitting ? "Sending..." : "Send to Admin"}
+                  onPress={handleSubmit}
+                  disabled={!canSubmit}
+                />
+              </View>
+
+              <Text style={styles.sectionTitle}>Your messages</Text>
+              {isLoading ? (
+                <View style={styles.loadingWrap}>
+                  <CustomLoading size="sm" />
+                </View>
+              ) : requests.length === 0 ? (
+                <EmptyState
+                  title="No messages yet"
+                  description="Your submitted messages will appear here with status updates."
+                  size="sm"
+                  style={styles.emptyCard}
+                />
+              ) : (
+                requests.map((request) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    styles={styles}
+                    colors={colors}
+                    isDark={isDark}
+                  />
+                ))
+              )}
+            </ScrollView>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -349,7 +346,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     flex: {
       flex: 1,

@@ -1,5 +1,6 @@
 import CustomButton from "@/components/CustomButton";
 import RoomCard from "@/components/RoomCard";
+import ScreenHeader from "@/components/ScreenHeader";
 import type { Resident } from "@/types/resident";
 import type { Room } from "@/types/room";
 import {
@@ -89,9 +90,9 @@ export default function HostelDetailScreen() {
     router.push({ pathname: "/rooms/add", params: { hostelId: id } });
   };
 
-  const handleAddTenant = (roomId: string) => {
+  const handleAddResident = (roomId: string) => {
     router.push({
-      pathname: "/tenants/add",
+      pathname: "/residents/add",
       params: { roomId, hostelId: id },
     });
   };
@@ -116,17 +117,7 @@ export default function HostelDetailScreen() {
   if (isHostelError || !hostel) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-            hitSlop={12}
-          >
-            <Ionicons name="chevron-back" size={vs(24)} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Hostel</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <ScreenHeader title="Hostel" showBack />
         <View style={styles.notFoundWrap}>
           <Text style={styles.notFoundText}>Hostel not found.</Text>
         </View>
@@ -136,25 +127,20 @@ export default function HostelDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          hitSlop={12}
-        >
-          <Ionicons name="chevron-back" size={vs(24)} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {hostel.name}
-        </Text>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => router.push(`/hostel/edit/${id}`)}
-          hitSlop={12}
-        >
-          <Ionicons name="create-outline" size={vs(22)} color={colors.primary} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title={hostel.name}
+        showBack
+        titleNumberOfLines={1}
+        rightSlot={
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push(`/hostel/edit/${id}`)}
+            hitSlop={12}
+          >
+            <Ionicons name="create-outline" size={vs(22)} color={colors.primary} />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -219,7 +205,7 @@ export default function HostelDetailScreen() {
                 residents={residents.filter(
                   (resident) => resident.roomId === item._id,
                 )}
-                onAddTenant={handleAddTenant}
+                onAddResident={handleAddResident}
                 onEdit={handleEditRoom}
               />
             ))}

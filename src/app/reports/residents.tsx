@@ -119,7 +119,7 @@ export default function ResidentsReportScreen() {
     setDownloading(true);
     try {
       const html = buildResidentsListHtml(reportData);
-      const fileName = sanitizeFileName(`vaas-residents-${scopeLabel}`);
+      const fileName = sanitizeFileName(`osstel-residents-${scopeLabel}`);
       await downloadReportPdf(html, fileName);
     } catch {
       Alert.alert("Download failed", "Could not generate the PDF report.");

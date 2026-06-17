@@ -13,6 +13,8 @@ export interface Resident {
   fatherPhone?: string;
   roomNumber: string;
   roomId: string;
+  roomRent?: number | null;
+  monthlyRent?: number | null;
   hostelId: string;
   checkInDate: string;
   createdAt: string;
@@ -25,6 +27,7 @@ export interface CreateResidentBody {
   phone: string;
   cnic?: string;
   roomNumber: string;
+  monthlyRent?: number;
   profileImage?: string;
   cnicFront?: string;
   cnicBack?: string;
@@ -38,6 +41,7 @@ export interface UpdateResidentBody {
   phone: string;
   cnic?: string;
   roomNumber: string;
+  monthlyRent?: number;
   profileImage?: string;
   cnicFront?: string;
   cnicBack?: string;

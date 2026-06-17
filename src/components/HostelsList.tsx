@@ -1,5 +1,7 @@
-import CustomButton from "@/components/CustomButton";
+import EmptyState from "@/components/EmptyState";
+import GradientBackground from "@/components/GradientBackground";
 import HostelCard from "@/components/HostelCard";
+import ScreenHeader from "@/components/ScreenHeader";
 import { useGetDashboardQuery, useGetHostelsQuery } from "../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -13,7 +15,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -63,59 +64,41 @@ export default function HostelsList({
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.loadingWrap}>
-          <CustomLoading size="lg" />
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.loadingWrap}>
+            <CustomLoading size="lg" />
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
-  const header = (
-    <View style={styles.header}>
-      {showBackButton ? (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          hitSlop={12}
-        >
-          <Ionicons name="chevron-back" size={vs(24)} color={colors.text} />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.backButton} />
-      )}
-      <Text style={styles.headerTitle}>My Hostels</Text>
-      <View style={styles.headerSpacer} />
-    </View>
-  );
-
   if (hostels.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        {header}
-        <View style={styles.content}>
-          <View style={styles.iconWrap}>
-            <MaterialCommunityIcons
-              name="office-building-outline"
-              size={vs(40)}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={styles.title}>No hostels yet</Text>
-          <Text style={styles.description}>
-            Add your first hostel to start managing rooms and residents.
-          </Text>
-          <CustomButton title="Add Hostel" onPress={handleAddHostel} />
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ScreenHeader
+            title="My Hostels"
+            showBack={showBackButton}
+          />
+          <EmptyState
+            title="No hostels yet"
+            description="Add your first hostel to start managing rooms and residents."
+            actionLabel="Add Hostel"
+            onAction={handleAddHostel}
+          />
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {header}
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader title="My Hostels" showBack={showBackButton} />
 
-      <View style={styles.listHeader}>
+        <View style={styles.listHeader}>
         <Text style={styles.listSubtitle}>
           {hostels.length} hostel{hostels.length === 1 ? "" : "s"}
         </Text>
@@ -150,7 +133,8 @@ export default function HostelsList({
           />
         )}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -158,65 +142,15 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     loadingWrap: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-    },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: vs(16),
-      paddingVertical: vs(12),
-    },
-    backButton: {
-      width: vs(40),
-      height: vs(40),
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: FONT_SIZES.xl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      textAlign: "center",
-    },
-    headerSpacer: {
-      width: vs(40),
-    },
-    content: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: vs(32),
-      paddingBottom: vs(40),
-    },
-    iconWrap: {
-      width: vs(88),
-      height: vs(88),
-      borderRadius: vs(44),
-      backgroundColor: isDark ? colors.white100 : colors.primary100,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: vs(20),
-    },
-    title: {
-      fontSize: FONT_SIZES.xxl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      marginBottom: vs(8),
-      textAlign: "center",
-    },
-    description: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.regular,
-      color: colors.gray200,
-      textAlign: "center",
-      lineHeight: vs(22),
-      marginBottom: vs(28),
     },
     listHeader: {
       flexDirection: "row",

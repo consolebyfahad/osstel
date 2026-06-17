@@ -17,12 +17,16 @@ export default function QuickActionCard({
   iconBackgroundColor,
   onPress,
 }: QuickActionCardProps) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [
+        styles.card,
+        isDark && { backgroundColor: colors.white200, borderColor: colors.white300 },
+        pressed && styles.cardPressed,
+      ]}
       onPress={onPress}
     >
       <View style={[styles.iconWrap, { backgroundColor: iconBackgroundColor }]}>
@@ -33,7 +37,7 @@ export default function QuickActionCard({
   );
 }
 
-function createStyles(colors: AppColors) {
+function createStyles(colors: AppColors, isDark: boolean) {
   return StyleSheet.create({
     card: {
       flex: 1,
@@ -42,11 +46,12 @@ function createStyles(colors: AppColors) {
       paddingVertical: 18,
       paddingHorizontal: 8,
       alignItems: "center",
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 6,
-      elevation: 2,
+      borderWidth: isDark ? 1 : 0,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: isDark ? 4 : 2 },
+      shadowOpacity: isDark ? 0.18 : 0.05,
+      shadowRadius: isDark ? 8 : 6,
+      elevation: isDark ? 3 : 2,
     },
     cardPressed: {
       opacity: 0.85,

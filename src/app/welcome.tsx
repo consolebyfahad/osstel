@@ -7,6 +7,7 @@ import { Images } from "@constants/images";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import {
+  Image,
   ImageBackground,
   StyleSheet,
   Text,
@@ -47,13 +48,18 @@ export default function Welcome() {
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.containerInner}>
           <View style={styles.logoSection}>
-            <Text style={styles.brandLogo}>VAAS</Text>
+            <Image
+              source={Images.osstellogo}
+              style={styles.brandLogoImage}
+              resizeMode="contain"
+              accessibilityLabel="OSSTEL logo"
+            />
           </View>
 
           <GradientBackground style={styles.cardSheet}>
             <View style={styles.headerGroup}>
               <Text style={styles.welcomeText}>Smart hostel management</Text>
-              <Text style={styles.titleText}>Welcome to VAAS</Text>
+              <Text style={styles.titleText}>Welcome to OSSTEL</Text>
             </View>
 
             <Text style={styles.tagline}>
@@ -101,10 +107,10 @@ function createStyles(
       alignItems: "center",
       justifyContent: "center",
     },
-    brandLogo: {
-      fontSize: FONT_SIZES.brand,
-      fontFamily: FONTS.title,
-      color: colors.text,
+    brandLogoImage: {
+      width: vs(240),
+      height: vs(96),
+      maxWidth: "72%",
     },
     cardSheet: {
       flex: 0,

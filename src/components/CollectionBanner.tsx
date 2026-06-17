@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
+    overflow: "hidden",
   },
   label: {
     fontSize: FONT_SIZES.xs,

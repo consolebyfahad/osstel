@@ -1,4 +1,6 @@
 import ReportTypeCard from "@/components/reports/ReportTypeCard";
+import GradientBackground from "@/components/GradientBackground";
+import ScreenHeader from "@/components/ScreenHeader";
 import { REPORT_TYPES } from "@/types/report";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -22,26 +24,23 @@ export default function ReportsScreen() {
 
   if (!isManager) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.centerWrap}>
-          <Text style={styles.emptyTitle}>Reports</Text>
-          <Text style={styles.emptyDescription}>
-            Report generation is available for managers only.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.centerWrap}>
+            <Text style={styles.emptyTitle}>Reports</Text>
+            <Text style={styles.emptyDescription}>
+              Report generation is available for managers only.
+            </Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.headerRow}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={vs(22)} color={colors.text} />
-        </Pressable>
-        <Text style={styles.title}>Reports</Text>
-        <View style={styles.backBtn} />
-      </View>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <ScreenHeader title="Reports" showBack />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -56,7 +55,7 @@ export default function ReportsScreen() {
           <Text style={styles.heroTitle}>Generate & Download</Text>
           <Text style={styles.heroText}>
             Create monthly rent reports, resident directories, and detailed
-            tenant profile PDFs for your hostels.
+            resident profile PDFs for your hostels.
           </Text>
         </View>
 
@@ -70,7 +69,8 @@ export default function ReportsScreen() {
           />
         ))}
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -78,7 +78,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     headerRow: {
       flexDirection: "row",

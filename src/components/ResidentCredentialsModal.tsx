@@ -39,7 +39,7 @@ export default function ResidentCredentialsModal({
     try {
       await Share.share({
         message: credentials.shareMessage,
-        title: `${residentName} — VAAS Login`,
+        title: `${residentName} — OSSTEL Login`,
       });
     } catch {
       // User cancelled share

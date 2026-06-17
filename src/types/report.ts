@@ -31,7 +31,7 @@ export interface ResidentsListReportData {
   residents: ResidentReportRow[];
 }
 
-export type TenantReportData = ResidentReportRow & {
+export type ResidentProfileReportData = ResidentReportRow & {
   hostelAddress?: string;
   hostelCity?: string;
   hostelContactPhone?: string;
@@ -43,7 +43,7 @@ export const REPORT_TYPES = [
   {
     id: "rent",
     title: "Rent Collection",
-    description: "Monthly rent summary with tenant names and payment status.",
+    description: "Monthly rent summary with resident names and payment status.",
     icon: "cash-outline" as const,
     route: "/reports/rent",
   },
@@ -55,9 +55,9 @@ export const REPORT_TYPES = [
     route: "/reports/residents",
   },
   {
-    id: "tenant",
-    title: "Tenant Profile",
-    description: "Detailed paper report for a single tenant with photo and CNIC.",
+    id: "resident-profile",
+    title: "Resident Profile",
+    description: "Detailed paper report for a single resident with photo and CNIC.",
     icon: "person-outline" as const,
     route: "/residents",
   },

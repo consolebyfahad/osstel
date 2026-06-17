@@ -4,7 +4,7 @@ import type {
   RentReportHostelSection,
   ResidentReportRow,
   ResidentsListReportData,
-  TenantReportData,
+  ResidentProfileReportData,
 } from "@/types/report";
 import type { RentResponse } from "@/types/rent";
 import type { Resident } from "@/types/resident";
@@ -76,11 +76,11 @@ export function buildResidentsReportData(
   };
 }
 
-export function buildTenantReportData(
+export function buildResidentProfileReportData(
   resident: Resident,
   hostel: Hostel | undefined,
   params: { generatedBy: string },
-): TenantReportData {
+): ResidentProfileReportData {
   return {
     ...resident,
     hostelName: hostel?.name ?? "Hostel",

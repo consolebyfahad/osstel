@@ -1,10 +1,9 @@
-import { COLORS } from "@constants/colors";
-import { FONT_SIZES, FONTS } from "@constants/fonts";
-import { LinearGradient } from "expo-linear-gradient";
+import { Images } from "@constants/images";
+import { vs } from "@constants/fonts";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -16,46 +15,16 @@ import Animated, {
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store/store";
 
-const LETTERS = ["V", "A", "A", "S"] as const;
-const FIRST_LETTER_DELAY_MS = 500;
-const LETTER_INTERVAL_MS = 580;
-const LETTER_FADE_MS = 420;
-const HOLD_AFTER_COMPLETE_MS = 1100;
+const LOGO_DELAY_MS = 500;
+const LOGO_FADE_MS = 520;
+const HOLD_AFTER_LOGO_MS = 1100;
 const ZOOM_DURATION_MS = 650;
 
-const LETTER_SPRING = {
+const LOGO_SPRING = {
   damping: 7,
   stiffness: 90,
   mass: 0.9,
 };
-
-const { primary, secondary } = COLORS.light;
-
-function AnimatedLetter({ letter }: { letter: string }) {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0);
-  const translateY = useSharedValue(36);
-
-  useEffect(() => {
-    opacity.value = withTiming(1, {
-      duration: LETTER_FADE_MS,
-      easing: Easing.out(Easing.cubic),
-    });
-    scale.value = withSpring(1, LETTER_SPRING);
-    translateY.value = withSpring(0, LETTER_SPRING);
-  }, [opacity, scale, translateY]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ scale: scale.value }, { translateY: translateY.value }],
-  }));
-
-  return (
-    <Animated.Text style={[styles.letter, animatedStyle]}>
-      {letter}
-    </Animated.Text>
-  );
-}
 
 export default function Splash() {
   const isAuthenticated = useSelector(
@@ -67,10 +36,13 @@ export default function Splash() {
   const isInitialized = useSelector(
     (state: RootState) => state.auth.isInitialized,
   );
-  const [visibleCount, setVisibleCount] = useState(0);
+  const [logoVisible, setLogoVisible] = useState(false);
   const [zooming, setZooming] = useState(false);
   const containerScale = useSharedValue(1);
   const containerOpacity = useSharedValue(1);
+  const logoOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.85);
+  const logoTranslateY = useSharedValue(24);
 
   const navigateAfterSplash = useCallback(() => {
     if (!isInitialized) return;
@@ -89,16 +61,21 @@ export default function Splash() {
   }, [isAuthenticated, hasSeenWelcome, isInitialized]);
 
   useEffect(() => {
-    if (visibleCount >= LETTERS.length) return;
-    const timer = setTimeout(
-      () => setVisibleCount((count) => count + 1),
-      visibleCount === 0 ? FIRST_LETTER_DELAY_MS : LETTER_INTERVAL_MS,
-    );
+    const timer = setTimeout(() => {
+      setLogoVisible(true);
+      logoOpacity.value = withTiming(1, {
+        duration: LOGO_FADE_MS,
+        easing: Easing.out(Easing.cubic),
+      });
+      logoScale.value = withSpring(1, LOGO_SPRING);
+      logoTranslateY.value = withSpring(0, LOGO_SPRING);
+    }, LOGO_DELAY_MS);
+
     return () => clearTimeout(timer);
-  }, [visibleCount]);
+  }, [logoOpacity, logoScale, logoTranslateY]);
 
   useEffect(() => {
-    if (visibleCount < LETTERS.length) return;
+    if (!logoVisible) return;
 
     const zoomTimer = setTimeout(() => {
       setZooming(true);
@@ -118,12 +95,25 @@ export default function Splash() {
         duration: ZOOM_DURATION_MS,
         easing: Easing.in(Easing.quad),
       });
-    }, HOLD_AFTER_COMPLETE_MS);
+    }, HOLD_AFTER_LOGO_MS);
 
     return () => clearTimeout(zoomTimer);
-  }, [visibleCount, containerScale, containerOpacity, navigateAfterSplash]);
+  }, [
+    logoVisible,
+    containerScale,
+    containerOpacity,
+    navigateAfterSplash,
+  ]);
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [
+      { scale: logoScale.value },
+      { translateY: logoTranslateY.value },
+    ],
+  }));
+
+  const containerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,
     transform: [{ scale: containerScale.value }],
   }));
@@ -131,20 +121,19 @@ export default function Splash() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <LinearGradient
-        colors={[primary, secondary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
 
       <Animated.View
-        style={[styles.logoRow, logoAnimatedStyle]}
+        style={[styles.logoWrap, containerAnimatedStyle]}
         pointerEvents={zooming ? "none" : "auto"}
       >
-        {LETTERS.slice(0, visibleCount).map((letter, index) => (
-          <AnimatedLetter key={`${letter}-${index}`} letter={letter} />
-        ))}
+        <Animated.View style={logoAnimatedStyle}>
+          <Image
+            source={Images.osstellogo}
+            style={styles.logoImage}
+            resizeMode="contain"
+            accessibilityLabel="OSSTEL logo"
+          />
+        </Animated.View>
       </Animated.View>
     </View>
   );
@@ -155,17 +144,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#000000",
   },
-  logoRow: {
-    flexDirection: "row",
+  logoWrap: {
     alignItems: "center",
     justifyContent: "center",
   },
-  letter: {
-    fontSize: FONT_SIZES.brand * 1.6,
-    fontFamily: FONTS.title,
-    color: "#ffffff",
-    letterSpacing: 4,
-    includeFontPadding: false,
+  logoImage: {
+    width: vs(240),
+    height: vs(96),
   },
 });

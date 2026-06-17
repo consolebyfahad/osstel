@@ -19,6 +19,7 @@ type CustomInputProps = {
   placeholder: string;
   value: string;
   onChangeText: (text: string) => void;
+  hint?: string;
   keyboardType?: KeyboardTypeOptions;
   secureTextEntry?: boolean;
   autoCapitalize?: "none" | "words" | "sentences" | "characters";
@@ -34,6 +35,7 @@ export default function CustomInput({
   placeholder,
   value,
   onChangeText,
+  hint,
   keyboardType = "default",
   secureTextEntry = false,
   autoCapitalize = "none",
@@ -43,8 +45,11 @@ export default function CustomInput({
   maxLength,
   leftAdornment,
 }: CustomInputProps) {
-  const { colors, fonts } = useTheme();
-  const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
+  const { colors, fonts, isDark } = useTheme();
+  const styles = useMemo(
+    () => createStyles(colors, fonts, isDark),
+    [colors, fonts, isDark],
+  );
   const [visible, setVisible] = useState(false);
   const isSecure = secureTextEntry && !visible;
 
@@ -82,11 +87,16 @@ export default function CustomInput({
           </TouchableOpacity>
         ) : null}
       </View>
+      {hint ? <Text style={styles.hint}>{hint}</Text> : null}
     </View>
   );
 }
 
-function createStyles(colors: AppColors, fonts: typeof FONTS) {
+function createStyles(
+  colors: AppColors,
+  fonts: typeof FONTS,
+  isDark: boolean,
+) {
   return StyleSheet.create({
     wrapper: {
       marginBottom: vs(16),
@@ -100,9 +110,11 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
-      borderRadius: vs(16),
-      backgroundColor: colors.white,
-      minHeight: vs(56),
+      borderRadius: vs(14),
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      borderWidth: 1,
+      borderColor: isDark ? colors.white200 : colors.white100,
+      minHeight: vs(52),
       paddingHorizontal: vs(14),
       gap: vs(8),
     },
@@ -116,6 +128,12 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       fontFamily: fonts.medium,
       color: colors.text,
       paddingVertical: Platform.OS === "ios" ? vs(14) : vs(10),
+    },
+    hint: {
+      marginTop: vs(6),
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
     },
   });
 }

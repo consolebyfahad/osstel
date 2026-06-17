@@ -46,10 +46,16 @@ import type {
   SubmitSupportResponse,
   SupportRequestsResponse,
 } from "@/types/support";
+import type {
+  NotificationsResponse,
+  RegisterPushTokenBody,
+  RemovePushTokenBody,
+  UnreadCountResponse,
+} from "@/types/notification";
 
 export const api = createApi({
   reducerPath: "api",
-  tagTypes: ["Hostel", "Dashboard", "Rent", "Room", "Resident", "User", "Complaint", "Plan", "Support"],
+  tagTypes: ["Hostel", "Dashboard", "Rent", "Room", "Resident", "User", "Complaint", "Plan", "Support", "Notification"],
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getMe: builder.query<MeResponse, void>({
@@ -408,6 +414,51 @@ export const api = createApi({
       }),
       invalidatesTags: ["Support"],
     }),
+
+    registerPushToken: builder.mutation<void, RegisterPushTokenBody>({
+      query: (body) => ({
+        url: "/users/me/push-token",
+        method: "PUT",
+        body,
+      }),
+    }),
+
+    removePushToken: builder.mutation<void, RemovePushTokenBody>({
+      query: (body) => ({
+        url: "/users/me/push-token",
+        method: "DELETE",
+        body,
+      }),
+    }),
+
+    getNotifications: builder.query<NotificationsResponse, { page?: number } | void>({
+      query: (params) => ({
+        url: "/notifications",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Notification"],
+    }),
+
+    getUnreadNotificationCount: builder.query<UnreadCountResponse, void>({
+      query: () => "/notifications/unread-count",
+      providesTags: ["Notification"],
+    }),
+
+    markNotificationRead: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/notifications/${id}/read`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Notification"],
+    }),
+
+    markAllNotificationsRead: builder.mutation<void, void>({
+      query: () => ({
+        url: "/notifications/read-all",
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Notification"],
+    }),
   }),
 });
 
@@ -448,4 +499,10 @@ export const {
   useSubmitPlanRequestMutation,
   useGetSupportRequestsQuery,
   useSubmitSupportRequestMutation,
+  useRegisterPushTokenMutation,
+  useRemovePushTokenMutation,
+  useGetNotificationsQuery,
+  useGetUnreadNotificationCountQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
 } = api;

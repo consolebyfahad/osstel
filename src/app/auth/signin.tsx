@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Image,
   ImageBackground,
   Keyboard,
   Platform,
@@ -171,6 +172,7 @@ export default function SignIn() {
       if (router.canDismiss()) router.dismissAll();
       router.replace("/(tabs)/home");
     } catch (error) {
+      console.log(error);
       const err = error as {
         data?:
           | {
@@ -223,7 +225,12 @@ export default function SignIn() {
         <View style={styles.containerInner}>
           {!keyboardOpen ? (
             <View style={styles.logoSection}>
-              <Text style={styles.brandLogo}>VAAS</Text>
+              <Image
+                source={Images.osstellogo}
+                style={styles.brandLogoImage}
+                resizeMode="contain"
+                accessibilityLabel="OSSTEL logo"
+              />
             </View>
           ) : null}
 
@@ -239,7 +246,7 @@ export default function SignIn() {
               </View>
               <Text style={styles.subtitle}>
                 {isSignUp && canSignUp
-                  ? "Register to manage your hostel with VAAS."
+                  ? "Register to manage your hostel with OSSTEL."
                   : selectedRole === "resident"
                     ? "Sign in with your user ID and password."
                     : "Sign in with your phone number and password."}
@@ -317,7 +324,7 @@ export default function SignIn() {
               {isResidentRole ? (
                 <CustomInput
                   label="User ID"
-                  placeholder="VAAS-482913"
+                  placeholder="482913"
                   value={userId}
                   onChangeText={setUserId}
                   autoCapitalize="characters"
@@ -441,11 +448,10 @@ function createStyles(
       alignItems: "center",
       justifyContent: "center",
     },
-    brandLogo: {
-      fontSize: FONT_SIZES.brand,
-      fontFamily: FONTS.title,
-      color: colors.text,
-      letterSpacing: 3,
+    brandLogoImage: {
+      width: vs(220),
+      height: vs(88),
+      maxWidth: "70%",
     },
     cardSheet: {
       flex: 1,
@@ -472,7 +478,6 @@ function createStyles(
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.medium,
       color: colors.text,
-      marginBottom: vs(4),
     },
     titleText: {
       fontSize: FONT_SIZES.display,
@@ -482,19 +487,18 @@ function createStyles(
     subtitle: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.regular,
-      color: colors.gray200,
-      lineHeight: vs(20),
+      color: colors.gray100,
     },
     sectionLabel: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.semiBold,
       color: colors.text,
-      marginBottom: vs(10),
+      marginBottom: vs(4),
     },
     roleRow: {
       flexDirection: "row",
       gap: vs(10),
-      marginBottom: vs(20),
+      marginBottom: vs(10),
     },
     roleChip: {
       flex: 1,
@@ -503,18 +507,14 @@ function createStyles(
       justifyContent: "center",
       gap: vs(6),
       borderRadius: vs(14),
-      backgroundColor: isDark
-        ? "rgba(255, 255, 255, 0.08)"
-        : "rgba(255, 255, 255, 0.82)",
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.background,
       borderWidth: 1.5,
-      borderColor: isDark
-        ? "rgba(255, 255, 255, 0.12)"
-        : "rgba(255, 255, 255, 0.9)",
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : colors.background,
       paddingVertical: vs(12),
       paddingHorizontal: vs(10),
     },
     roleChipSelected: {
-      backgroundColor: colors.primary,
+      backgroundColor: isDark ? colors.primary400 : colors.primary,
       borderColor: colors.primary,
     },
     roleChipText: {
@@ -545,10 +545,11 @@ function createStyles(
       marginTop: vs(8),
     },
     switchText: {
-      fontSize: FONT_SIZES.md,
+      fontSize: FONT_SIZES.sm,
       fontFamily: fonts.regular,
       color: colors.text,
       marginTop: vs(16),
+      marginBottom: vs(4),
       textAlign: "center",
     },
     switchLink: {

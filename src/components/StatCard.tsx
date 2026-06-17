@@ -18,39 +18,51 @@ export default function StatCard({
   iconColor,
   iconBackgroundColor,
 }: StatCardProps) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   return (
-    <View style={[styles.card, { backgroundColor: iconBackgroundColor }]}>
+    <View
+      style={[
+        styles.card,
+        isDark
+          ? { backgroundColor: colors.white200, borderColor: colors.white300 }
+          : { backgroundColor: iconBackgroundColor },
+      ]}
+    >
       <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.value}>{value}</Text>
       </View>
 
-      <View style={[styles.iconWrap]}>
-        <Ionicons name={iconName} size={32} color={iconColor} />
+      <View
+        style={[
+          styles.iconWrap,
+          isDark && { backgroundColor: iconBackgroundColor },
+        ]}
+      >
+        <Ionicons name={iconName} size={isDark ? 26 : 32} color={iconColor} />
       </View>
     </View>
   );
 }
 
-function createStyles(colors: AppColors) {
+function createStyles(colors: AppColors, isDark: boolean) {
   return StyleSheet.create({
     card: {
       flex: 1,
       minHeight: 108,
-      backgroundColor: colors.background,
       borderRadius: 16,
       padding: 16,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      borderWidth: isDark ? 1 : 0,
       shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
+      shadowOffset: { width: 0, height: isDark ? 4 : 2 },
+      shadowOpacity: isDark ? 0.2 : 0.06,
+      shadowRadius: isDark ? 10 : 8,
+      elevation: isDark ? 4 : 2,
     },
     content: {
       flex: 1,
@@ -59,7 +71,7 @@ function createStyles(colors: AppColors) {
     title: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.medium,
-      color: colors.text,
+      color: isDark ? colors.gray : colors.text,
       marginBottom: 8,
     },
     value: {
@@ -69,8 +81,17 @@ function createStyles(colors: AppColors) {
     },
     iconWrap: {
       position: "absolute",
-      right: 20,
-      bottom: 20,
+      right: 16,
+      bottom: 16,
+      ...(isDark
+        ? {
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            alignItems: "center",
+            justifyContent: "center",
+          }
+        : {}),
     },
   });
 }
