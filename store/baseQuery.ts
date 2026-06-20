@@ -17,6 +17,8 @@ const AUTH_PATHS_WITHOUT_REFRESH = new Set([
   "/auth/logout",
 ]);
 
+console.log("ENV.API_BASE_URL", ENV.API_BASE_URL);
+
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: ENV.API_BASE_URL,
   prepareHeaders: (headers, { getState }) => {
