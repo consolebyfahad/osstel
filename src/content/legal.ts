@@ -17,7 +17,7 @@ export const PRIVACY_POLICY: LegalDocument = {
   lastUpdated: "June 12, 2026",
   intro:
     "OSSTEL (“we”, “our”, or “us”) operates a hostel and property management platform for managers and residents. This Privacy Policy explains how we collect, use, store, and protect your information when you use the OSSTEL mobile application and related services.",
-  contactEmail: "osstel@gmail.com",
+  contactEmail: "admin.osstel@gmail.com",
   sections: [
     {
       title: "Information We Collect",
@@ -99,7 +99,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
   lastUpdated: "June 12, 2026",
   intro:
     "These Terms of Service (“Terms”) govern your access to and use of the OSSTEL mobile application and related services. By creating an account or using OSSTEL, you agree to these Terms.",
-  contactEmail: "osstel@gmail.com",
+  contactEmail: "admin.osstel@gmail.com",
   sections: [
     {
       title: "Eligibility and Accounts",
