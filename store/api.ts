@@ -2,7 +2,10 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./baseQuery";
 import type {
   ComplaintsResponse,
+  CreateComplaintBody,
+  CreateComplaintResponse,
   GetComplaintsParams,
+  GetMyComplaintsParams,
   UpdateComplaintStatusParams,
   UpdateComplaintStatusResponse,
 } from "@/types/complaint";
@@ -38,6 +41,9 @@ import type {
   MyRentResponse,
   SubmitRentPaymentBody,
   SubmitRentPaymentResponse,
+  SendRentAlertBody,
+  SendRentAlertResponse,
+  SendResidentRentAlertParams,
   UpdateRentStatusParams,
   UpdateRentStatusResponse,
 } from "@/types/rent";
@@ -115,7 +121,7 @@ export const api = createApi({
     }),
 
     getHostels: builder.query<HostelsResponse, void>({
-      query: () => "/hostels",
+      query: () => "/hostels/me",
       providesTags: (result) =>
         result?.hostels?.length
           ? [
@@ -271,6 +277,31 @@ export const api = createApi({
         url: "/rent/me/history",
         params: { year },
       }),
+      transformResponse: (response: {
+        year?: number;
+        history?: MyRentHistoryResponse["records"];
+        records?: MyRentHistoryResponse["records"];
+        summary?: {
+          paidAmount?: number;
+          paidMonths?: number;
+          pendingMonths?: number;
+          totalPaid?: number;
+          monthsPaid?: number;
+          monthsPending?: number;
+        };
+      }): MyRentHistoryResponse => {
+        const records = response.history ?? response.records ?? [];
+        const summary = response.summary ?? {};
+        return {
+          year: response.year ?? new Date().getFullYear(),
+          records,
+          summary: {
+            totalPaid: summary.totalPaid ?? summary.paidAmount ?? 0,
+            monthsPaid: summary.monthsPaid ?? summary.paidMonths ?? 0,
+            monthsPending: summary.monthsPending ?? summary.pendingMonths ?? 0,
+          },
+        };
+      },
       providesTags: ["Rent"],
     }),
 
@@ -301,14 +332,59 @@ export const api = createApi({
       ],
     }),
 
+    sendRentAlert: builder.mutation<
+      SendRentAlertResponse,
+      { rentId: string } & SendRentAlertBody
+    >({
+      query: ({ rentId, ...body }) => ({
+        url: `/rent/${rentId}/alert`,
+        method: "POST",
+        body,
+      }),
+    }),
+
+    sendResidentRentAlert: builder.mutation<
+      SendRentAlertResponse,
+      SendResidentRentAlertParams
+    >({
+      query: ({ tenancyId, ...body }) => ({
+        url: `/residents/${tenancyId}/rent-alert`,
+        method: "POST",
+        body,
+      }),
+    }),
+
     getComplaints: builder.query<ComplaintsResponse, GetComplaintsParams>({
       query: ({ hostelId, status }) => ({
         url: "/complaints",
-        params: { hostelId, status },
+        params: {
+          hostelId,
+          ...(status && status !== "all" ? { status } : {}),
+        },
       }),
       providesTags: (_result, _error, { hostelId }) => [
         { type: "Complaint", id: hostelId },
       ],
+    }),
+
+    getMyComplaints: builder.query<ComplaintsResponse, GetMyComplaintsParams | void>({
+      query: (params) => ({
+        url: "/complaints/me",
+        params:
+          params?.status && params.status !== "all"
+            ? { status: params.status }
+            : undefined,
+      }),
+      providesTags: [{ type: "Complaint", id: "ME" }],
+    }),
+
+    createComplaint: builder.mutation<CreateComplaintResponse, CreateComplaintBody>({
+      query: (body) => ({
+        url: "/complaints",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "Complaint", id: "ME" }, "Dashboard"],
     }),
 
     updateComplaintStatus: builder.mutation<
@@ -487,7 +563,11 @@ export const {
   useGetMyRentHistoryQuery,
   useSubmitRentPaymentMutation,
   useUpdateRentStatusMutation,
+  useSendRentAlertMutation,
+  useSendResidentRentAlertMutation,
   useGetComplaintsQuery,
+  useGetMyComplaintsQuery,
+  useCreateComplaintMutation,
   useUpdateComplaintStatusMutation,
   useGetResidentsQuery,
   useLazyGetResidentsQuery,

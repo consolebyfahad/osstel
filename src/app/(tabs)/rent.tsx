@@ -5,7 +5,7 @@ import ResidentRentView from "@/components/resident/ResidentRentView";
 import ScreenHeader from "@/components/ScreenHeader";
 import type { Hostel } from "@/types/hostel";
 import type { RentFilter, RentRecord, RentStatus } from "@/types/rent";
-import { useGetHostelsQuery, useGetRentQuery, useUpdateRentStatusMutation } from "../../../store/api";
+import { useGetHostelsQuery, useGetRentQuery, useSendRentAlertMutation, useUpdateRentStatusMutation } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -62,6 +62,7 @@ const STATUS_LABELS: Record<RentStatus, string> = {
   review: "Review",
   paid: "Paid",
   pending: "Pending",
+  rejected: "Rejected",
 };
 
 function formatAmount(amount: number) {
@@ -166,15 +167,20 @@ type RentRecordCardProps = {
   record: RentRecord;
   styles: ReturnType<typeof createStyles>;
   onReview: (rentId: string, approve: boolean) => void;
+  onSendAlert: (rentId: string, residentName: string) => void;
   isUpdating: boolean;
+  isSendingAlert: boolean;
 };
 
 function RentRecordCard({
   record,
   styles,
   onReview,
+  onSendAlert,
   isUpdating,
+  isSendingAlert,
 }: RentRecordCardProps) {
+  const { colors } = useTheme();
   const statusStyle =
     record.status === "paid"
       ? styles.statusPaid
@@ -237,6 +243,23 @@ function RentRecordCard({
           </Pressable>
         </View>
       ) : null}
+
+      {record.status !== "paid" && record.status !== "review" ? (
+        <Pressable
+          style={styles.alertBtn}
+          disabled={isSendingAlert}
+          onPress={() => onSendAlert(record.id, record.resident.name)}
+        >
+          <MaterialCommunityIcons
+            name="bell-ring-outline"
+            size={vs(16)}
+            color={colors.primary}
+          />
+          <Text style={styles.alertBtnText}>
+            {isSendingAlert ? "Sending..." : "Send Alert"}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -261,9 +284,13 @@ function ManagerRentView() {
   const [activeFilter, setActiveFilter] = useState<RentFilter>("all");
   const [selectedHostelId, setSelectedHostelId] = useState("");
   const [updatingRentId, setUpdatingRentId] = useState<string | null>(null);
+  const [sendingAlertRentId, setSendingAlertRentId] = useState<string | null>(
+    null,
+  );
 
   const { data: hostelsData } = useGetHostelsQuery(undefined);
   const [updateRentStatus] = useUpdateRentStatusMutation();
+  const [sendRentAlert] = useSendRentAlertMutation();
 
   const hostelOptions = useMemo(
     () =>
@@ -330,7 +357,7 @@ function ManagerRentView() {
         await updateRentStatus({
           rentId,
           hostelId: selectedHostelId,
-          status: approve ? "paid" : "pending",
+          status: approve ? "paid" : "rejected",
           rejectionReason,
         }).unwrap();
         refetch();
@@ -358,6 +385,35 @@ function ManagerRentView() {
           text: "Reject",
           style: "destructive",
           onPress: () => submit("Payment proof rejected"),
+        },
+      ],
+    );
+  };
+
+  const handleSendAlert = (rentId: string, residentName: string) => {
+    if (sendingAlertRentId) return;
+
+    Alert.alert(
+      "Send rent alert",
+      `Send a rent payment reminder to ${residentName}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send Alert",
+          onPress: async () => {
+            setSendingAlertRentId(rentId);
+            try {
+              await sendRentAlert({ rentId }).unwrap();
+              Alert.alert(
+                "Alert sent",
+                `${residentName} will receive a rent reminder notification.`,
+              );
+            } catch {
+              Alert.alert("Alert failed", "Could not send rent alert.");
+            } finally {
+              setSendingAlertRentId(null);
+            }
+          },
         },
       ],
     );
@@ -458,7 +514,9 @@ function ManagerRentView() {
                   record={record}
                   styles={styles}
                   onReview={handleReview}
+                  onSendAlert={handleSendAlert}
                   isUpdating={updatingRentId === record.id}
+                  isSendingAlert={sendingAlertRentId === record.id}
                 />
               ))
             )}
@@ -747,6 +805,23 @@ function createStyles(
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.semiBold,
       color: colors.error,
+    },
+    alertBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: vs(8),
+      marginTop: vs(12),
+      paddingVertical: vs(10),
+      borderRadius: vs(10),
+      borderWidth: 1,
+      borderColor: colors.primary200,
+      backgroundColor: isDark ? colors.primary100 : colors.primary100,
+    },
+    alertBtnText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.primary,
     },
   });
 }

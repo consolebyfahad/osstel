@@ -1,10 +1,5 @@
-import ManagerGuard from "@/components/auth/ManagerGuard";
 import { Stack } from "expo-router";
 
 export default function ComplaintsLayout() {
-  return (
-    <ManagerGuard>
-      <Stack screenOptions={{ headerShown: false }} />
-    </ManagerGuard>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

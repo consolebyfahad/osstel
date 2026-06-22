@@ -1,4 +1,4 @@
-export type RentStatus = "review" | "paid" | "pending";
+export type RentStatus = "review" | "paid" | "pending" | "rejected";
 
 export type RentFilter = "all" | RentStatus;
 
@@ -93,7 +93,7 @@ export type SubmitRentPaymentResponse = {
 };
 
 export type UpdateRentStatusBody = {
-  status: RentStatus;
+  status: RentStatus | "approved";
   rejectionReason?: string;
 };
 
@@ -105,4 +105,18 @@ export type UpdateRentStatusParams = {
 export type UpdateRentStatusResponse = {
   message?: string;
   record: RentRecord;
+};
+
+export type SendRentAlertBody = {
+  message?: string;
+};
+
+export type SendRentAlertResponse = {
+  message?: string;
+  paymentId: string;
+};
+
+export type SendResidentRentAlertParams = {
+  tenancyId: string;
+  message?: string;
 };

@@ -1,3 +1,4 @@
+import ResidentComplaintsView from "@/components/resident/ResidentComplaintsView";
 import EmptyState from "@/components/EmptyState";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
@@ -144,7 +145,7 @@ function ComplaintCard({
   );
 }
 
-export default function ComplaintsScreen() {
+function ManagerComplaintsView() {
   const { hostelId: presetHostelId } = useLocalSearchParams<{
     hostelId?: string;
   }>();
@@ -251,21 +252,6 @@ export default function ComplaintsScreen() {
       setUpdatingComplaintId(null);
     }
   };
-
-  if (!isManager) {
-    return (
-      <GradientBackground style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={["top"]}>
-          <View style={styles.noAccessWrap}>
-            <Text style={styles.emptyTitle}>Complaints</Text>
-            <Text style={styles.emptyDescription}>
-              Complaint management is available for managers only.
-            </Text>
-          </View>
-        </SafeAreaView>
-      </GradientBackground>
-    );
-  }
 
   if (hostelOptions.length === 0) {
     return (
@@ -617,4 +603,10 @@ function createStyles(
       color: colors.primary,
     },
   });
+}
+
+export default function ComplaintsScreen() {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isManager = user?.role === "manager";
+  return isManager ? <ManagerComplaintsView /> : <ResidentComplaintsView />;
 }

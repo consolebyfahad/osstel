@@ -3,6 +3,7 @@ import QuickActionCard from "@/components/QuickActionCard";
 import type { QuickAction } from "@/types/dashboard";
 import type { RentStatus } from "@/types/rent";
 import { isRentDueWindow } from "@/utils/rent";
+import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
 import { useGetMeQuery, useGetMyRentQuery } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -40,6 +41,7 @@ const MONTH_NAMES = [
 function statusLabel(status: RentStatus | undefined) {
   if (status === "paid") return "Paid";
   if (status === "review") return "Under Review";
+  if (status === "rejected") return "Rejected";
   if (status === "pending") return "Pending";
   return "Not available";
 }
@@ -47,6 +49,7 @@ function statusLabel(status: RentStatus | undefined) {
 function statusColor(status: RentStatus | undefined, colors: AppColors) {
   if (status === "paid") return colors.success;
   if (status === "review") return colors.primary;
+  if (status === "rejected") return colors.error;
   if (status === "pending") return colors.warning;
   return colors.gray200;
 }
@@ -58,6 +61,8 @@ export default function ResidentHomeDashboard() {
     [colors, fonts, isDark],
   );
   const user = useSelector((state: RootState) => state.auth.user);
+  const { data: unreadData } = useUnreadNotificationCount(!user?.accessToken);
+  const unreadCount = unreadData?.unreadCount ?? 0;
   const now = new Date();
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
@@ -97,18 +102,18 @@ export default function ResidentHomeDashboard() {
         iconBackgroundColor: "#DCFCE7",
       },
       {
+        id: "complaints",
+        label: "Complaints",
+        iconName: "chatbox-ellipses-outline",
+        iconColor: "#B45309",
+        iconBackgroundColor: "#FEF3C7",
+      },
+      {
         id: "support",
         label: "Support",
         iconName: "help-circle-outline",
         iconColor: "#6D28D9",
         iconBackgroundColor: "#EDE9FE",
-      },
-      {
-        id: "profile",
-        label: "My Profile",
-        iconName: "person-outline",
-        iconColor: "#C2410C",
-        iconBackgroundColor: "#FFEDD5",
       },
     ],
     [],
@@ -119,12 +124,12 @@ export default function ResidentHomeDashboard() {
       router.push("/(tabs)/rent");
       return;
     }
-    if (actionId === "support") {
-      router.push("/support");
+    if (actionId === "complaints") {
+      router.push("/complaints");
       return;
     }
-    if (actionId === "profile") {
-      router.push("/(tabs)/profile");
+    if (actionId === "support") {
+      router.push("/support");
     }
   };
 
@@ -156,6 +161,25 @@ export default function ResidentHomeDashboard() {
           <Text style={styles.greeting}>Welcome back,</Text>
           <Text style={styles.userName}>{profile?.name?.trim() || "Resident"}</Text>
         </View>
+        <Pressable
+          style={styles.notificationBtn}
+          onPress={() => router.push("/notifications")}
+          accessibilityLabel="Notifications"
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={vs(24)}
+            color={colors.text}
+          />
+          {unreadCount > 0 ? (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
       </View>
 
       {showDueBanner ? (
@@ -290,6 +314,31 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     },
     headerText: {
       flex: 1,
+    },
+    notificationBtn: {
+      width: vs(44),
+      height: vs(44),
+      borderRadius: vs(22),
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? colors.white200 : colors.primary100,
+    },
+    notificationBadge: {
+      position: "absolute",
+      top: vs(4),
+      right: vs(4),
+      minWidth: vs(18),
+      height: vs(18),
+      borderRadius: vs(9),
+      paddingHorizontal: vs(4),
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.error,
+    },
+    notificationBadgeText: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: fonts.bold,
+      color: "#FFFFFF",
     },
     greeting: {
       fontSize: FONT_SIZES.md,

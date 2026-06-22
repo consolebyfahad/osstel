@@ -24,6 +24,23 @@ export function filterVacantRooms(rooms: Room[], residents: Resident[]) {
   return rooms.filter((room) => roomHasVacancy(room, residents));
 }
 
+/** Rooms available when reassigning a resident (current room + any with vacant beds). */
+export function filterRoomsForResidentEdit(
+  rooms: Room[],
+  residents: Resident[],
+  currentRoomId: string,
+  currentTenancyId: string,
+) {
+  const otherResidents = residents.filter(
+    (resident) => resident.tenancyId !== currentTenancyId,
+  );
+
+  return rooms.filter(
+    (room) =>
+      room._id === currentRoomId || roomHasVacancy(room, otherResidents),
+  );
+}
+
 export function buildVacancyMap(rooms: Room[], residents: Resident[]) {
   return Object.fromEntries(
     rooms.map((room) => [room._id, getVacantBeds(room, residents)]),

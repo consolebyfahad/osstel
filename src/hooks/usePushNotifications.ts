@@ -32,11 +32,15 @@ export function usePushNotifications(enabled: boolean) {
     let active = true;
 
     const syncPushToken = async () => {
-      const payload = await getPushRegistrationPayload();
-      if (!active || !payload) return;
+      try {
+        const payload = await getPushRegistrationPayload();
+        if (!active || !payload) return;
 
-      cachedPushToken = payload.token;
-      await registerPushToken(payload).unwrap();
+        cachedPushToken = payload.token;
+        await registerPushToken(payload).unwrap();
+      } catch (error) {
+        console.warn("[push] Token registration failed:", error);
+      }
     };
 
     void syncPushToken();

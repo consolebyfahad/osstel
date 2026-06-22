@@ -16,11 +16,12 @@
     },
     "android": {
       "package": "com.fa11ad.osstel",
+      "icon": "./assets/images/applogo.png",
       "googleServicesFile": "./google-services.json",
       "permissions": ["POST_NOTIFICATIONS"],
       "adaptiveIcon": {
-        "backgroundColor": "#69B4E8",
-        "foregroundImage": "./assets/images/applogo.png"
+        "foregroundImage": "./assets/images/applogo.png",
+        "backgroundColor": "#69B4E8"
       },
       "predictiveBackGestureEnabled": false
     },

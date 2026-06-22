@@ -48,6 +48,20 @@ export type GetComplaintsParams = {
   status: ComplaintFilter;
 };
 
+export type GetMyComplaintsParams = {
+  status?: ComplaintFilter;
+};
+
+export type CreateComplaintBody = {
+  title: string;
+  description: string;
+};
+
+export interface CreateComplaintResponse {
+  message?: string;
+  complaint: Complaint;
+}
+
 export type UpdateComplaintStatusBody = {
   status: ComplaintStatus;
 };

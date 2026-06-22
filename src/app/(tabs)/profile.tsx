@@ -401,12 +401,29 @@ export default function Profile() {
                   styles={styles}
                   colors={colors}
                 />
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="chatbox-ellipses-outline"
+                  label="My Complaints"
+                  value="Report hostel issues"
+                  onPress={() => router.push("/complaints")}
+                  styles={styles}
+                  colors={colors}
+                />
               </>
             )}
           </View>
 
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.sectionCard}>
+            <MenuRow
+              icon="notifications-outline"
+              label="Notifications"
+              onPress={() => router.push("/notifications")}
+              styles={styles}
+              colors={colors}
+            />
+            <View style={styles.divider} />
             <MenuRow
               icon="help-circle-outline"
               label="Help & Support"

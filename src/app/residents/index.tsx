@@ -11,6 +11,7 @@ import {
   useGetHostelsQuery,
   useGetResidentsQuery,
   useLazyGetResidentsQuery,
+  useSendResidentRentAlertMutation,
 } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -20,6 +21,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CustomLoading from "@/components/CustomLoading";
 import {
+  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -41,6 +43,8 @@ type ResidentCardProps = {
   colors: AppColors;
   onPress: () => void;
   onGenerateReport: () => void;
+  onSendAlert: () => void;
+  isSendingAlert: boolean;
 };
 
 function ResidentCard({
@@ -50,6 +54,8 @@ function ResidentCard({
   colors,
   onPress,
   onGenerateReport,
+  onSendAlert,
+  isSendingAlert,
 }: ResidentCardProps) {
   const metaParts = [
     `Room ${resident.roomNumber}`,
@@ -80,6 +86,21 @@ function ResidentCard({
         ) : null}
       </View>
       <Pressable
+        style={styles.alertBtn}
+        onPress={(event) => {
+          event.stopPropagation();
+          onSendAlert();
+        }}
+        hitSlop={8}
+        disabled={isSendingAlert}
+      >
+        <Ionicons
+          name="notifications-outline"
+          size={vs(18)}
+          color={isSendingAlert ? colors.gray300 : colors.warning}
+        />
+      </Pressable>
+      <Pressable
         style={styles.reportBtn}
         onPress={(event) => {
           event.stopPropagation();
@@ -106,10 +127,14 @@ export default function ResidentsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [allResidents, setAllResidents] = useState<ResidentRow[]>([]);
   const [allLoading, setAllLoading] = useState(false);
+  const [sendingAlertTenancyId, setSendingAlertTenancyId] = useState<
+    string | null
+  >(null);
 
   const { data: hostelsData } = useGetHostelsQuery(undefined, {
     skip: !isManager,
   });
+  const [sendResidentRentAlert] = useSendResidentRentAlertMutation();
 
   const hostelOptions = useMemo(
     () =>
@@ -258,6 +283,40 @@ export default function ResidentsScreen() {
   const isEmpty = !isLoading && filteredResidents.length === 0;
   const showHostel = selectedHostelId === "all" || hostelOptions.length > 1;
 
+  const handleSendRentAlert = (resident: ResidentRow) => {
+    if (sendingAlertTenancyId) return;
+
+    Alert.alert(
+      "Send rent alert",
+      `Send a rent payment reminder to ${resident.name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send Alert",
+          onPress: async () => {
+            setSendingAlertTenancyId(resident.tenancyId);
+            try {
+              await sendResidentRentAlert({
+                tenancyId: resident.tenancyId,
+              }).unwrap();
+              Alert.alert(
+                "Alert sent",
+                `${resident.name} will receive a rent reminder notification.`,
+              );
+            } catch (error) {
+              const message =
+                (error as { data?: { message?: string } })?.data?.message ??
+                "Could not send rent alert.";
+              Alert.alert("Alert failed", message);
+            } finally {
+              setSendingAlertTenancyId(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (!isManager) {
     return (
       <GradientBackground style={styles.container}>
@@ -394,7 +453,7 @@ export default function ResidentsScreen() {
                 colors={colors}
                 onPress={() =>
                   router.push({
-                    pathname: "/reports/resident-profile",
+                    pathname: "/residents/edit",
                     params: {
                       tenancyId: resident.tenancyId,
                       hostelId: resident.hostelId,
@@ -410,6 +469,8 @@ export default function ResidentsScreen() {
                     },
                   })
                 }
+                onSendAlert={() => handleSendRentAlert(resident)}
+                isSendingAlert={sendingAlertTenancyId === resident.tenancyId}
               />
             ))
           )}
@@ -546,6 +607,14 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       height: vs(36),
       borderRadius: vs(10),
       backgroundColor: isDark ? colors.primary100 : colors.primary100,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    alertBtn: {
+      width: vs(36),
+      height: vs(36),
+      borderRadius: vs(10),
+      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
       alignItems: "center",
       justifyContent: "center",
     },
