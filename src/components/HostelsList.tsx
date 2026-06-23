@@ -3,6 +3,7 @@ import GradientBackground from "@/components/GradientBackground";
 import HostelCard from "@/components/HostelCard";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useGetDashboardQuery, useGetHostelsQuery } from "../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -36,6 +37,7 @@ export default function HostelsList({
   const { data, isLoading, isFetching, refetch } = useGetHostelsQuery(undefined);
   const { data: dashboardData, refetch: refetchDashboard } =
     useGetDashboardQuery(undefined);
+  const { guardAddHostel } = useSubscription();
 
   const roomCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -55,7 +57,7 @@ export default function HostelsList({
   const hostels = data?.hostels ?? [];
 
   const handleAddHostel = () => {
-    router.push("/hostel/details");
+    guardAddHostel(() => router.push("/hostel/details"));
   };
 
   const handleOpenHostel = (hostelId: string) => {

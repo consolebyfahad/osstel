@@ -3,6 +3,8 @@ import CustomInput from "@/components/CustomInput";
 import CustomLoading from "@/components/CustomLoading";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useCreateHostelRoomMutation } from "../../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -24,6 +26,7 @@ import {
 export default function AddRoom() {
   const { hostelId } = useLocalSearchParams<{ hostelId: string }>();
   const [createRoom, { isLoading: isSaving }] = useCreateHostelRoomMutation();
+  const { checkAddRoom } = useSubscription();
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(
@@ -42,6 +45,13 @@ export default function AddRoom() {
 
   const handleSave = async () => {
     if (!isValid || isSaving || !hostelId) return;
+
+    const limitCheck = checkAddRoom();
+    if (!limitCheck.allowed) {
+      showSubscriptionBlocked(limitCheck.message);
+      return;
+    }
+
     Keyboard.dismiss();
 
     try {

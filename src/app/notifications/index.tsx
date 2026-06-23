@@ -102,6 +102,7 @@ export default function NotificationsScreen() {
         <ScreenHeader
           title="Notifications"
           showBack
+          // mainHeader={true}
           rightSlot={
             unreadCount > 0 ? (
               <Pressable

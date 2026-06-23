@@ -38,7 +38,7 @@ export default function ScreenHeader({
   }
 
   return (
-    <View style={styles.rowHeader}>
+    <View style={ styles.rowHeader}>
       <View style={styles.sideSlot}>
         {showBack ? (
           <Pressable
@@ -72,14 +72,17 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
     staticHeader: {
       paddingTop: vs(16),
       paddingBottom: vs(8),
+      paddingHorizontal: vs(14),
     },
     rowHeader: {
       flexDirection: "row",
       alignItems: "center",
       paddingTop: vs(16),
       paddingBottom: vs(8),
+      paddingRight: vs(14),
       gap: vs(8),
     },
+
     sideSlot: {
       width: vs(40),
       minHeight: vs(40),

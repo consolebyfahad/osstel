@@ -15,6 +15,8 @@ import {
 } from "@/types/dashboard";
 import { getTimeGreeting } from "@/utils/greeting";
 import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PLAN_FEATURES } from "@/constants/plans";
 import {
   useGetDashboardActivitiesQuery,
   useGetDashboardQuery,
@@ -61,7 +63,11 @@ export default function Home() {
   );
   const user = useSelector((state: RootState) => state.auth.user);
   const isManager = user?.role === "manager";
-  const { data: unreadData } = useUnreadNotificationCount(!user?.accessToken);
+  const { guardFeature, guardAddTenant, guardAddRoom, checkFeature } = useSubscription();
+  const notificationsAllowed = checkFeature(PLAN_FEATURES.notifications).allowed;
+  const { data: unreadData } = useUnreadNotificationCount(
+    !user?.accessToken || (isManager && !notificationsAllowed),
+  );
   const unreadCount = unreadData?.unreadCount ?? 0;
 
   const { data, isLoading, isFetching, refetch } = useGetDashboardQuery(
@@ -242,15 +248,15 @@ export default function Home() {
 
   const handleQuickAction = (actionId: string) => {
     if (actionId === "add-room") {
-      router.push("/(tabs)/hostels");
+      guardAddRoom(() => router.push("/(tabs)/hostels"));
       return;
     }
     if (actionId === "add-resident") {
-      router.push("/residents/add");
+      guardAddTenant(() => router.push("/residents/add"));
       return;
     }
     if (actionId === "reports") {
-      router.push("/reports");
+      guardFeature(PLAN_FEATURES.reports, () => router.push("/reports"));
     }
   };
 
@@ -283,7 +289,11 @@ export default function Home() {
             </View>
             <Pressable
               style={styles.notificationBtn}
-              onPress={() => router.push("/notifications")}
+              onPress={() =>
+                guardFeature(PLAN_FEATURES.notifications, () =>
+                  router.push("/notifications"),
+                )
+              }
               accessibilityLabel="Notifications"
               accessibilityRole="button"
             >

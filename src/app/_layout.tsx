@@ -11,6 +11,7 @@ import {
 } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
 import CustomLoading from "@/components/CustomLoading";
+import { useAndroidBackHandler } from "@/hooks/useAndroidBackHandler";
 import { useEffect } from "react";
 import { View } from "react-native";
 import "react-native-reanimated";
@@ -23,6 +24,7 @@ SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
   const { isDark } = useTheme();
+  useAndroidBackHandler();
 
   return (
     <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>

@@ -1,5 +1,6 @@
 import type { UserRole } from "./role";
 import type { SubscriptionPlanId } from "./subscription";
+import type { SubscriptionUsage } from "@/utils/subscription";
 import { unwrapApiResponse } from "@/utils/api";
 
 export interface UserHostel {
@@ -16,6 +17,10 @@ export interface UserRoom {
   rent: number;
 }
 
+export type GoogleAuthBody = {
+  idToken: string;
+};
+
 export interface AuthUser {
   id?: string;
   userId?: string;
@@ -31,6 +36,7 @@ export interface AuthUser {
   refreshToken: string | null;
   isVerified: boolean;
   subscriptionPlan?: SubscriptionPlanId;
+  subscriptionUsage?: SubscriptionUsage;
   hostels?: UserHostel[];
   hostel?: UserHostel | null;
   room?: UserRoom | null;
@@ -49,6 +55,7 @@ export interface MeResponse {
     profileImage?: string | null;
     role: UserRole;
     subscriptionPlan: SubscriptionPlanId;
+    subscriptionUsage?: SubscriptionUsage;
     hostels: UserHostel[];
     hostel: UserHostel | null;
     room: UserRoom | null;
@@ -147,6 +154,7 @@ export function meToAuthProfile(me: MeResponse["user"]): Partial<AuthUser> {
     profileImage: me.profileImage,
     role: me.role,
     subscriptionPlan: me.subscriptionPlan,
+    subscriptionUsage: me.subscriptionUsage,
     hostels: me.hostels,
     hostel: me.hostel,
     room: me.room,

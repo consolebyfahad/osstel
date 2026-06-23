@@ -6,6 +6,9 @@ import ScreenHeader from "@/components/ScreenHeader";
 import type { Hostel } from "@/types/hostel";
 import type { RentFilter, RentRecord, RentStatus } from "@/types/rent";
 import { useGetHostelsQuery, useGetRentQuery, useSendRentAlertMutation, useUpdateRentStatusMutation } from "../../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PLAN_FEATURES } from "@/constants/plans";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -289,6 +292,7 @@ function ManagerRentView() {
   );
 
   const { data: hostelsData } = useGetHostelsQuery(undefined);
+  const { checkFeature } = useSubscription();
   const [updateRentStatus] = useUpdateRentStatusMutation();
   const [sendRentAlert] = useSendRentAlertMutation();
 
@@ -393,6 +397,12 @@ function ManagerRentView() {
   const handleSendAlert = (rentId: string, residentName: string) => {
     if (sendingAlertRentId) return;
 
+    const notificationCheck = checkFeature(PLAN_FEATURES.notifications);
+    if (!notificationCheck.allowed) {
+      showSubscriptionBlocked(notificationCheck.message);
+      return;
+    }
+
     Alert.alert(
       "Send rent alert",
       `Send a rent payment reminder to ${residentName}?`,
@@ -438,7 +448,7 @@ function ManagerRentView() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="Rent Management" subtitle={monthLabel} />
+        <ScreenHeader title="Rent Management" subtitle={monthLabel}  />
 
         <View style={styles.staticHeader}>
           <HostelDropdown

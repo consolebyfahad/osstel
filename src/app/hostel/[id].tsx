@@ -8,6 +8,7 @@ import {
   useGetHostelRoomsQuery,
   useGetResidentsQuery,
 } from "../../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -65,6 +66,7 @@ export default function HostelDetailScreen() {
 
   const rooms: Room[] = roomsData?.rooms ?? [];
   const residents: Resident[] = residentsData?.residents ?? [];
+  const { guardAddRoom, guardAddTenant } = useSubscription();
 
   useFocusEffect(
     useCallback(() => {
@@ -87,14 +89,18 @@ export default function HostelDetailScreen() {
   const managerName = hostel ? getManagerName(hostel.manager) : null;
 
   const handleAddRoom = () => {
-    router.push({ pathname: "/rooms/add", params: { hostelId: id } });
+    guardAddRoom(() =>
+      router.push({ pathname: "/rooms/add", params: { hostelId: id } }),
+    );
   };
 
   const handleAddResident = (roomId: string) => {
-    router.push({
-      pathname: "/residents/add",
-      params: { roomId, hostelId: id },
-    });
+    guardAddTenant(() =>
+      router.push({
+        pathname: "/residents/add",
+        params: { roomId, hostelId: id },
+      }),
+    );
   };
 
   const handleEditRoom = (roomId: string) => {

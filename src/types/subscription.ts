@@ -51,12 +51,12 @@ export function canUpgradeTo(
 
 export function getPlanDisplayName(planId: SubscriptionPlanId): string {
   if (planId === "free") return "Free";
-  if (planId === "standard") return "Standard";
-  return "Premium";
+  if (planId === "standard") return "Starter";
+  return "Pro";
 }
 
 export function formatPlanPrice(price: number): string {
-  if (price === 0) return "Free";
+  if (price === 0) return "Free Forever";
   return `Rs ${price.toLocaleString()}/month`;
 }
 

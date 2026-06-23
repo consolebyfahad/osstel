@@ -14,6 +14,9 @@ import {
 } from "@/utils/reports/format";
 import { buildResidentsListHtml } from "@/utils/reports/html";
 import { downloadReportPdf } from "@/utils/reports/pdf";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PLAN_FEATURES } from "@/constants/plans";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import { formatCnic } from "@/utils/cnic";
 import {
   useGetHostelsQuery,
@@ -35,6 +38,7 @@ export default function ResidentsReportScreen() {
   );
   const user = useSelector((state: RootState) => state.auth.user);
   const generatedBy = user?.name?.trim() || "Manager";
+  const { checkFeature } = useSubscription();
 
   const [selectedHostelId, setSelectedHostelId] = useState("all");
   const [reportData, setReportData] = useState<ResidentsListReportData | null>(
@@ -115,6 +119,12 @@ export default function ResidentsReportScreen() {
 
   const handleDownload = async () => {
     if (!reportData) return;
+
+    const exportCheck = checkFeature(PLAN_FEATURES.data_export);
+    if (!exportCheck.allowed) {
+      showSubscriptionBlocked(exportCheck.message);
+      return;
+    }
 
     setDownloading(true);
     try {

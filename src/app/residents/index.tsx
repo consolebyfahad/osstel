@@ -13,6 +13,9 @@ import {
   useLazyGetResidentsQuery,
   useSendResidentRentAlertMutation,
 } from "../../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PLAN_FEATURES } from "@/constants/plans";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -135,6 +138,7 @@ export default function ResidentsScreen() {
     skip: !isManager,
   });
   const [sendResidentRentAlert] = useSendResidentRentAlertMutation();
+  const { guardAddTenant, checkFeature } = useSubscription();
 
   const hostelOptions = useMemo(
     () =>
@@ -286,6 +290,12 @@ export default function ResidentsScreen() {
   const handleSendRentAlert = (resident: ResidentRow) => {
     if (sendingAlertTenancyId) return;
 
+    const notificationCheck = checkFeature(PLAN_FEATURES.notifications);
+    if (!notificationCheck.allowed) {
+      showSubscriptionBlocked(notificationCheck.message);
+      return;
+    }
+
     Alert.alert(
       "Send rent alert",
       `Send a rent payment reminder to ${resident.name}?`,
@@ -358,7 +368,7 @@ export default function ResidentsScreen() {
           rightSlot={
             <Pressable
               style={styles.addBtn}
-              onPress={() => router.push("/residents/add")}
+              onPress={() => guardAddTenant(() => router.push("/residents/add"))}
             >
               <Ionicons
                 name="person-add-outline"
@@ -439,7 +449,7 @@ export default function ResidentsScreen() {
               onAction={
                 searchQuery.trim()
                   ? undefined
-                  : () => router.push("/residents/add")
+                  : () => guardAddTenant(() => router.push("/residents/add"))
               }
               size="sm"
             />
@@ -460,15 +470,20 @@ export default function ResidentsScreen() {
                     },
                   })
                 }
-                onGenerateReport={() =>
+                onGenerateReport={() => {
+                  const reportCheck = checkFeature(PLAN_FEATURES.advanced_reports);
+                  if (!reportCheck.allowed) {
+                    showSubscriptionBlocked(reportCheck.message);
+                    return;
+                  }
                   router.push({
                     pathname: "/reports/resident-profile",
                     params: {
                       tenancyId: resident.tenancyId,
                       hostelId: resident.hostelId,
                     },
-                  })
-                }
+                  });
+                }}
                 onSendAlert={() => handleSendRentAlert(resident)}
                 isSendingAlert={sendingAlertTenancyId === resident.tenancyId}
               />

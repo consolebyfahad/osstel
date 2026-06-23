@@ -9,7 +9,7 @@ import type {
   UpdateComplaintStatusParams,
   UpdateComplaintStatusResponse,
 } from "@/types/complaint";
-import type { LoginBody, MeResponse, UpdateProfileBody } from "@/types/auth";
+import type { GoogleAuthBody, LoginBody, MeResponse, UpdateProfileBody } from "@/types/auth";
 import type {
   HostelResponse,
   HostelsResponse,
@@ -81,6 +81,14 @@ export const api = createApi({
     login: builder.mutation<unknown, LoginBody>({
       query: (body) => ({
         url: "/auth/login",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    googleAuth: builder.mutation<unknown, GoogleAuthBody>({
+      query: (body) => ({
+        url: "/auth/google",
         method: "POST",
         body,
       }),
@@ -543,6 +551,7 @@ export const {
   useUpdateMeMutation,
   useLazyGetMeQuery,
   useLoginMutation,
+  useGoogleAuthMutation,
   useRegisterMutation,
   useLogoutMutation,
   useGetHostelsQuery,

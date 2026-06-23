@@ -9,6 +9,11 @@ import {
 } from "@/utils/reports/format";
 import { buildResidentProfileHtml } from "@/utils/reports/html";
 import { downloadReportPdf } from "@/utils/reports/pdf";
+import SubscriptionFeatureGuard, {
+  PLAN_FEATURES,
+} from "@/components/SubscriptionFeatureGuard";
+import { useSubscription } from "@/hooks/useSubscription";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import { formatCnic } from "@/utils/cnic";
 import {
   useGetHostelQuery,
@@ -42,6 +47,14 @@ function DetailItem({
 }
 
 export default function ResidentProfileReportScreen() {
+  return (
+    <SubscriptionFeatureGuard feature={PLAN_FEATURES.advanced_reports}>
+      <ResidentProfileReportContent />
+    </SubscriptionFeatureGuard>
+  );
+}
+
+function ResidentProfileReportContent() {
   const { tenancyId, hostelId } = useLocalSearchParams<{
     tenancyId?: string;
     hostelId?: string;
@@ -54,6 +67,7 @@ export default function ResidentProfileReportScreen() {
   const user = useSelector((state: RootState) => state.auth.user);
   const generatedBy = user?.name?.trim() || "Manager";
   const [downloading, setDownloading] = useState(false);
+  const { checkFeature } = useSubscription();
 
   const {
     data: residentsData,
@@ -87,6 +101,12 @@ export default function ResidentProfileReportScreen() {
 
   const handleDownload = async () => {
     if (!reportData) return;
+
+    const exportCheck = checkFeature(PLAN_FEATURES.data_export);
+    if (!exportCheck.allowed) {
+      showSubscriptionBlocked(exportCheck.message);
+      return;
+    }
 
     setDownloading(true);
     try {

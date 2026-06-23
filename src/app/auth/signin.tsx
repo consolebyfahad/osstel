@@ -4,10 +4,12 @@ import GradientBackground from "@/components/GradientBackground";
 import { meToAuthProfile, toAuthUser } from "@/types/auth";
 import { type UserRole, USER_ROLES } from "@/types/role";
 import {
+  useGoogleAuthMutation,
   useLazyGetMeQuery,
   useLoginMutation,
   useRegisterMutation,
 } from "../../../store/api";
+import { useGoogleSignIn } from "@/hooks/useGoogleSignIn";
 import { setUser, updateUser } from "../../../store/reducers/authSlice";
 import type { AppDispatch } from "../../../store/store";
 import type { AppColors } from "@constants/colors";
@@ -42,8 +44,10 @@ export default function SignIn() {
   const dispatch = useDispatch<AppDispatch>();
   const scrollRef = useRef<ScrollView>(null);
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
+  const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
   const [register, { isLoading: isRegisterLoading }] = useRegisterMutation();
   const [fetchMe] = useLazyGetMeQuery();
+  const { signIn: signInWithGoogle, isReady: isGoogleReady } = useGoogleSignIn();
   const { colors, fonts, isDark } = useTheme();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -62,7 +66,7 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const isSubmitting = isLoginLoading || isRegisterLoading;
+  const isSubmitting = isLoginLoading || isRegisterLoading || isGoogleLoading;
 
   useEffect(() => {
     const showEvent =
@@ -109,6 +113,59 @@ export default function SignIn() {
   const isResidentRole = selectedRole === "resident";
   const canSignUp = isManagerRole;
 
+  const completeAuth = async (result: unknown) => {
+    dispatch(setUser(toAuthUser(result)));
+
+    try {
+      const me = await fetchMe(undefined).unwrap();
+      dispatch(updateUser(meToAuthProfile(me.user)));
+    } catch {
+      // Profile sync is optional immediately after auth
+    }
+
+    if (router.canDismiss()) router.dismissAll();
+    router.replace("/(tabs)/home");
+  };
+
+  const handleAuthError = (error: unknown, fallback: string) => {
+    const err = error as {
+      data?:
+        | {
+            message?: string;
+            errors?: { msg: string }[];
+          }
+        | string;
+    };
+
+    let message = fallback;
+
+    if (typeof err.data === "string") {
+      message = err.data;
+    } else if (err.data?.errors?.length) {
+      message = err.data.errors.map((e) => e.msg).join("\n");
+    } else if (err.data?.message) {
+      message = err.data.message;
+    }
+
+    alert(message);
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (!isGoogleReady || isSubmitting) return;
+
+    Keyboard.dismiss();
+
+    try {
+      const idToken = await signInWithGoogle();
+      if (!idToken) return;
+
+      const result = await googleAuth({ idToken }).unwrap();
+      await completeAuth(result);
+    } catch (error) {
+      handleAuthError(error, "Google Sign-In failed.");
+    }
+  };
+
   const handleSubmit = async () => {
     if (isResidentRole) {
       if (!userId.trim()) {
@@ -152,47 +209,20 @@ export default function SignIn() {
           confirmPassword,
           role: selectedRole,
         }).unwrap();
-        dispatch(setUser(toAuthUser(result)));
+        await completeAuth(result);
       } else {
         const result = await login(
           isResidentRole
             ? { userId: userId.trim(), password }
             : { phone, password, role: selectedRole },
         ).unwrap();
-        dispatch(setUser(toAuthUser(result)));
+        await completeAuth(result);
       }
-
-      try {
-        const me = await fetchMe(undefined).unwrap();
-        dispatch(updateUser(meToAuthProfile(me.user)));
-      } catch {
-        // Profile sync is optional immediately after auth
-      }
-
-      if (router.canDismiss()) router.dismissAll();
-      router.replace("/(tabs)/home");
     } catch (error) {
-      console.log(error);
-      const err = error as {
-        data?:
-          | {
-              message?: string;
-              errors?: { msg: string }[];
-            }
-          | string;
-      };
-
-      let message = isSignUp ? "Registration failed." : "Login failed.";
-
-      if (typeof err.data === "string") {
-        message = err.data;
-      } else if (err.data?.errors?.length) {
-        message = err.data.errors.map((e) => e.msg).join("\n");
-      } else if (err.data?.message) {
-        message = err.data.message;
-      }
-
-      alert(message);
+      handleAuthError(
+        error,
+        isSignUp ? "Registration failed." : "Login failed.",
+      );
     }
   };
 
@@ -387,6 +417,38 @@ export default function SignIn() {
                   disabled={isSubmitDisabled}
                 />
 
+                {isManagerRole && isGoogleReady ? (
+                  <>
+                    <View style={styles.dividerRow}>
+                      <View style={styles.dividerLine} />
+                      <Text style={styles.dividerText}>or</Text>
+                      <View style={styles.dividerLine} />
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.googleButton}
+                      activeOpacity={0.85}
+                      onPress={handleGoogleSignIn}
+                      disabled={isSubmitting}
+                    >
+                      {isGoogleLoading ? (
+                        <CustomLoading size="sm" />
+                      ) : (
+                        <>
+                          <Ionicons
+                            name="logo-google"
+                            size={vs(18)}
+                            color={colors.text}
+                          />
+                          <Text style={styles.googleButtonText}>
+                            Continue with Google
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </>
+                ) : null}
+
                 {canSignUp ? (
                   <Text style={styles.switchText}>
                     {isSignUp
@@ -543,6 +605,44 @@ function createStyles(
     actionWrapper: {
       alignItems: "center",
       marginTop: vs(8),
+      width: "100%",
+    },
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: vs(12),
+      marginTop: vs(18),
+      marginBottom: vs(18),
+      width: "100%",
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : colors.gray,
+    },
+    dividerText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.medium,
+      color: colors.gray200,
+      textTransform: "lowercase",
+    },
+    googleButton: {
+      width: "100%",
+      minHeight: vs(52),
+      borderRadius: vs(14),
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : colors.gray,
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.white,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: vs(10),
+      paddingHorizontal: vs(16),
+    },
+    googleButtonText: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.text,
     },
     switchText: {
       fontSize: FONT_SIZES.sm,

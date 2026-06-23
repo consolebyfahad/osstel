@@ -30,6 +30,8 @@ import {
   useLazyGetHostelRoomsQuery,
   useLazyGetResidentsQuery,
 } from "../../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -84,6 +86,7 @@ export default function AddResident() {
     hostelId?: string;
   }>();
   const [createResident, { isLoading: isSaving }] = useCreateResidentMutation();
+  const { checkAddTenant } = useSubscription();
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(
@@ -244,6 +247,13 @@ export default function AddResident() {
 
   const handleSave = async () => {
     if (!isValid || !selectedRoom || isSaving) return;
+
+    const limitCheck = checkAddTenant();
+    if (!limitCheck.allowed) {
+      showSubscriptionBlocked(limitCheck.message);
+      return;
+    }
+
     Keyboard.dismiss();
 
     const hostelId = selectedRoom.hostel || presetHostelId;

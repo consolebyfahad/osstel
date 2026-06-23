@@ -16,6 +16,8 @@ import {
   getPlanDisplayName,
   type SubscriptionPlanId,
 } from "@/types/subscription";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PLAN_FEATURES } from "@/constants/plans";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -102,6 +104,7 @@ export default function Profile() {
     [colors, fonts, isDark],
   );
   const user = useSelector((state: RootState) => state.auth.user);
+  const { guardFeature } = useSubscription();
   const isAuthenticated = useSelector(
     (state: RootState) => state.auth.isAuthenticated,
   );
@@ -370,7 +373,11 @@ export default function Profile() {
                   icon="document-attach-outline"
                   label="Reports"
                   value="Rent, residents & profile PDFs"
-                  onPress={() => router.push("/reports")}
+                  onPress={() =>
+                    guardFeature(PLAN_FEATURES.reports, () =>
+                      router.push("/reports"),
+                    )
+                  }
                   styles={styles}
                   colors={colors}
                 />
@@ -419,7 +426,15 @@ export default function Profile() {
             <MenuRow
               icon="notifications-outline"
               label="Notifications"
-              onPress={() => router.push("/notifications")}
+              onPress={() => {
+                if (isManager) {
+                  guardFeature(PLAN_FEATURES.notifications, () =>
+                    router.push("/notifications"),
+                  );
+                  return;
+                }
+                router.push("/notifications");
+              }}
               styles={styles}
               colors={colors}
             />
