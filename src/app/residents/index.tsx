@@ -346,13 +346,15 @@ export default function ResidentsScreen() {
     return (
       <GradientBackground style={styles.container}>
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
-          <ScreenHeader title="Residents" showBack />
-          <EmptyState
-            title="No hostels yet"
-            description="Add a hostel first to view residents."
-            actionLabel="Go to Hostels"
-            onAction={() => router.push("/(tabs)/hostels")}
-          />
+          <View style={styles.flex}>
+            <ScreenHeader title="Residents" showBack />
+            <EmptyState
+              title="No hostels yet"
+              description="Add a hostel first to view residents."
+              actionLabel="Go to Hostels"
+              onAction={() => router.push("/(tabs)/hostels")}
+            />
+          </View>
         </SafeAreaView>
       </GradientBackground>
     );
@@ -361,136 +363,159 @@ export default function ResidentsScreen() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.staticHeader}>
-        <ScreenHeader
-          title="Residents"
-          showBack
-          rightSlot={
-            <Pressable
-              style={styles.addBtn}
-              onPress={() => guardAddTenant(() => router.push("/residents/add"))}
-            >
+        <View style={styles.flex}>
+          <ScreenHeader
+            title="Residents"
+            showBack
+            rightSlot={
+              <Pressable
+                style={styles.addBtn}
+                onPress={() =>
+                  guardAddTenant(() => router.push("/residents/add"))
+                }
+              >
+                <Ionicons
+                  name="person-add-outline"
+                  size={vs(22)}
+                  color={colors.primary}
+                />
+              </Pressable>
+            }
+          />
+
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[
+              styles.scrollContent,
+              isEmpty && !isLoading && styles.scrollContentEmpty,
+            ]}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={refreshResidents}
+                tintColor={colors.primary}
+              />
+            }
+          >
+            <View style={styles.infoCard}>
               <Ionicons
-                name="person-add-outline"
-                size={vs(22)}
+                name="people-outline"
+                size={vs(24)}
                 color={colors.primary}
               />
-            </Pressable>
-          }
-        />
+              <Text style={styles.infoTitle}>Resident Directory</Text>
+              <Text style={styles.infoText}>
+                View, search, and manage residents across your hostels.
+              </Text>
+            </View>
 
-        <HostelDropdown
-          hostels={hostelOptions}
-          value={selectedHostelId}
-          onChange={setSelectedHostelId}
-          showAllOption
-        />
-
-        <View style={styles.searchWrap}>
-          <Ionicons
-            name="search-outline"
-            size={vs(18)}
-            color={colors.gray200}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name, phone, room..."
-            placeholderTextColor={colors.gray200}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 ? (
-            <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
-              <Ionicons name="close-circle" size={vs(18)} color={colors.gray200} />
-            </Pressable>
-          ) : null}
-        </View>
-
-        {!isLoading ? (
-          <Text style={styles.countLabel}>
-            {filteredResidents.length} resident
-            {filteredResidents.length === 1 ? "" : "s"}
-          </Text>
-        ) : null}
-      </View>
-
-      {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <CustomLoading size="lg" />
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.scrollContent,
-            isEmpty && styles.scrollContentEmpty,
-          ]}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={refreshResidents}
-              tintColor={colors.primary}
-            />
-          }
-        >
-          {isEmpty ? (
-            <EmptyState
-              title={searchQuery.trim() ? "No matches found" : "No residents yet"}
-              description={
-                searchQuery.trim()
-                  ? "Try a different name, phone number, or room."
-                  : "Add your first resident to start tracking occupancy."
-              }
-              actionLabel={searchQuery.trim() ? undefined : "Add Resident"}
-              onAction={
-                searchQuery.trim()
-                  ? undefined
-                  : () => guardAddTenant(() => router.push("/residents/add"))
-              }
-              size="sm"
-            />
-          ) : (
-            filteredResidents.map((resident) => (
-              <ResidentCard
-                key={resident.tenancyId}
-                resident={resident}
-                showHostel={showHostel}
-                styles={styles}
-                colors={colors}
-                onPress={() =>
-                  router.push({
-                    pathname: "/residents/edit",
-                    params: {
-                      tenancyId: resident.tenancyId,
-                      hostelId: resident.hostelId,
-                    },
-                  })
-                }
-                onGenerateReport={() => {
-                  const reportCheck = checkFeature(PLAN_FEATURES.advanced_reports);
-                  if (!reportCheck.allowed) {
-                    showSubscriptionBlocked(reportCheck.message);
-                    return;
-                  }
-                  router.push({
-                    pathname: "/reports/resident-profile",
-                    params: {
-                      tenancyId: resident.tenancyId,
-                      hostelId: resident.hostelId,
-                    },
-                  });
-                }}
-                onSendAlert={() => handleSendRentAlert(resident)}
-                isSendingAlert={sendingAlertTenancyId === resident.tenancyId}
+            <View style={styles.dropdownWrap}>
+              <HostelDropdown
+                hostels={hostelOptions}
+                value={selectedHostelId}
+                onChange={setSelectedHostelId}
+                showAllOption
               />
-            ))
-          )}
-        </ScrollView>
-      )}
+            </View>
+
+            <View style={styles.searchWrap}>
+              <Ionicons
+                name="search-outline"
+                size={vs(18)}
+                color={colors.gray200}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search by name, phone, room..."
+                placeholderTextColor={colors.gray200}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 ? (
+                <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
+                  <Ionicons
+                    name="close-circle"
+                    size={vs(18)}
+                    color={colors.gray200}
+                  />
+                </Pressable>
+              ) : null}
+            </View>
+
+            <Text style={styles.sectionTitle}>
+              {isLoading
+                ? "All residents"
+                : `${filteredResidents.length} resident${filteredResidents.length === 1 ? "" : "s"}`}
+            </Text>
+
+            {isLoading ? (
+              <View style={styles.loadingWrap}>
+                <CustomLoading size="lg" />
+              </View>
+            ) : isEmpty ? (
+              <EmptyState
+                title={
+                  searchQuery.trim() ? "No matches found" : "No residents yet"
+                }
+                description={
+                  searchQuery.trim()
+                    ? "Try a different name, phone number, or room."
+                    : "Add your first resident to start tracking occupancy."
+                }
+                actionLabel={searchQuery.trim() ? undefined : "Add Resident"}
+                onAction={
+                  searchQuery.trim()
+                    ? undefined
+                    : () => guardAddTenant(() => router.push("/residents/add"))
+                }
+                size="sm"
+              />
+            ) : (
+              filteredResidents.map((resident) => (
+                <ResidentCard
+                  key={resident.tenancyId}
+                  resident={resident}
+                  showHostel={showHostel}
+                  styles={styles}
+                  colors={colors}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/residents/edit",
+                      params: {
+                        tenancyId: resident.tenancyId,
+                        hostelId: resident.hostelId,
+                      },
+                    })
+                  }
+                  onGenerateReport={() => {
+                    const reportCheck = checkFeature(
+                      PLAN_FEATURES.advanced_reports,
+                    );
+                    if (!reportCheck.allowed) {
+                      showSubscriptionBlocked(reportCheck.message);
+                      return;
+                    }
+                    router.push({
+                      pathname: "/reports/resident-profile",
+                      params: {
+                        tenancyId: resident.tenancyId,
+                        hostelId: resident.hostelId,
+                      },
+                    });
+                  }}
+                  onSendAlert={() => handleSendRentAlert(resident)}
+                  isSendingAlert={
+                    sendingAlertTenancyId === resident.tenancyId
+                  }
+                />
+              ))
+            )}
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </GradientBackground>
   );
@@ -505,22 +530,8 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       flex: 1,
       backgroundColor: "transparent",
     },
-    staticHeader: {
-      paddingHorizontal: vs(20),
-      paddingTop: vs(8),
-      paddingBottom: vs(4),
-    },
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: vs(16),
-    },
-    backBtn: {
-      width: vs(40),
-      height: vs(40),
-      alignItems: "center",
-      justifyContent: "center",
+    flex: {
+      flex: 1,
     },
     addBtn: {
       width: vs(40),
@@ -528,10 +539,50 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       alignItems: "center",
       justifyContent: "center",
     },
-    title: {
-      fontSize: FONT_SIZES.title,
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: vs(20),
+      paddingBottom: vs(40),
+    },
+    scrollContentEmpty: {
+      flexGrow: 1,
+    },
+    infoCard: {
+      backgroundColor: colors.primary100,
+      borderRadius: vs(16),
+      padding: vs(18),
+      alignItems: "center",
+      marginBottom: vs(20),
+      borderWidth: 1,
+      borderColor: colors.primary200,
+    },
+    infoTitle: {
+      fontSize: FONT_SIZES.lg,
       fontFamily: fonts.bold,
       color: colors.text,
+      marginTop: vs(10),
+      marginBottom: vs(6),
+    },
+    infoText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      textAlign: "center",
+      lineHeight: vs(20),
+    },
+    dropdownWrap: {
+      marginBottom: vs(16),
+    },
+    sectionTitle: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.gray200,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: vs(10),
+      marginLeft: vs(4),
     },
     searchWrap: {
       flexDirection: "row",
@@ -554,28 +605,9 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.text,
       paddingVertical: 0,
     },
-    countLabel: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-      marginBottom: vs(8),
-      marginLeft: vs(4),
-    },
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingHorizontal: vs(20),
-      paddingBottom: vs(40),
-    },
-    scrollContentEmpty: {
-      flexGrow: 1,
-      justifyContent: "center",
-    },
     loadingWrap: {
-      flex: 1,
+      paddingVertical: vs(24),
       alignItems: "center",
-      justifyContent: "center",
     },
     noAccessWrap: {
       flex: 1,

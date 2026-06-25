@@ -305,9 +305,10 @@ export default function SupportScreen() {
                 </Text>
 
                 <CustomButton
-                  title={isSubmitting ? "Sending..." : "Send to Admin"}
+                  title="Send to Admin"
                   onPress={handleSubmit}
                   disabled={!canSubmit}
+                  loading={isSubmitting}
                 />
               </View>
 

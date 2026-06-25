@@ -79,6 +79,8 @@ function createStyles(colors: AppColors) {
       padding: 20,
       marginBottom: 24,
       overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.gradientBorder,
     },
     label: {
       fontSize: FONT_SIZES.xs,

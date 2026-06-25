@@ -247,9 +247,10 @@ export default function ResidentComplaintsView() {
                     />
 
                     <CustomButton
-                      title={isSubmitting ? "Submitting..." : "Submit Complaint"}
+                      title="Submit Complaint"
                       onPress={handleSubmit}
                       disabled={!canSubmit}
+                      loading={isSubmitting}
                     />
                   </View>
                 </>

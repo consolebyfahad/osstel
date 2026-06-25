@@ -7,6 +7,15 @@ export interface TrialInfo {
   daysRemaining: number;
 }
 
+export interface SubscriptionPeriodInfo {
+  active: boolean;
+  plan: SubscriptionPlanId;
+  startedAt: string | null;
+  expiresAt: string;
+  daysRemaining: number;
+  canRenew: boolean;
+}
+
 export type PlanRequestStatus = "pending" | "approved" | "rejected" | string;
 
 export interface ApiPlan {
@@ -32,6 +41,8 @@ export interface PlanUpgradeRequest {
 export interface PlanRequestResponse {
   currentPlan: SubscriptionPlanId;
   request: PlanUpgradeRequest | null;
+  canRenew?: boolean;
+  subscription?: SubscriptionPeriodInfo | null;
 }
 
 export interface SubmitPlanRequestBody {
@@ -54,6 +65,24 @@ export function canUpgradeTo(
   targetPlan: SubscriptionPlanId,
 ): boolean {
   return PLAN_ORDER[targetPlan] > PLAN_ORDER[currentPlan];
+}
+
+export function canRequestPlan(
+  currentPlan: SubscriptionPlanId,
+  targetPlan: SubscriptionPlanId,
+  options?: {
+    canRenew?: boolean;
+    basePlan?: SubscriptionPlanId;
+  },
+): boolean {
+  if (
+    options?.canRenew &&
+    options.basePlan &&
+    targetPlan === options.basePlan
+  ) {
+    return true;
+  }
+  return canUpgradeTo(currentPlan, targetPlan);
 }
 
 export function getPlanDisplayName(planId: SubscriptionPlanId): string {

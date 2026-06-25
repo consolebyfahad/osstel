@@ -37,7 +37,7 @@ export function PhonePrefix() {
         divider: {
           width: 1,
           height: vs(20),
-          backgroundColor: colors.gray100,
+          backgroundColor: colors.divider,
           marginHorizontal: vs(4),
         },
       }),

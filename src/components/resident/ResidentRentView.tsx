@@ -6,7 +6,12 @@ import ImageUploadField, {
 } from "@/components/ImageUploadField";
 import ScreenHeader from "@/components/ScreenHeader";
 import type { RentRecord, RentStatus } from "@/types/rent";
-import { isRentDueWindow, rentDueDateLabel } from "@/utils/rent";
+import {
+  getEligibleRentMonths,
+  getRentHistoryStartYear,
+  isRentDueWindow,
+  rentDueDateLabel,
+} from "@/utils/rent";
 import {
   buildResidentRentHistoryHtml,
   type ResidentRentHistoryReportData,
@@ -239,6 +244,9 @@ export default function ResidentRentView() {
   const profile = meData?.user ?? user;
   const room = profile?.room ?? user?.room;
   const hostel = profile?.hostel ?? user?.hostel;
+  const checkInDate =
+    (profile as { checkInDate?: string | null })?.checkInDate ?? null;
+  const historyStartYear = getRentHistoryStartYear(checkInDate);
   const currentRecord = currentRentData?.record ?? pendingRecord;
 
   useEffect(() => {
@@ -246,6 +254,12 @@ export default function ResidentRentView() {
       setPendingRecord(null);
     }
   }, [currentRentData?.record]);
+
+  useEffect(() => {
+    if (year < historyStartYear) {
+      setYear(historyStartYear);
+    }
+  }, [historyStartYear, year]);
 
   const hasRentRecord = Boolean(currentRecord?.id);
   const currentStatus = currentRecord?.status;
@@ -258,7 +272,17 @@ export default function ResidentRentView() {
     isRentDueWindow() &&
     (!hasRentRecord || currentStatus === "pending");
 
-  const historyRecords = historyData?.records ?? [];
+  const historyRecords = useMemo(() => {
+    const records = historyData?.records ?? [];
+    const eligibleMonths = new Set(
+      getEligibleRentMonths(checkInDate, year, now),
+    );
+    return records.filter((record) => {
+      const recordMonth =
+        record.month ?? new Date(record.dueDate).getMonth() + 1;
+      return eligibleMonths.has(recordMonth);
+    });
+  }, [checkInDate, historyData?.records, now, year]);
 
   const closePayModal = () => {
     setShowPayModal(false);
@@ -458,8 +482,13 @@ export default function ResidentRentView() {
             <Pressable
               style={styles.yearBtn}
               onPress={() => setYear((value) => value - 1)}
+              disabled={year <= historyStartYear}
             >
-              <Ionicons name="chevron-back" size={vs(18)} color={colors.text} />
+              <Ionicons
+                name="chevron-back"
+                size={vs(18)}
+                color={year <= historyStartYear ? colors.gray300 : colors.text}
+              />
             </Pressable>
             <Text style={styles.yearLabel}>{year}</Text>
             <Pressable
@@ -511,9 +540,10 @@ export default function ResidentRentView() {
 
         <View style={styles.downloadWrap}>
           <CustomButton
-            title={downloading ? "Generating PDF..." : "Download Year Report (PDF)"}
+            title="Download Year Report (PDF)"
             onPress={handleDownloadReport}
             disabled={downloading || historyRecords.length === 0}
+            loading={downloading}
           />
         </View>
       </ScrollView>
@@ -567,15 +597,10 @@ export default function ResidentRentView() {
               </Pressable>
               <View style={styles.submitWrap}>
                 <CustomButton
-                  title={
-                    isSubmitting
-                      ? "Sending..."
-                      : isRejected
-                        ? "Resubmit for Review"
-                        : "Send to Owner"
-                  }
+                  title={isRejected ? "Resubmit for Review" : "Send to Owner"}
                   onPress={handleSubmitPayment}
                   disabled={isSubmitting || !paymentProof.uploadValue}
+                  loading={isSubmitting}
                 />
               </View>
             </View>

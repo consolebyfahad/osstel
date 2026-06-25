@@ -122,6 +122,7 @@ export default function AddResident() {
   const [fatherName, setFatherName] = useState("");
   const [fatherDigits, setFatherDigits] = useState("");
   const [agreedRent, setAgreedRent] = useState("");
+  const [securityDeposit, setSecurityDeposit] = useState("");
 
   useEffect(() => {
     const showEvent =
@@ -263,6 +264,11 @@ export default function AddResident() {
 
   const parsedAgreedRent = Number(agreedRent);
   const hasValidRent = parsedAgreedRent > 0;
+  const parsedSecurityDeposit =
+    securityDeposit.trim() === "" ? 0 : Number(securityDeposit);
+  const hasValidSecurityDeposit =
+    securityDeposit.trim() === "" ||
+    (!Number.isNaN(parsedSecurityDeposit) && parsedSecurityDeposit >= 0);
 
   const projectedRoomTotal = useMemo(() => {
     if (!selectedRoom || !hasValidRent) return null;
@@ -283,6 +289,7 @@ export default function AddResident() {
     phoneDigits.length >= 10 &&
     selectedRoom !== null &&
     hasValidRent &&
+    hasValidSecurityDeposit &&
     isEmptyOrCompleteCnic(cnic) &&
     isValidOptionalPhone(emergencyDigits) &&
     isValidOptionalPhone(fatherDigits);
@@ -345,6 +352,7 @@ export default function AddResident() {
         phone: formatPhoneForApi(phoneDigits),
         roomNumber: selectedRoom.roomNumber,
         monthlyRent: parsedAgreedRent,
+        securityDeposit: parsedSecurityDeposit,
         ...(cnicDigits.length === 13 ? { cnic: formatCnic(cnicDigits) } : {}),
         ...(profileImageValue ? { profileImage: profileImageValue } : {}),
         ...(cnicFrontValue ? { cnicFront: cnicFrontValue } : {}),
@@ -527,6 +535,29 @@ export default function AddResident() {
                       />
                     </View>
 
+                    <View
+                      onLayout={(event) =>
+                        registerFieldPosition(
+                          "securityDeposit",
+                          event.nativeEvent.layout.y,
+                        )
+                      }
+                    >
+                      <CustomInput
+                        label="Security Deposit (Rs)"
+                        placeholder="e.g. 10000"
+                        value={securityDeposit}
+                        onChangeText={(text) =>
+                          setSecurityDeposit(
+                            text.replace(/[^0-9]/g, "").slice(0, 8),
+                          )
+                        }
+                        keyboardType="number-pad"
+                        hint="One-time deposit collected when the resident moves in. Leave blank if none."
+                        onFocus={() => scrollToField("securityDeposit")}
+                      />
+                    </View>
+
                     {projectedRoomTotal != null ? (
                       <View style={styles.rentSummaryCard}>
                         <Text style={styles.rentSummaryLabel}>
@@ -644,16 +675,21 @@ export default function AddResident() {
                       {(hasValidRent ? parsedAgreedRent : selectedRoom.rent).toLocaleString()}{" "}
                       / month
                     </Text>
+                    {parsedSecurityDeposit > 0 ? (
+                      <Text style={styles.summaryHint}>
+                        Security deposit: Rs{" "}
+                        {parsedSecurityDeposit.toLocaleString()}
+                      </Text>
+                    ) : null}
                   </View>
                 ) : null}
 
                 <View style={styles.buttonWrap}>
                   <CustomButton
-                    title={
-                      isSaving ? <CustomLoading size="sm" /> : "Save Resident"
-                    }
+                    title="Save Resident"
                     onPress={handleSave}
                     disabled={!isValid || isSaving}
+                    loading={isSaving}
                   />
                 </View>
               </>
@@ -791,6 +827,12 @@ function createStyles(
       fontSize: FONT_SIZES.xl,
       fontFamily: fonts.bold,
       color: colors.secondary,
+    },
+    summaryHint: {
+      marginTop: vs(6),
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.medium,
+      color: colors.gray200,
     },
     buttonWrap: {
       marginTop: vs(8),

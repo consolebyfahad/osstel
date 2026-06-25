@@ -329,17 +329,18 @@ export default function EditRoomScreen() {
 
             <View style={styles.actions}>
               <CustomButton
-                title={
-                  isSaving ? <CustomLoading size="sm" /> : "Save Changes"
-                }
+                title="Save Changes"
                 onPress={handleSave}
                 disabled={!isValid || isBusy}
+                loading={isSaving}
               />
 
               <CustomButton
-                title={isDeleting ? "Deleting..." : "Delete Room"}
+                title="Delete Room"
                 onPress={handleDelete}
+                variant="destructive"
                 disabled={isBusy}
+                loading={isDeleting}
                 style={styles.deleteBtn}
               />
             </View>
@@ -457,7 +458,7 @@ function createStyles(
       gap: vs(12),
     },
     deleteBtn: {
-      backgroundColor: colors.error,
+      marginTop: vs(16),
     },
     loadingWrap: {
       flex: 1,

@@ -382,7 +382,7 @@ export default function RoomDetailScreen() {
         {vacantBeds > 0 ? (
           <CustomButton title="Add Resident" onPress={handleAddResident} />
         ) : (
-          <CustomButton title="Edit Room" onPress={handleEditRoom} />
+          <CustomButton title="Edit Room" onPress={handleEditRoom} variant="outline" />
         )}
       </View>
     </SafeAreaView>

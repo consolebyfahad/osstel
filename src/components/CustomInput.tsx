@@ -65,7 +65,7 @@ export default function CustomInput({
         <TextInput
           style={styles.input}
           placeholder={placeholder}
-          placeholderTextColor={colors.gray100}
+          placeholderTextColor={colors.disabledText}
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
@@ -116,7 +116,7 @@ function createStyles(
       borderRadius: vs(14),
       backgroundColor: isDark ? colors.white100 : colors.white,
       borderWidth: 1,
-      borderColor: isDark ? colors.white200 : colors.white100,
+      borderColor: isDark ? colors.border : colors.borderSubtle,
       minHeight: vs(52),
       paddingHorizontal: vs(14),
       gap: vs(8),
@@ -136,7 +136,7 @@ function createStyles(
       marginTop: vs(6),
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.regular,
-      color: colors.gray200,
+      color: colors.gray,
     },
   });
 }

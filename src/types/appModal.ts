@@ -1,4 +1,6 @@
-import type { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+
+export type AppModalIconName = keyof typeof Ionicons.glyphMap;
 
 export type AppModalButtonStyle =
   | "cancel"
@@ -16,7 +18,7 @@ export type AppModalButton = {
 export type AppModalOptions = {
   title: string;
   message?: string;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: AppModalIconName;
   iconColor?: string;
   buttons?: AppModalButton[];
 };
@@ -27,6 +29,6 @@ export type ConfirmModalOptions = {
   confirmText?: string;
   cancelText?: string;
   destructive?: boolean;
-  icon?: keyof typeof Ionicons.glyphMap;
+  icon?: AppModalIconName;
   onConfirm?: () => void | Promise<void>;
 };

@@ -43,9 +43,7 @@ export default function HostelCard({ hostel, stats, onPress }: HostelCardProps) 
     totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
   const monthlyCollected = stats?.monthlyCollection.collected ?? 0;
 
-  const headerGradient = isDark
-    ? ([colors.secondary300, colors.secondary] as [string, string])
-    : ([colors.secondary, "#8B5CF6"] as [string, string]);
+  const headerGradient = colors.cardGradient;
 
   const content = (
     <View style={styles.card}>
@@ -58,7 +56,7 @@ export default function HostelCard({ hostel, stats, onPress }: HostelCardProps) 
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
             <View style={styles.activeBadge}>
-              <Ionicons name="business-outline" size={vs(14)} color={colors.onPrimary} />
+              <Ionicons name="business-outline" size={vs(14)} color={colors.primary} />
               <Text style={styles.activeBadgeText}>Active Hostel</Text>
             </View>
             <Text style={styles.title} numberOfLines={2}>
@@ -138,6 +136,8 @@ function createStyles(
       borderRadius: vs(24),
       overflow: "hidden",
       backgroundColor: isDark ? colors.white100 : colors.white,
+      borderWidth: 1,
+      borderColor: isDark ? colors.gradientBorder : colors.white100,
       shadowColor: colors.black,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: isDark ? 0.2 : 0.1,
@@ -173,7 +173,7 @@ function createStyles(
     title: {
       fontSize: FONT_SIZES.xxl,
       fontFamily: fonts.bold,
-      color: colors.onPrimary,
+      color: colors.onGradient,
       marginBottom: vs(6),
     },
     locationRow: {
@@ -193,7 +193,7 @@ function createStyles(
     amountValue: {
       fontSize: FONT_SIZES.xl,
       fontFamily: fonts.bold,
-      color: colors.onPrimary,
+      color: colors.onGradient,
     },
     amountLabel: {
       marginTop: vs(2),
@@ -215,18 +215,18 @@ function createStyles(
     occupancyValue: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.semiBold,
-      color: colors.onPrimary,
+      color: colors.onGradient,
     },
     progressTrack: {
       height: vs(6),
       borderRadius: vs(999),
-      backgroundColor: "rgba(255, 255, 255, 0.28)",
+      backgroundColor: colors.onGradientSurface,
       overflow: "hidden",
     },
     progressFill: {
       height: "100%",
       borderRadius: vs(999),
-      backgroundColor: colors.onPrimary,
+      backgroundColor: colors.primary,
     },
     body: {
       paddingHorizontal: vs(18),

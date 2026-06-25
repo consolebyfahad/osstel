@@ -1,4 +1,3 @@
-import { PLAN_FEATURES } from "@/constants/plans";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -37,7 +36,8 @@ const NOTCH_DEPTH = 26;
 const BAR_TOP = 20;
 const CIRCLE_SIZE = 60;
 const ACTION_SIZE = 52;
-const ARC_RADIUS = 92;
+const ARC_RADIUS = 80;
+const ARC_ACTION_Y_OFFSET = 24;
 const ACTION_HIT_WIDTH = 80;
 const ACTION_HIT_HEIGHT = 88;
 const SPRING_CONFIG = { damping: 18, stiffness: 210, mass: 0.75 };
@@ -48,7 +48,7 @@ const TAB_ICON_POP_CONFIG = { damping: 13, stiffness: 280, mass: 0.55 };
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const MANAGER_LEFT_TABS = [
-  { name: "home", icon: "home" as const, activeIcon: "home" as const },
+  { name: "home", icon: "home-fill" as const, activeIcon: "home-fill" as const },
   {
     name: "hostels",
     icon: "organization" as const,
@@ -62,7 +62,7 @@ const MANAGER_RIGHT_TABS = [
 ];
 
 const RESIDENT_TABS = [
-  { name: "home", icon: "home" as const, activeIcon: "home" as const },
+  { name: "home", icon: "home-fill" as const, activeIcon: "home-fill" as const },
   { name: "rent", icon: "credit-card" as const, activeIcon: "credit-card" as const },
   { name: "profile", icon: "person" as const, activeIcon: "person" as const },
 ];
@@ -85,9 +85,8 @@ const QUICK_ACTIONS = [
     arcAngle: 90,
   },
   {
-    id: "reports",
-    // label: "Reports",
-    icon: "download-outline" as const,
+    id: "add-expense",
+    icon: "wallet-outline" as const,
     iconColorKey: "purpleText" as const,
     iconBgKey: "purpleBg" as const,
     arcAngle: 30,
@@ -131,7 +130,6 @@ type ArcActionProps = {
 };
 
 function ArcActionButton({
-  // label,
   icon,
   iconColor,
   iconBackgroundColor,
@@ -146,7 +144,8 @@ function ArcActionButton({
     const angleRad = (arcAngle * Math.PI) / 180;
     const radius = ARC_RADIUS * menuProgress.value;
     const centerX = originX + radius * Math.cos(angleRad);
-    const centerY = originY - radius * Math.sin(angleRad);
+    const centerY =
+      originY - radius * Math.sin(angleRad) + ARC_ACTION_Y_OFFSET;
     const scale = 0.35 + menuProgress.value * 0.65;
 
     return {
@@ -166,12 +165,10 @@ function ArcActionButton({
         ]}
         onPress={onPress}
         accessibilityRole="button"
-        // accessibilityLabel={label}
       >
         <View style={[styles.actionIconWrap, { backgroundColor: iconBackgroundColor }]}>
           <Ionicons name={icon} size={22} color={iconColor} />
         </View>
-        {/* <Text style={styles.actionLabel}>{label}</Text> */}
       </Pressable>
     </Animated.View>
   );
@@ -225,7 +222,7 @@ function TabButton({
         <Octicons
           name={isFocused ? tab.activeIcon : tab.icon}
           size={TAB_ICON_SIZE}
-          color={isFocused ? colors.primary : colors.black100}
+          color={isFocused ? colors.primary : colors.gray300}
         />
       </Animated.View>
     </Pressable>
@@ -242,7 +239,7 @@ export default function CustomTabBar({
   const insets = useSafeAreaInsets();
   const user = useSelector((state: RootState) => state.auth.user);
   const isManager = user?.role === "manager";
-  const { guardFeature, guardAddTenant, guardAddRoom } = useSubscription();
+  const { guardAddTenant, guardAddRoom } = useSubscription();
   const { data: hostelsData } = useGetHostelsQuery(undefined, { skip: !isManager });
   const hostels = hostelsData?.hostels ?? [];
   const singleHostelId = hostels.length === 1 ? hostels[0]._id : undefined;
@@ -327,18 +324,16 @@ export default function CustomTabBar({
         return;
       }
 
-      if (actionId === "reports") {
-        guardFeature(PLAN_FEATURES.reports, () => {
-          closeMenu();
-          router.push("/reports");
-        });
+      if (actionId === "add-expense") {
+        closeMenu();
+        router.push("/expenses/add");
+        return;
       }
     },
     [
       closeMenu,
       guardAddRoom,
       guardAddTenant,
-      guardFeature,
       singleHostelId,
     ],
   );
@@ -525,7 +520,7 @@ function createStyles(colors: AppColors) {
       position: "absolute",
       left: 0,
       right: 0,
-      bottom: -25,
+      bottom: -20,
     },
     modalRoot: {
       flex: 1,
@@ -574,11 +569,11 @@ function createStyles(colors: AppColors) {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      paddingBottom: 18,
+      paddingBottom: 24,
     },
     fabWrap: {
       position: "absolute",
-      top: BAR_TOP - CIRCLE_SIZE / 2 + 6,
+      top: BAR_TOP - CIRCLE_SIZE / 2 + 2,
       left: SCREEN_WIDTH / 2 - CIRCLE_SIZE / 2,
       width: CIRCLE_SIZE,
       height: CIRCLE_SIZE,
@@ -627,20 +622,13 @@ function createStyles(colors: AppColors) {
       borderRadius: ACTION_SIZE / 2,
       alignItems: "center",
       justifyContent: "center",
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: colors.background,
       shadowColor: colors.black,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.12,
       shadowRadius: 8,
       elevation: 5,
-    },
-    actionLabel: {
-      marginTop: vs(6),
-      fontSize: FONT_SIZES.xs,
-      fontFamily: FONTS.semiBold,
-      color: colors.text,
-      textAlign: "center",
     },
   });
 }

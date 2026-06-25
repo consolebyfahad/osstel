@@ -34,7 +34,8 @@ export default function AppModal({
 
   if (!options) return null;
 
-  const buttons = options.buttons ?? [{ text: "OK", style: "primary" as const }];
+  const buttons: AppModalButton[] =
+    options.buttons ?? [{ text: "OK", style: "primary" }];
   const actionButtons = buttons.filter((button) => button.style !== "cancel");
   const cancelButtons = buttons.filter((button) => button.style === "cancel");
 
@@ -103,12 +104,14 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       backgroundColor: colors.white,
       borderRadius: vs(20),
       padding: vs(24),
+      borderWidth: isDark ? 1 : 0,
+      borderColor: colors.border,
     },
     iconWrap: {
       width: vs(56),
       height: vs(56),
       borderRadius: vs(28),
-      backgroundColor: isDark ? colors.primary100 : colors.primary100,
+      backgroundColor: colors.primary100,
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "center",
@@ -124,7 +127,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     message: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.regular,
-      color: colors.gray200,
+      color: colors.gray,
       textAlign: "center",
       lineHeight: vs(20),
       marginBottom: vs(20),
@@ -140,7 +143,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     cancelBtnText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.gray200,
+      color: colors.gray,
     },
   });
 }

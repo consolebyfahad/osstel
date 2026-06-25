@@ -37,7 +37,6 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import CustomLoading from "@/components/CustomLoading";
 
 const ROLE_OPTIONS: UserRole[] = ["resident", "manager"];
 
@@ -174,7 +173,17 @@ export default function SignIn() {
       const result = await googleAuth({ idToken }).unwrap();
       await completeAuth(result);
     } catch (error) {
-      handleAuthError(error, "Google Sign-In failed.");
+      const err = error as {
+        data?: { message?: string } | string;
+      };
+      const message =
+        typeof err.data === "string"
+          ? err.data
+          : err.data?.message?.toLowerCase().includes("phone")
+            ? "Google sign-in could not complete. If you registered with a phone number, sign in with phone and password instead. To link Google to that account, add the same email in Edit Profile first."
+            : undefined;
+
+      handleAuthError(error, message ?? "Google Sign-In failed.");
     }
   };
 
@@ -436,17 +445,10 @@ export default function SignIn() {
 
               <View style={styles.actionWrapper}>
                 <CustomButton
-                  title={
-                    isSubmitting ? (
-                      <CustomLoading size="md" />
-                    ) : isSignUp && canSignUp ? (
-                      "Sign Up"
-                    ) : (
-                      "Sign In"
-                    )
-                  }
+                  title={isSignUp && canSignUp ? "Sign Up" : "Sign In"}
                   onPress={handleSubmit}
                   disabled={isSubmitDisabled}
+                  loading={isLoginLoading || isRegisterLoading}
                 />
 
                 {isManagerRole && isGoogleReady ? (
@@ -457,27 +459,20 @@ export default function SignIn() {
                       <View style={styles.dividerLine} />
                     </View>
 
-                    <TouchableOpacity
-                      style={styles.googleButton}
-                      activeOpacity={0.85}
+                    <CustomButton
+                      variant="outline"
+                      title="Continue with Google"
                       onPress={handleGoogleSignIn}
                       disabled={isSubmitting}
-                    >
-                      {isGoogleLoading ? (
-                        <CustomLoading size="sm" />
-                      ) : (
-                        <>
-                          <Ionicons
-                            name="logo-google"
-                            size={vs(18)}
-                            color={colors.text}
-                          />
-                          <Text style={styles.googleButtonText}>
-                            Continue with Google
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
+                      loading={isGoogleLoading}
+                      icon={
+                        <Ionicons
+                          name="logo-google"
+                          size={vs(18)}
+                          color={colors.text}
+                        />
+                      }
+                    />
                   </>
                 ) : null}
 
@@ -669,24 +664,6 @@ function createStyles(
       fontFamily: fonts.medium,
       color: colors.gray200,
       textTransform: "lowercase",
-    },
-    googleButton: {
-      width: "100%",
-      minHeight: vs(52),
-      borderRadius: vs(14),
-      borderWidth: 1.5,
-      borderColor: isDark ? colors.chipBorder : colors.gray,
-      backgroundColor: isDark ? colors.surfaceMuted : colors.white,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: vs(10),
-      paddingHorizontal: vs(16),
-    },
-    googleButtonText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.text,
     },
     switchText: {
       fontSize: FONT_SIZES.sm,

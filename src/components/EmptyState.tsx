@@ -1,3 +1,4 @@
+import CustomButton from "@/components/CustomButton";
 import { Animations } from "@constants/animations";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -5,7 +6,6 @@ import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import LottieView from "lottie-react-native";
 import { useMemo } from "react";
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -58,9 +58,14 @@ export default function EmptyState({
         <Text style={styles.description}>{description}</Text>
       ) : null}
       {actionLabel && onAction ? (
-        <Pressable style={styles.action} onPress={onAction}>
-          <Text style={styles.actionText}>{actionLabel}</Text>
-        </Pressable>
+        <CustomButton
+          title={actionLabel}
+          onPress={onAction}
+          variant="outline"
+          size="sm"
+          fullWidth={false}
+          style={styles.action}
+        />
       ) : null}
     </View>
   );
@@ -99,15 +104,6 @@ function createStyles(
     },
     action: {
       marginTop: vs(20),
-      backgroundColor: colors.primary,
-      paddingHorizontal: vs(24),
-      paddingVertical: vs(12),
-      borderRadius: vs(12),
-    },
-    actionText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.onPrimary,
     },
   });
 }

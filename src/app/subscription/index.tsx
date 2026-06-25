@@ -4,7 +4,7 @@ import ScreenHeader from "@/components/ScreenHeader";
 import PlanUpgradeCard from "@/components/PlanUpgradeCard";
 import { meToAuthProfile } from "@/types/auth";
 import {
-  canUpgradeTo,
+  canRequestPlan,
   getPlanDisplayName,
   PLAN_ORDER,
   type ApiPlan,
@@ -95,6 +95,7 @@ export default function SubscriptionScreen() {
   const isManager = user?.role === "manager";
 
   const [upgradeTarget, setUpgradeTarget] = useState<ApiPlan | null>(null);
+  const [isRenewalRequest, setIsRenewalRequest] = useState(false);
   const [note, setNote] = useState("");
 
   const {
@@ -143,7 +144,16 @@ export default function SubscriptionScreen() {
     requestData?.currentPlan ??
     user?.subscriptionPlan ??
     "free";
+  const basePlanId: SubscriptionPlanId =
+    meData?.user.baseSubscriptionPlan ?? currentPlanId;
   const activeTrial = meData?.user.trial ?? user?.trial ?? null;
+  const activeSubscription =
+    meData?.user.subscription ??
+    requestData?.subscription ??
+    user?.subscription ??
+    null;
+  const canRenew =
+    requestData?.canRenew ?? activeSubscription?.canRenew ?? false;
 
   const pendingRequest =
     requestData?.request?.status === "pending" ? requestData.request : null;
@@ -195,6 +205,13 @@ export default function SubscriptionScreen() {
 
   const closeModal = () => {
     setUpgradeTarget(null);
+    setIsRenewalRequest(false);
+    setNote("");
+  };
+
+  const openPlanRequest = (plan: ApiPlan, renewal = false) => {
+    setUpgradeTarget(plan);
+    setIsRenewalRequest(renewal);
     setNote("");
   };
 
@@ -210,7 +227,7 @@ export default function SubscriptionScreen() {
       closeModal();
       Toast.show({
         type: "success",
-        text1: "Request submitted",
+        text1: isRenewalRequest ? "Renewal request submitted" : "Request submitted",
         text2: "Admin will activate your plan after payment verification.",
       });
       refetchRequest();
@@ -298,6 +315,34 @@ export default function SubscriptionScreen() {
             </View>
           ) : null}
 
+          {activeSubscription?.active && !activeTrial?.active ? (
+            <View style={styles.pendingBanner}>
+              <Ionicons
+                name="calendar-outline"
+                size={vs(22)}
+                color={colors.primary}
+              />
+              <View style={styles.pendingContent}>
+                <Text style={styles.pendingTitle}>
+                  {getPlanDisplayName(activeSubscription.plan)} plan active —{" "}
+                  {activeSubscription.daysRemaining} day
+                  {activeSubscription.daysRemaining === 1 ? "" : "s"} remaining
+                </Text>
+                <Text style={styles.pendingSubtext}>
+                  Valid until{" "}
+                  {formatSubmittedDate(activeSubscription.expiresAt)}. After 30
+                  days your plan returns to Free unless you renew or admin
+                  extends it.
+                </Text>
+                {canRenew ? (
+                  <Text style={styles.renewHint}>
+                    Renewal is open — submit a request below to keep access.
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
           {hasPending && pendingRequest ? (
             <View style={styles.pendingBanner}>
               <Ionicons
@@ -324,7 +369,10 @@ export default function SubscriptionScreen() {
             </View>
           ) : null}
 
-          {currentPlanId === "premium" && !hasPending && !activeTrial?.active ? (
+          {currentPlanId === "premium" &&
+          !hasPending &&
+          !activeTrial?.active &&
+          !activeSubscription?.active ? (
             <View style={styles.bestPlanBanner}>
               <Ionicons
                 name="diamond-outline"
@@ -339,8 +387,14 @@ export default function SubscriptionScreen() {
 
           {sortedPlans.map((plan) => {
             const isCurrent = plan.id === currentPlanId;
+            const isRenewalTarget =
+              canRenew && plan.id === basePlanId && isCurrent;
             const canUpgrade =
-              !hasPending && canUpgradeTo(currentPlanId, plan.id);
+              !hasPending &&
+              canRequestPlan(currentPlanId, plan.id, {
+                canRenew,
+                basePlan: basePlanId,
+              });
 
             return (
               <PlanUpgradeCard
@@ -349,7 +403,10 @@ export default function SubscriptionScreen() {
                 isCurrent={isCurrent}
                 showUpgrade={canUpgrade}
                 upgradeDisabled={hasPending}
-                onUpgrade={() => setUpgradeTarget(plan)}
+                actionLabel={
+                  isRenewalTarget ? `Renew ${plan.name}` : undefined
+                }
+                onUpgrade={() => openPlanRequest(plan, isRenewalTarget)}
               />
             );
           })}
@@ -368,7 +425,9 @@ export default function SubscriptionScreen() {
         >
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
-              Upgrade to {upgradeTarget?.name}
+              {isRenewalRequest
+                ? `Renew ${upgradeTarget?.name}`
+                : `Upgrade to ${upgradeTarget?.name}`}
             </Text>
             <Text style={styles.modalPrice}>
               Rs {upgradeTarget?.price.toLocaleString() ?? "0"} per month
@@ -398,9 +457,10 @@ export default function SubscriptionScreen() {
               </Pressable>
               <View style={styles.submitBtnWrap}>
                 <CustomButton
-                  title={isSubmitting ? "Submitting..." : "Submit Request"}
+                  title={isRenewalRequest ? "Submit Renewal" : "Submit Request"}
                   onPress={handleSubmitUpgrade}
                   disabled={isSubmitting}
+                  loading={isSubmitting}
                 />
               </View>
             </View>
@@ -501,6 +561,13 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontFamily: fonts.medium,
       color: colors.text,
       marginTop: vs(8),
+    },
+    renewHint: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.warning,
+      marginTop: vs(8),
+      lineHeight: vs(18),
     },
     bestPlanBanner: {
       flexDirection: "row",

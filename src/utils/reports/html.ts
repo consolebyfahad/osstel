@@ -290,11 +290,43 @@ export function buildRentCollectionHtml(data: RentCollectionReportData) {
     .join("");
 
   const body = `
+    <div class="summary-grid">
+      <div class="summary-card"><div class="summary-label">Total Collection</div><div class="summary-value">${formatCurrency(data.totals.collected)}</div></div>
+      <div class="summary-card"><div class="summary-label">Total Expenses</div><div class="summary-value">${formatCurrency(data.financials.totalExpenses)}</div></div>
+      <div class="summary-card"><div class="summary-label">Remaining</div><div class="summary-value">${formatCurrency(data.financials.netRemaining)}</div></div>
+    </div>
     ${summaryCards(data.totals)}
     ${sectionsHtml}
+    <div class="section-title">Monthly Expenses</div>
+    ${
+      data.expenses.length > 0
+        ? `<table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Hostel</th>
+                <th>Details</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>${data.expenses
+              .map(
+                (expense) => `
+              <tr>
+                <td>${escapeHtml(expense.title)}</td>
+                <td>${escapeHtml(expense.hostelName)}</td>
+                <td>${escapeHtml(expense.details || "—")}</td>
+                <td>${formatCurrency(expense.amount)}</td>
+              </tr>
+            `,
+              )
+              .join("")}</tbody>
+          </table>`
+        : `<p>No expenses recorded for this period.</p>`
+    }
   `;
 
-  return reportShell("Monthly Rent Collection Report", [
+  return reportShell("Monthly Hostel Financial Report", [
     `Period: ${formatMonthYear(data.month, data.year)}`,
     `Scope: ${data.scopeLabel}`,
     `Generated: ${formatReportDate(data.generatedAt)}`,

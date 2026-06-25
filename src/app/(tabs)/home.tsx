@@ -208,11 +208,8 @@ export default function Home() {
       pendingAmount: summary.pending,
       complaintsOpen: summary.complaintsOpen,
       currency: "Rs",
-      gradientColors: isDark
-        ? ([colors.primary500, colors.primary300] as [string, string])
-        : ([colors.primary, colors.primary200] as [string, string]),
     };
-  }, [colors.primary, colors.primary200, colors.primary300, colors.primary500, isDark, summary]);
+  }, [summary]);
 
   return (
     <GradientBackground style={styles.container}>

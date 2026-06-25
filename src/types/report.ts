@@ -1,6 +1,19 @@
 import type { RentRecord, RentSummary } from "@/types/rent";
 import type { Resident } from "@/types/resident";
 
+export interface ExpenseReportRow {
+  id: string;
+  title: string;
+  details: string;
+  amount: number;
+  hostelName: string;
+}
+
+export interface ReportFinancials {
+  totalExpenses: number;
+  netRemaining: number;
+}
+
 export type ReportHostelScope = string;
 
 export interface RentReportHostelSection {
@@ -18,6 +31,8 @@ export interface RentCollectionReportData {
   generatedBy: string;
   sections: RentReportHostelSection[];
   totals: RentSummary;
+  financials: ReportFinancials;
+  expenses: ExpenseReportRow[];
 }
 
 export type ResidentReportRow = Resident & {
@@ -42,8 +57,8 @@ export type ResidentProfileReportData = ResidentReportRow & {
 export const REPORT_TYPES = [
   {
     id: "rent",
-    title: "Rent Collection",
-    description: "Monthly rent summary with resident names and payment status.",
+    title: "Monthly Financial Report",
+    description: "Rent collection, expenses, and remaining balance for the month.",
     icon: "cash-outline" as const,
     route: "/reports/rent",
   },

@@ -26,7 +26,7 @@ export default function StatCard({
       style={[
         styles.card,
         isDark
-          ? { backgroundColor: colors.white200, borderColor: colors.white300 }
+          ? { backgroundColor: colors.white, borderColor: colors.border }
           : { backgroundColor: iconBackgroundColor },
       ]}
     >
@@ -71,7 +71,7 @@ function createStyles(colors: AppColors, isDark: boolean) {
     title: {
       fontSize: FONT_SIZES.md,
       fontFamily: FONTS.medium,
-      color: isDark ? colors.gray : colors.text,
+      color: isDark ? colors.gray200 : colors.gray,
       marginBottom: 8,
     },
     value: {

@@ -26,13 +26,20 @@ export default function ScreenHeader({
   const { colors, fonts } = useTheme();
   const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
 
-  if (!showBack && !rightSlot) {
+  if (!showBack) {
     return (
       <View style={styles.staticHeader}>
-        <Text style={styles.pageTitle} numberOfLines={titleNumberOfLines}>
-          {title}
-        </Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <View style={styles.staticHeaderRow}>
+          <View style={styles.titleWrap}>
+            <Text style={styles.pageTitle} numberOfLines={titleNumberOfLines}>
+              {title}
+            </Text>
+            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          </View>
+          {rightSlot ? (
+            <View style={styles.sideSlotRight}>{rightSlot}</View>
+          ) : null}
+        </View>
       </View>
     );
   }
@@ -74,6 +81,11 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       paddingBottom: vs(8),
       paddingHorizontal: vs(14),
     },
+    staticHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: vs(8),
+    },
     rowHeader: {
       flexDirection: "row",
       alignItems: "center",
@@ -110,7 +122,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       color: colors.text,
     },
     subtitle: {
-      fontSize: FONT_SIZES.md,
+      fontSize: FONT_SIZES.sm,
       fontFamily: fonts.medium,
       color: colors.gray200,
       marginTop: vs(4),

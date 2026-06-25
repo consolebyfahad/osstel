@@ -18,8 +18,11 @@ import { PLAN_FEATURES } from "@/constants/plans";
 import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import {
   useGetHostelsQuery,
+  useLazyGetExpenseSummaryQuery,
+  useLazyGetExpensesQuery,
   useLazyGetRentQuery,
 } from "../../../store/api";
+import type { ExpenseReportRow } from "@/types/report";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -67,6 +70,8 @@ export default function RentReportScreen() {
 
   const { data: hostelsData } = useGetHostelsQuery();
   const [fetchRent] = useLazyGetRentQuery();
+  const [fetchExpenseSummary] = useLazyGetExpenseSummaryQuery();
+  const [fetchExpenses] = useLazyGetExpensesQuery();
 
   const hostelOptions = useMemo(
     () =>
@@ -125,12 +130,45 @@ export default function RentReportScreen() {
       );
 
       const validResponses = responses.filter(Boolean);
+      const expenseSummary = await fetchExpenseSummary({
+        hostelIds:
+          selectedHostelId === "all"
+            ? targetHostels.map((hostel) => hostel.id).join(",")
+            : undefined,
+        hostelId: selectedHostelId === "all" ? undefined : selectedHostelId,
+        month,
+        year,
+      })
+        .unwrap()
+        .catch(() => null);
+
+      const expenseResponses = await Promise.all(
+        targetHostels.map((hostel) =>
+          fetchExpenses({ hostelId: hostel.id, month, year })
+            .unwrap()
+            .catch(() => null),
+        ),
+      );
+
+      const expenseRows: ExpenseReportRow[] = expenseResponses.flatMap(
+        (response) =>
+          (response?.expenses ?? []).map((expense) => ({
+            id: expense.id,
+            title: expense.title,
+            details: expense.details,
+            amount: expense.amount,
+            hostelName: expense.hostelName ?? response?.hostel.name ?? "Hostel",
+          })),
+      );
+
       setReportData(
         buildRentReportData(validResponses as NonNullable<(typeof responses)[0]>[], {
           month,
           year,
           scopeLabel,
           generatedBy,
+          totalExpenses: expenseSummary?.summary.totalAmount ?? 0,
+          expenses: expenseRows,
         }),
       );
     } finally {
@@ -138,6 +176,8 @@ export default function RentReportScreen() {
     }
   }, [
     fetchRent,
+    fetchExpenseSummary,
+    fetchExpenses,
     generatedBy,
     hostelOptions,
     month,
@@ -175,7 +215,7 @@ export default function RentReportScreen() {
 
   return (
     <ReportScaffold
-      title="Rent Collection Report"
+      title="Monthly Financial Report"
       subtitle={formatMonthYear(month, year)}
       loading={loading}
       downloading={downloading}
@@ -214,6 +254,24 @@ export default function RentReportScreen() {
 
           <View style={previewStyles.summaryRow}>
             <SummaryRow
+              label="Collection"
+              value={formatCurrency(reportData.totals.collected)}
+              styles={previewStyles}
+            />
+            <SummaryRow
+              label="Expenses"
+              value={formatCurrency(reportData.financials.totalExpenses)}
+              styles={previewStyles}
+            />
+            <SummaryRow
+              label="Remaining"
+              value={formatCurrency(reportData.financials.netRemaining)}
+              styles={previewStyles}
+            />
+          </View>
+
+          <View style={previewStyles.summaryRow}>
+            <SummaryRow
               label="Expected"
               value={formatCurrency(reportData.totals.expected)}
               styles={previewStyles}
@@ -229,6 +287,26 @@ export default function RentReportScreen() {
               styles={previewStyles}
             />
           </View>
+
+          {reportData.expenses.length > 0 ? (
+            <View style={previewStyles.sectionCard}>
+              <Text style={previewStyles.sectionTitle}>Expenses</Text>
+              {reportData.expenses.map((expense) => (
+                <View key={expense.id} style={previewStyles.recordRow}>
+                  <View style={previewStyles.recordMain}>
+                    <Text style={previewStyles.recordTitle}>{expense.title}</Text>
+                    <Text style={previewStyles.recordMeta}>
+                      {expense.hostelName}
+                      {expense.details ? ` · ${expense.details}` : ""}
+                    </Text>
+                  </View>
+                  <Text style={previewStyles.recordAmount}>
+                    {formatCurrency(expense.amount)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {reportData.sections.map((section) => (
             <View key={section.hostelId} style={previewStyles.sectionCard}>

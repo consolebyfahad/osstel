@@ -27,6 +27,14 @@ import type {
   SubmitPlanRequestResponse,
 } from "@/types/subscription";
 import type {
+  CreateExpenseBody,
+  CreateExpenseResponse,
+  ExpenseSummaryResponse,
+  ExpensesResponse,
+  GetExpenseSummaryParams,
+  GetExpensesParams,
+} from "@/types/expense";
+import type {
   CreateResidentBody,
   CreateResidentResponse,
   GetResidentsParams,
@@ -61,7 +69,7 @@ import type {
 
 export const api = createApi({
   reducerPath: "api",
-  tagTypes: ["Hostel", "Dashboard", "Rent", "Room", "Resident", "User", "Complaint", "Plan", "Support", "Notification"],
+  tagTypes: ["Hostel", "Dashboard", "Rent", "Room", "Resident", "User", "Complaint", "Plan", "Support", "Notification", "Expense"],
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getMe: builder.query<MeResponse, void>({
@@ -551,6 +559,39 @@ export const api = createApi({
       }),
       invalidatesTags: ["Notification"],
     }),
+
+    getExpenses: builder.query<ExpensesResponse, GetExpensesParams>({
+      query: ({ hostelId, month, year }) => ({
+        url: "/expenses",
+        params: { hostelId, month, year },
+      }),
+      providesTags: (_result, _error, { hostelId }) => [
+        { type: "Expense", id: hostelId },
+      ],
+    }),
+
+    getExpenseSummary: builder.query<
+      ExpenseSummaryResponse,
+      GetExpenseSummaryParams
+    >({
+      query: ({ hostelId, hostelIds, month, year }) => ({
+        url: "/expenses/summary",
+        params: { hostelId, hostelIds, month, year },
+      }),
+      providesTags: ["Expense"],
+    }),
+
+    createExpense: builder.mutation<CreateExpenseResponse, CreateExpenseBody>({
+      query: (body) => ({
+        url: "/expenses",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { hostelId }) => [
+        { type: "Expense", id: hostelId },
+        "Expense",
+      ],
+    }),
   }),
 });
 
@@ -603,4 +644,8 @@ export const {
   useGetUnreadNotificationCountQuery,
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
+  useGetExpensesQuery,
+  useLazyGetExpenseSummaryQuery,
+  useLazyGetExpensesQuery,
+  useCreateExpenseMutation,
 } = api;

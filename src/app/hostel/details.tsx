@@ -219,9 +219,10 @@ export default function HostelDetailsScreen() {
 
             <View style={styles.buttonWrap}>
               <CustomButton
-                title={isSaving ? <CustomLoading size="sm" /> : "Create Hostel"}
+                title="Create Hostel"
                 onPress={handleSave}
                 disabled={!isValid || isSaving}
+                loading={isSaving}
               />
             </View>
           </ScrollView>

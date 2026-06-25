@@ -36,6 +36,13 @@ export function useGoogleSignIn() {
         showPlayServicesUpdateDialog: true,
       });
 
+      // Clear cached Google session so the account picker shows every time.
+      try {
+        await GoogleSignin.signOut();
+      } catch {
+        // No active Google session yet.
+      }
+
       const response = await GoogleSignin.signIn();
 
       if (!isSuccessResponse(response)) {

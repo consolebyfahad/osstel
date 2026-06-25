@@ -264,16 +264,17 @@ export default function EditHostelScreen() {
 
             <View style={styles.actions}>
               <CustomButton
-                title={
-                  isSaving ? <CustomLoading size="sm" /> : "Save Changes"
-                }
+                title="Save Changes"
                 onPress={handleSave}
                 disabled={!isValid || isBusy}
+                loading={isSaving}
               />
               <CustomButton
-                title={isDeleting ? "Deleting..." : "Delete Hostel"}
+                title="Delete Hostel"
                 onPress={handleDelete}
+                variant="destructive"
                 disabled={isBusy}
+                loading={isDeleting}
                 style={styles.deleteBtn}
               />
             </View>
@@ -339,7 +340,7 @@ function createStyles(
       gap: vs(12),
     },
     deleteBtn: {
-      backgroundColor: colors.error,
+      marginTop: vs(16),
     },
   });
 }

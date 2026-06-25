@@ -483,9 +483,10 @@ export default function EditProfileScreen() {
 
               <View style={styles.footer}>
                 <CustomButton
-                  title={isSaving ? "Saving..." : "Save Changes"}
+                  title="Save Changes"
                   onPress={handleSave}
                   disabled={!isValid || isSaving || isProcessingImage}
+                  loading={isSaving}
                 />
               </View>
             </ScrollView>

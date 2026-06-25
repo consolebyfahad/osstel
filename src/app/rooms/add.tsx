@@ -233,9 +233,10 @@ export default function AddRoom() {
 
               <View style={styles.buttonWrap}>
                 <CustomButton
-                  title={isSaving ? <CustomLoading size="sm" /> : "Save Room"}
+                  title="Save Room"
                   onPress={handleSave}
                   disabled={!isValid || isSaving}
+                  loading={isSaving}
                 />
               </View>
             </ScrollView>

@@ -41,6 +41,8 @@ export function buildRentReportData(
     year: number;
     scopeLabel: string;
     generatedBy: string;
+    totalExpenses?: number;
+    expenses?: RentCollectionReportData["expenses"];
   },
 ): RentCollectionReportData {
   const sections: RentReportHostelSection[] = responses.map((response) => ({
@@ -50,6 +52,9 @@ export function buildRentReportData(
     records: response.records,
   }));
 
+  const totals = mergeRentSummaries(sections.map((section) => section.summary));
+  const totalExpenses = params.totalExpenses ?? 0;
+
   return {
     month: params.month,
     year: params.year,
@@ -57,7 +62,12 @@ export function buildRentReportData(
     generatedAt: new Date().toISOString(),
     generatedBy: params.generatedBy,
     sections,
-    totals: mergeRentSummaries(sections.map((section) => section.summary)),
+    totals,
+    financials: {
+      totalExpenses,
+      netRemaining: totals.collected - totalExpenses,
+    },
+    expenses: params.expenses ?? [],
   };
 }
 

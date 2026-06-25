@@ -12,6 +12,7 @@ type PlanUpgradeCardProps = {
   isCurrent: boolean;
   showUpgrade: boolean;
   upgradeDisabled?: boolean;
+  actionLabel?: string;
   onUpgrade?: () => void;
 };
 
@@ -46,6 +47,7 @@ export default function PlanUpgradeCard({
   isCurrent,
   showUpgrade,
   upgradeDisabled = false,
+  actionLabel,
   onUpgrade,
 }: PlanUpgradeCardProps) {
   const { colors, fonts, isDark } = useTheme();
@@ -90,16 +92,33 @@ export default function PlanUpgradeCard({
       </View>
 
       {isCurrent ? (
-        <View style={styles.currentBtn}>
-          <Text style={styles.currentBtnText}>Current plan</Text>
-        </View>
+        showUpgrade ? (
+          <Pressable
+            style={[
+              styles.upgradeBtn,
+              upgradeDisabled && styles.upgradeBtnDisabled,
+            ]}
+            onPress={onUpgrade}
+            disabled={upgradeDisabled || !onUpgrade}
+          >
+            <Text style={styles.upgradeBtnText}>
+              {actionLabel ?? `Renew ${plan.name}`}
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={styles.currentBtn}>
+            <Text style={styles.currentBtnText}>Current plan</Text>
+          </View>
+        )
       ) : showUpgrade ? (
         <Pressable
           style={[styles.upgradeBtn, upgradeDisabled && styles.upgradeBtnDisabled]}
           onPress={onUpgrade}
           disabled={upgradeDisabled || !onUpgrade}
         >
-          <Text style={styles.upgradeBtnText}>Upgrade to {plan.name}</Text>
+          <Text style={styles.upgradeBtnText}>
+            {actionLabel ?? `Upgrade to ${plan.name}`}
+          </Text>
         </Pressable>
       ) : null}
     </View>

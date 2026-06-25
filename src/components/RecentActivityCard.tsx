@@ -45,7 +45,7 @@ function createStyles(
     },
     cardBorder: {
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? colors.white300 : colors.gray500,
+      borderBottomColor:  colors.border,
     },
     title: {
       fontSize: FONT_SIZES.md,

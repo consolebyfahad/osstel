@@ -147,9 +147,10 @@ export default function ChangePasswordScreen() {
               />
 
               <CustomButton
-                title={isLoading ? "Updating..." : "Update Password"}
+                title="Update Password"
                 onPress={handleSubmit}
-                disabled={!isValid || isLoading}
+                disabled={!isValid}
+                loading={isLoading}
               />
             </ScrollView>
           </View>

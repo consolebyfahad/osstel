@@ -1,5 +1,5 @@
 import type { UserRole } from "./role";
-import type { SubscriptionPlanId, TrialInfo } from "./subscription";
+import type { SubscriptionPlanId, TrialInfo, SubscriptionPeriodInfo } from "./subscription";
 import type { SubscriptionUsage } from "@/utils/subscription";
 import { unwrapApiResponse } from "@/utils/api";
 
@@ -42,10 +42,13 @@ export interface AuthUser {
   subscriptionPlan?: SubscriptionPlanId;
   baseSubscriptionPlan?: SubscriptionPlanId;
   trial?: TrialInfo | null;
+  subscription?: SubscriptionPeriodInfo | null;
   subscriptionUsage?: SubscriptionUsage;
   hostels?: UserHostel[];
   hostel?: UserHostel | null;
   room?: UserRoom | null;
+  checkInDate?: string | null;
+  tenancyId?: string | null;
 }
 
 export interface MeResponse {
@@ -65,10 +68,13 @@ export interface MeResponse {
     subscriptionPlan: SubscriptionPlanId;
     baseSubscriptionPlan?: SubscriptionPlanId;
     trial?: TrialInfo | null;
+    subscription?: SubscriptionPeriodInfo | null;
     subscriptionUsage?: SubscriptionUsage;
     hostels: UserHostel[];
     hostel: UserHostel | null;
     room: UserRoom | null;
+    checkInDate?: string | null;
+    tenancyId?: string | null;
   };
 }
 
@@ -192,6 +198,10 @@ export function toAuthUser(response: unknown): AuthUser {
       user.trial && typeof user.trial === "object"
         ? (user.trial as TrialInfo)
         : null,
+    subscription:
+      user.subscription && typeof user.subscription === "object"
+        ? (user.subscription as SubscriptionPeriodInfo)
+        : null,
     hostels: Array.isArray(user.hostels)
       ? (user.hostels as UserHostel[])
       : undefined,
@@ -217,10 +227,13 @@ export function meToAuthProfile(me: MeResponse["user"]): Partial<AuthUser> {
     subscriptionPlan: me.subscriptionPlan,
     baseSubscriptionPlan: me.baseSubscriptionPlan,
     trial: me.trial ?? null,
+    subscription: me.subscription ?? null,
     subscriptionUsage: me.subscriptionUsage,
     hostels: me.hostels,
     hostel: me.hostel,
     room: me.room,
+    checkInDate: me.checkInDate ?? undefined,
+    tenancyId: me.tenancyId ?? undefined,
   };
 }
 

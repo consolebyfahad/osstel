@@ -5,10 +5,9 @@ import HostelCard from "@/components/HostelCard";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useGetDashboardQuery, useGetHostelsQuery } from "../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
-import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
-import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { vs } from "@constants/fonts";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo } from "react";
 import CustomLoading from "@/components/CustomLoading";
@@ -16,7 +15,6 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -30,11 +28,8 @@ export default function HostelsList({
   showBackButton = false,
   listBottomPadding = vs(40),
 }: HostelsListProps) {
-  const { colors, fonts, isDark } = useTheme();
-  const styles = useMemo(
-    () => createStyles(colors, fonts, isDark),
-    [colors, fonts, isDark],
-  );
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(), []);
   const { data, isLoading, isFetching, refetch } = useGetHostelsQuery(undefined);
   const { data: dashboardData, refetch: refetchDashboard } =
     useGetDashboardQuery(undefined);
@@ -65,6 +60,23 @@ export default function HostelsList({
     router.push(`/hostel/${hostelId}`);
   };
 
+  const hostelCountLabel = `${hostels.length} hostel${hostels.length === 1 ? "" : "s"}`;
+
+  const headerRightSlot = (
+    <Pressable
+      style={styles.addBtn}
+      onPress={handleAddHostel}
+      accessibilityRole="button"
+      accessibilityLabel="Add hostel"
+    >
+      <MaterialCommunityIcons
+        name="plus"
+        size={vs(24)}
+        color={colors.primary}
+      />
+    </Pressable>
+  );
+
   if (isLoading) {
     return (
       <GradientBackground style={styles.container}>
@@ -84,6 +96,7 @@ export default function HostelsList({
           <ScreenHeader
             title="My Hostels"
             showBack={showBackButton}
+            rightSlot={headerRightSlot}
           />
           <EmptyState
             title="No hostels yet"
@@ -99,21 +112,12 @@ export default function HostelsList({
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="My Hostels" showBack={showBackButton} />
-
-        <View style={styles.listHeader}>
-        <Text style={styles.listSubtitle}>
-          {hostels.length} hostel{hostels.length === 1 ? "" : "s"}
-        </Text>
-        <Pressable style={styles.addChip} onPress={handleAddHostel}>
-          <MaterialCommunityIcons
-            name="plus"
-            size={vs(18)}
-            color={colors.primary}
-          />
-          <Text style={styles.addChipText}>Add</Text>
-        </Pressable>
-      </View>
+        <ScreenHeader
+          title="My Hostels"
+          showBack={showBackButton}
+          subtitle={hostelCountLabel}
+          rightSlot={headerRightSlot}
+        />
 
       <FlatList
         data={hostels}
@@ -141,7 +145,7 @@ export default function HostelsList({
   );
 }
 
-function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
+function createStyles() {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -155,31 +159,11 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       alignItems: "center",
       justifyContent: "center",
     },
-    listHeader: {
-      flexDirection: "row",
+    addBtn: {
+      width: vs(40),
+      height: vs(40),
       alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: vs(20),
-      paddingBottom: vs(12),
-    },
-    listSubtitle: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-    },
-    addChip: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(4),
-      backgroundColor: isDark ? colors.white100 : colors.primary100,
-      paddingHorizontal: vs(12),
-      paddingVertical: vs(8),
-      borderRadius: vs(20),
-    },
-    addChipText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.primary,
+      justifyContent: "center",
     },
     listContent: {
       paddingHorizontal: vs(20),

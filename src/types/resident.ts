@@ -15,6 +15,7 @@ export interface Resident {
   roomId: string;
   roomRent?: number | null;
   monthlyRent?: number | null;
+  securityDeposit?: number | null;
   hostelId: string;
   checkInDate: string;
   createdAt: string;
@@ -28,6 +29,7 @@ export interface CreateResidentBody {
   cnic?: string;
   roomNumber: string;
   monthlyRent?: number;
+  securityDeposit?: number;
   profileImage?: string;
   cnicFront?: string;
   cnicBack?: string;
@@ -42,6 +44,7 @@ export interface UpdateResidentBody {
   cnic?: string;
   roomNumber: string;
   monthlyRent?: number;
+  securityDeposit?: number;
   profileImage?: string;
   cnicFront?: string;
   cnicBack?: string;

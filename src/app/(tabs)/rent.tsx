@@ -174,22 +174,25 @@ function RentRecordCard({
 
       {record.status === "review" ? (
         <View style={styles.reviewActions}>
-          <Pressable
-            style={[styles.reviewBtn, styles.approveBtn]}
+          <CustomButton
+            title="Approve"
+            variant="success"
+            size="sm"
+            fullWidth={false}
+            style={styles.reviewActionBtn}
             disabled={isUpdating}
+            loading={isUpdating}
             onPress={() => onReview(record.id, true)}
-          >
-            <Text style={styles.approveBtnText}>
-              {isUpdating ? "..." : "Approve"}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.reviewBtn, styles.rejectBtn]}
+          />
+          <CustomButton
+            title="Reject"
+            variant="destructive"
+            size="sm"
+            fullWidth={false}
+            style={styles.reviewActionBtn}
             disabled={isUpdating}
             onPress={() => onReview(record.id, false)}
-          >
-            <Text style={styles.rejectBtnText}>Reject</Text>
-          </Pressable>
+          />
         </View>
       ) : null}
 
@@ -208,8 +211,9 @@ function RentRecordCard({
                 color={colors.primary}
               />
             }
-            title={isSendingAlert ? "Sending..." : "Send Alert"}
+            title="Send Alert"
             onPress={() => onSendAlert(record.id, record.resident.name)}
+            loading={isSendingAlert}
           />
           <CustomButton
             variant="success"
@@ -224,8 +228,9 @@ function RentRecordCard({
                 color={colors.success}
               />
             }
-            title={isUpdating ? "..." : "Mark as Paid"}
+            title="Mark as Paid"
             onPress={() => onMarkPaid(record.id, record.resident.name)}
+            loading={isUpdating}
           />
         </View>
       ) : null}
@@ -757,27 +762,8 @@ function createStyles(
       gap: vs(10),
       marginTop: vs(12),
     },
-    reviewBtn: {
+    reviewActionBtn: {
       flex: 1,
-      paddingVertical: vs(10),
-      borderRadius: vs(10),
-      alignItems: "center",
-    },
-    approveBtn: {
-      backgroundColor: colors.successBg,
-    },
-    rejectBtn: {
-      backgroundColor: colors.errorBg,
-    },
-    approveBtnText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.success,
-    },
-    rejectBtnText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.error,
     },
     pendingActions: {
       flexDirection: "row",

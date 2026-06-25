@@ -147,6 +147,7 @@ export default function EditResident() {
   const [fatherName, setFatherName] = useState("");
   const [fatherDigits, setFatherDigits] = useState("");
   const [agreedRent, setAgreedRent] = useState("");
+  const [securityDeposit, setSecurityDeposit] = useState("");
   const [residentUserId, setResidentUserId] = useState<string | null>(null);
 
   const {
@@ -217,12 +218,22 @@ export default function EditResident() {
       resident.fatherPhone ? phoneToDigits(resident.fatherPhone) : "",
     );
     setAgreedRent(String(getResidentMonthlyRent(resident)));
+    setSecurityDeposit(
+      resident.securityDeposit != null && resident.securityDeposit > 0
+        ? String(resident.securityDeposit)
+        : "",
+    );
     setResidentUserId(resident.userId ?? null);
     setInitialized(true);
   }, [resident, initialized]);
 
   const parsedAgreedRent = Number(agreedRent);
   const hasValidRent = parsedAgreedRent > 0;
+  const parsedSecurityDeposit =
+    securityDeposit.trim() === "" ? 0 : Number(securityDeposit);
+  const hasValidSecurityDeposit =
+    securityDeposit.trim() === "" ||
+    (!Number.isNaN(parsedSecurityDeposit) && parsedSecurityDeposit >= 0);
 
   const projectedRoomTotal = useMemo(() => {
     if (!selectedRoom || !hasValidRent || !resident) return null;
@@ -244,6 +255,7 @@ export default function EditResident() {
     phoneDigits.length >= 10 &&
     selectedRoom !== null &&
     hasValidRent &&
+    hasValidSecurityDeposit &&
     isEmptyOrCompleteCnic(cnic) &&
     isValidOptionalPhone(emergencyDigits) &&
     isValidOptionalPhone(fatherDigits);
@@ -293,6 +305,7 @@ export default function EditResident() {
         phone: formatPhoneForApi(phoneDigits),
         roomNumber: selectedRoom.roomNumber,
         monthlyRent: parsedAgreedRent,
+        securityDeposit: parsedSecurityDeposit,
         ...(cnicDigits.length === 13 ? { cnic: formatCnic(cnicDigits) } : {}),
         ...(profileImageValue !== undefined
           ? { profileImage: profileImageValue }
@@ -475,6 +488,19 @@ export default function EditResident() {
                       hint={`Room default is Rs ${selectedRoom.rent.toLocaleString()}/mo.`}
                     />
 
+                    <CustomInput
+                      label="Security Deposit (Rs)"
+                      placeholder="e.g. 10000"
+                      value={securityDeposit}
+                      onChangeText={(text) =>
+                        setSecurityDeposit(
+                          text.replace(/[^0-9]/g, "").slice(0, 8),
+                        )
+                      }
+                      keyboardType="number-pad"
+                      hint="One-time deposit collected at check-in. Leave blank if none."
+                    />
+
                     {projectedRoomTotal != null ? (
                       <View style={styles.rentSummaryCard}>
                         <Text style={styles.rentSummaryLabel}>
@@ -543,18 +569,19 @@ export default function EditResident() {
 
                 <View style={styles.buttonWrap}>
                   <CustomButton
-                    title={
-                      isSaving ? <CustomLoading size="sm" /> : "Save Changes"
-                    }
+                    title="Save Changes"
                     onPress={handleSave}
                     disabled={!isValid || isSaving || isRemoving}
+                    loading={isSaving}
                   />
                 </View>
 
                 <CustomButton
-                  title={isRemoving ? "Removing..." : "Remove Resident"}
+                  title="Remove Resident"
                   onPress={handleRemove}
+                  variant="destructive"
                   disabled={isSaving || isRemoving}
+                  loading={isRemoving}
                   style={styles.deleteBtn}
                 />
               </>
@@ -692,7 +719,6 @@ function createStyles(
       marginTop: vs(8),
     },
     deleteBtn: {
-      backgroundColor: colors.error,
       marginTop: vs(16),
     },
     loadingWrap: {

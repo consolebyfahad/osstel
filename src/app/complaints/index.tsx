@@ -258,13 +258,15 @@ function ManagerComplaintsView() {
     return (
       <GradientBackground style={styles.container}>
         <SafeAreaView style={styles.safeArea} edges={["top"]}>
-          <ScreenHeader title="Complaints" showBack />
-          <EmptyState
-            title="No hostels yet"
-            description="Add a hostel first to view complaints."
-            actionLabel="Go to Hostels"
-            onAction={() => router.push("/(tabs)/hostels")}
-          />
+          <View style={styles.flex}>
+            <ScreenHeader title="Complaints" showBack />
+            <EmptyState
+              title="No hostels yet"
+              description="Add a hostel first to view complaints."
+              actionLabel="Go to Hostels"
+              onAction={() => router.push("/(tabs)/hostels")}
+            />
+          </View>
         </SafeAreaView>
       </GradientBackground>
     );
@@ -273,81 +275,97 @@ function ManagerComplaintsView() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.staticHeader}>
-        <ScreenHeader title="Complaints" showBack />
+        <View style={styles.flex}>
+          <ScreenHeader title="Complaints" showBack />
 
-        <HostelDropdown
-          hostels={hostelOptions}
-          value={selectedHostelId}
-          onChange={setSelectedHostelId}
-          showAllOption={false}
-        />
-
-        {summary ? (
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryChipValue}>{summary.open}</Text>
-              <Text style={styles.summaryChipLabel}>Open</Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryChipValue}>{summary.in_progress}</Text>
-              <Text style={styles.summaryChipLabel}>In Progress</Text>
-            </View>
-            <View style={styles.summaryChip}>
-              <Text style={styles.summaryChipValue}>{summary.resolved}</Text>
-              <Text style={styles.summaryChipLabel}>Resolved</Text>
-            </View>
-          </View>
-        ) : null}
-
-        <AnimatedFilterBar
-          filters={COMPLAINT_FILTERS}
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          style={styles.filterBarSpacing}
-        />
-      </View>
-
-      {isLoading ? (
-        <View style={styles.loadingWrap}>
-          <CustomLoading size="lg" />
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isFetching && !isLoading}
-              onRefresh={refetch}
-              tintColor={colors.primary}
-            />
-          }
-          contentContainerStyle={[
-            styles.scrollContent,
-            isEmpty && styles.scrollContentEmpty,
-          ]}
-        >
-          {isEmpty ? (
-            <EmptyState
-              title="No complaints"
-              description={emptyMessage}
-              size="sm"
-            />
-          ) : (
-            complaints.map((complaint) => (
-              <ComplaintCard
-                key={complaint.id}
-                complaint={complaint}
-                styles={styles}
-                colors={colors}
-                isUpdating={updatingComplaintId === complaint.id}
-                onStatusChange={handleStatusChange}
+          <ScrollView
+            style={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isFetching && !isLoading}
+                onRefresh={refetch}
+                tintColor={colors.primary}
               />
-            ))
-          )}
-        </ScrollView>
-      )}
+            }
+            contentContainerStyle={[
+              styles.scrollContent,
+              isEmpty && !isLoading && styles.scrollContentEmpty,
+            ]}
+          >
+            <View style={styles.infoCard}>
+              <Ionicons
+                name="chatbox-ellipses-outline"
+                size={vs(24)}
+                color={colors.primary}
+              />
+              <Text style={styles.infoTitle}>Complaint Management</Text>
+              <Text style={styles.infoText}>
+                Track and resolve resident issues for each hostel.
+              </Text>
+            </View>
+
+            <View style={styles.dropdownWrap}>
+              <HostelDropdown
+                hostels={hostelOptions}
+                value={selectedHostelId}
+                onChange={setSelectedHostelId}
+                showAllOption={false}
+              />
+            </View>
+
+            {summary ? (
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryChip}>
+                  <Text style={styles.summaryChipValue}>{summary.open}</Text>
+                  <Text style={styles.summaryChipLabel}>Open</Text>
+                </View>
+                <View style={styles.summaryChip}>
+                  <Text style={styles.summaryChipValue}>
+                    {summary.in_progress}
+                  </Text>
+                  <Text style={styles.summaryChipLabel}>In Progress</Text>
+                </View>
+                <View style={styles.summaryChip}>
+                  <Text style={styles.summaryChipValue}>{summary.resolved}</Text>
+                  <Text style={styles.summaryChipLabel}>Resolved</Text>
+                </View>
+              </View>
+            ) : null}
+
+            <Text style={styles.sectionTitle}>All complaints</Text>
+
+            <AnimatedFilterBar
+              filters={COMPLAINT_FILTERS}
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              style={styles.filterBarSpacing}
+            />
+
+            {isLoading ? (
+              <View style={styles.loadingWrap}>
+                <CustomLoading size="lg" />
+              </View>
+            ) : isEmpty ? (
+              <EmptyState
+                title="No complaints"
+                description={emptyMessage}
+                size="sm"
+              />
+            ) : (
+              complaints.map((complaint) => (
+                <ComplaintCard
+                  key={complaint.id}
+                  complaint={complaint}
+                  styles={styles}
+                  colors={colors}
+                  isUpdating={updatingComplaintId === complaint.id}
+                  onStatusChange={handleStatusChange}
+                />
+              ))
+            )}
+          </ScrollView>
+        </View>
       </SafeAreaView>
     </GradientBackground>
   );
@@ -366,27 +384,8 @@ function createStyles(
       flex: 1,
       backgroundColor: "transparent",
     },
-    staticHeader: {
-      paddingHorizontal: vs(20),
-      paddingTop: vs(8),
-      paddingBottom: vs(4),
-    },
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: vs(12),
-    },
-    backBtn: {
-      width: vs(40),
-      height: vs(40),
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    title: {
-      fontSize: FONT_SIZES.title,
-      fontFamily: fonts.bold,
-      color: colors.text,
+    flex: {
+      flex: 1,
     },
     scroll: {
       flex: 1,
@@ -397,12 +396,45 @@ function createStyles(
     },
     scrollContentEmpty: {
       flexGrow: 1,
-      justifyContent: "center",
+    },
+    infoCard: {
+      backgroundColor: colors.primary100,
+      borderRadius: vs(16),
+      padding: vs(18),
+      alignItems: "center",
+      marginBottom: vs(20),
+      borderWidth: 1,
+      borderColor: colors.primary200,
+    },
+    infoTitle: {
+      fontSize: FONT_SIZES.lg,
+      fontFamily: fonts.bold,
+      color: colors.text,
+      marginTop: vs(10),
+      marginBottom: vs(6),
+    },
+    infoText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      textAlign: "center",
+      lineHeight: vs(20),
+    },
+    dropdownWrap: {
+      marginBottom: vs(16),
+    },
+    sectionTitle: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.gray200,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: vs(10),
+      marginLeft: vs(4),
     },
     loadingWrap: {
-      flex: 1,
+      paddingVertical: vs(24),
       alignItems: "center",
-      justifyContent: "center",
     },
     noAccessWrap: {
       flex: 1,

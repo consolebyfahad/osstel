@@ -12,6 +12,7 @@ import ProfileAvatar from "@/components/ProfileAvatar";
 import CustomButton from "@/components/CustomButton";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
+import SectionCard, { getCardShadow } from "@/components/SectionCard";
 import { USER_ROLES, type UserRole } from "@/types/role";
 import {
   getPlanDisplayName,
@@ -283,26 +284,27 @@ export default function Profile() {
           </View>
 
           {isManager ? (
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{roomCount}</Text>
-                <Text style={styles.statLabel}>Rooms</Text>
+            <SectionCard title="Overview" contentStyle={styles.statsContent}>
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>{roomCount}</Text>
+                  <Text style={styles.statLabel}>Rooms</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>{bedCount}</Text>
+                  <Text style={styles.statLabel}>Beds</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statValue}>
+                    {monthlyRent > 0 ? `${Math.round(monthlyRent / 1000)}k` : "0"}
+                  </Text>
+                  <Text style={styles.statLabel}>Rent/mo</Text>
+                </View>
               </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>{bedCount}</Text>
-                <Text style={styles.statLabel}>Beds</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statValue}>
-                  {monthlyRent > 0 ? `${Math.round(monthlyRent / 1000)}k` : "0"}
-                </Text>
-                <Text style={styles.statLabel}>Rent/mo</Text>
-              </View>
-            </View>
+            </SectionCard>
           ) : null}
 
-          <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.sectionCard}>
+          <SectionCard title="Account">
             <MenuRow
               icon="person-outline"
               label="Edit Profile"
@@ -365,12 +367,9 @@ export default function Profile() {
                 />
               </>
             ) : null}
-          </View>
+          </SectionCard>
 
-          <Text style={styles.sectionTitle}>
-            {isManager ? "Hostel" : "My Stay"}
-          </Text>
-          <View style={styles.sectionCard}>
+          <SectionCard title={isManager ? "Hostel" : "My Stay"}>
             {isManager ? (
               <>
                 <MenuRow
@@ -391,6 +390,15 @@ export default function Profile() {
                   label="All Residents"
                   value="View resident list"
                   onPress={() => router.push("/residents")}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="wallet-outline"
+                  label="Expenses"
+                  value="Track hostel spending"
+                  onPress={() => router.push("/expenses")}
                   styles={styles}
                   colors={colors}
                 />
@@ -445,10 +453,9 @@ export default function Profile() {
                 />
               </>
             )}
-          </View>
+          </SectionCard>
 
-          <Text style={styles.sectionTitle}>Support</Text>
-          <View style={styles.sectionCard}>
+          <SectionCard title="Support">
             <MenuRow
               icon="notifications-outline"
               label="Notifications"
@@ -488,19 +495,10 @@ export default function Profile() {
               styles={styles}
               colors={colors}
             />
-          </View>
+          </SectionCard>
 
-          <Text style={styles.sectionTitle}>App</Text>
-          <View style={styles.sectionCard}>
-            <MenuRow
-              icon="phone-portrait-outline"
-              label="App Version"
-              value="1.0.0"
-              styles={styles}
-              colors={colors}
-            />
-          </View>
-
+      
+<Text style={styles.appVersion}>App Version: 1.0.0</Text>
           <CustomButton
             title="Sign out"
             variant="destructive"
@@ -514,6 +512,8 @@ export default function Profile() {
 }
 
 function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
+  const cardShadow = getCardShadow(colors, isDark);
+
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -530,6 +530,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       paddingBottom: vs(110),
     },
     heroCard: {
+      ...cardShadow,
       backgroundColor: isDark ? colors.white100 : colors.primary100,
       borderRadius: vs(20),
       padding: vs(24),
@@ -604,19 +605,20 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     statusTextPending: {
       color: colors.warning,
     },
+    statsContent: {
+      paddingHorizontal: vs(14),
+      paddingBottom: vs(14),
+    },
     statsRow: {
       flexDirection: "row",
       gap: vs(10),
-      marginBottom: vs(24),
     },
     statCard: {
       flex: 1,
-      backgroundColor: colors.white,
+      backgroundColor: colors.white100,
       borderRadius: vs(14),
       paddingVertical: vs(14),
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.white100,
     },
     statValue: {
       fontSize: FONT_SIZES.xl,
@@ -653,23 +655,6 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontSize: FONT_SIZES.xs,
       fontFamily: fonts.semiBold,
       color: colors.primary,
-    },
-    sectionTitle: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.gray200,
-      textTransform: "uppercase",
-      letterSpacing: 0.8,
-      marginBottom: vs(10),
-      marginLeft: vs(4),
-    },
-    sectionCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
-      borderWidth: 1,
-      borderColor: colors.white100,
-      marginBottom: vs(24),
-      overflow: "hidden",
     },
     menuRow: {
       flexDirection: "row",
@@ -713,6 +698,14 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       height: 1,
       backgroundColor: colors.white100,
       marginLeft: vs(62),
+    },
+    appVersion: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      textAlign: "right",
+
+      marginBottom: vs(4),
     },
   });
 }

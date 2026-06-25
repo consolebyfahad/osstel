@@ -16,6 +16,8 @@ export interface RentRoom {
 export interface RentRecord {
   id: string;
   amount: number;
+  month?: number;
+  year?: number;
   status: RentStatus;
   dueDate: string;
   isOverdue: boolean;
