@@ -91,7 +91,7 @@ function createStyles(
     },
     darkOverlay: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      backgroundColor: colors.overlay,
     },
     safeArea: {
       flex: 1,

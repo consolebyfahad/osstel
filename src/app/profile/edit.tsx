@@ -24,7 +24,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -75,10 +75,12 @@ function parseDateOfBirth(value?: string) {
 export default function EditProfileScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
   const { colors, fonts } = useTheme();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const styles = useMemo(
-    () => createStyles(colors, fonts, insets.bottom),
-    [colors, fonts, insets.bottom],
+    () => createStyles(colors, fonts, insets.bottom, keyboardHeight),
+    [colors, fonts, insets.bottom, keyboardHeight],
   );
   const authUser = useSelector((state: RootState) => state.auth.user);
 
@@ -95,6 +97,48 @@ export default function EditProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateDraft, setDateDraft] = useState(new Date(1995, 0, 1));
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const fieldPositions = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const registerFieldPosition = useCallback((key: string, y: number) => {
+    fieldPositions.current[key] = y;
+  }, []);
+
+  const scrollToField = useCallback((key: string) => {
+    const y = fieldPositions.current[key];
+    if (y === undefined) return;
+
+    const scroll = () => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, y - vs(20)),
+        animated: true,
+      });
+    };
+
+    requestAnimationFrame(scroll);
+
+    if (Platform.OS === "android") {
+      setTimeout(scroll, 120);
+    }
+  }, []);
 
   useEffect(() => {
     const user = meData?.user;
@@ -247,6 +291,7 @@ export default function EditProfileScreen() {
             <ScreenHeader title="Edit Profile" showBack />
 
             <ScrollView
+              ref={scrollRef}
               style={styles.scroll}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
@@ -267,7 +312,12 @@ export default function EditProfileScreen() {
 
               <Text style={styles.avatarHint}>Tap to change profile photo</Text>
 
-              <View style={styles.field}>
+              <View
+                style={styles.field}
+                onLayout={(event) =>
+                  registerFieldPosition("name", event.nativeEvent.layout.y)
+                }
+              >
                 <Text style={styles.label}>Full Name</Text>
                 <TextInput
                   style={styles.input}
@@ -276,6 +326,7 @@ export default function EditProfileScreen() {
                   value={name}
                   onChangeText={setName}
                   maxLength={60}
+                  onFocus={() => scrollToField("name")}
                 />
               </View>
 
@@ -294,7 +345,12 @@ export default function EditProfileScreen() {
                 </Text>
               </View>
 
-              <View style={styles.field}>
+              <View
+                style={styles.field}
+                onLayout={(event) =>
+                  registerFieldPosition("email", event.nativeEvent.layout.y)
+                }
+              >
                 <Text style={styles.label}>Email Address</Text>
                 <TextInput
                   style={styles.input}
@@ -305,10 +361,16 @@ export default function EditProfileScreen() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  onFocus={() => scrollToField("email")}
                 />
               </View>
 
-              <View style={styles.field}>
+              <View
+                style={styles.field}
+                onLayout={(event) =>
+                  registerFieldPosition("address", event.nativeEvent.layout.y)
+                }
+              >
                 <Text style={styles.label}>Address</Text>
                 <TextInput
                   style={[styles.input, styles.multilineInput]}
@@ -317,6 +379,7 @@ export default function EditProfileScreen() {
                   value={address}
                   onChangeText={setAddress}
                   multiline
+                  onFocus={() => scrollToField("address")}
                 />
               </View>
 
@@ -353,7 +416,12 @@ export default function EditProfileScreen() {
                 ) : null}
               </View>
 
-              <View style={styles.field}>
+              <View
+                style={styles.field}
+                onLayout={(event) =>
+                  registerFieldPosition("cnic", event.nativeEvent.layout.y)
+                }
+              >
                 <Text style={styles.label}>CNIC</Text>
                 <TextInput
                   style={styles.input}
@@ -363,8 +431,17 @@ export default function EditProfileScreen() {
                   onChangeText={handleCnicChange}
                   keyboardType="number-pad"
                   maxLength={CNIC_FORMATTED_LENGTH}
+                  onFocus={() => scrollToField("cnic")}
                 />
                 <Text style={styles.hint}>Format: 35201-1234567-1</Text>
+              </View>
+
+              <View style={styles.footer}>
+                <CustomButton
+                  title={isSaving ? "Saving..." : "Save Changes"}
+                  onPress={handleSave}
+                  disabled={!isValid || isSaving || isProcessingImage}
+                />
               </View>
             </ScrollView>
 
@@ -409,14 +486,6 @@ export default function EditProfileScreen() {
                 </Pressable>
               </Pressable>
             </Modal>
-
-            <View style={styles.footer}>
-              <CustomButton
-                title={isSaving ? "Saving..." : "Save Changes"}
-                onPress={handleSave}
-                disabled={!isValid || isSaving || isProcessingImage}
-              />
-            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -428,7 +497,15 @@ function createStyles(
   colors: AppColors,
   fonts: typeof FONTS,
   bottomInset: number,
+  keyboardHeight: number,
 ) {
+  const keyboardPadding =
+    keyboardHeight > 0
+      ? Platform.OS === "ios"
+        ? vs(16)
+        : Math.max(keyboardHeight - bottomInset + vs(16), vs(16))
+      : 0;
+
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -474,9 +551,10 @@ function createStyles(
       flex: 1,
     },
     scrollContent: {
+      flexGrow: 1,
       paddingHorizontal: vs(20),
       paddingTop: vs(8),
-      paddingBottom: vs(24),
+      paddingBottom: Math.max(bottomInset, vs(20)) + keyboardPadding,
     },
     avatarHint: {
       textAlign: "center",
@@ -564,7 +642,7 @@ function createStyles(
     },
     dateModalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      backgroundColor: colors.overlay,
       justifyContent: "flex-end",
     },
     dateModalSheet: {
@@ -616,12 +694,8 @@ function createStyles(
       height: Platform.OS === "ios" ? vs(216) : vs(180),
     },
     footer: {
-      paddingHorizontal: vs(20),
+      marginTop: vs(8),
       paddingTop: vs(12),
-      paddingBottom: Math.max(bottomInset, vs(20)),
-      borderTopWidth: 1,
-      borderTopColor: colors.white100,
-      backgroundColor: "transparent",
     },
   });
 }

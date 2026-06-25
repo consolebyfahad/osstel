@@ -543,13 +543,13 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       borderRadius: vs(20),
     },
     statusOpen: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
     },
     statusInProgress: {
-      backgroundColor: isDark ? colors.primary100 : "#EFF6FF",
+      backgroundColor: colors.infoBg,
     },
     statusResolved: {
-      backgroundColor: isDark ? colors.secondary100 : "#F0FDF4",
+      backgroundColor: colors.successBg,
     },
     statusText: {
       fontSize: FONT_SIZES.xs,

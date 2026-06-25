@@ -26,6 +26,7 @@ type CustomInputProps = {
   autoCorrect?: boolean;
   returnKeyType?: ReturnKeyType;
   onSubmitEditing?: () => void;
+  onFocus?: () => void;
   maxLength?: number;
   leftAdornment?: ReactNode;
 };
@@ -42,6 +43,7 @@ export default function CustomInput({
   autoCorrect = false,
   returnKeyType = "next",
   onSubmitEditing,
+  onFocus,
   maxLength,
   leftAdornment,
 }: CustomInputProps) {
@@ -72,6 +74,7 @@ export default function CustomInput({
           autoCorrect={autoCorrect}
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
+          onFocus={onFocus}
           maxLength={maxLength}
         />
         {secureTextEntry ? (

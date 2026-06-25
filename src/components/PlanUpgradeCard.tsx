@@ -24,7 +24,7 @@ function getVariantStyles(
     return {
       borderColor: colors.warning,
       accent: colors.warning,
-      chipBg: isDark ? "rgba(237, 161, 47, 0.18)" : "#FFFBEB",
+      chipBg: colors.warningBg,
     };
   }
   if (planId === "standard") {
@@ -194,7 +194,7 @@ function createStyles(
     upgradeBtnText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.bold,
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
   });
 }

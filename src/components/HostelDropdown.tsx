@@ -49,7 +49,7 @@ export default function HostelDropdown({
     ];
   }, [hostels, showAllOption]);
 
-  if (hostels.length === 0) return null;
+  if (hostels.length <= 1) return null;
 
   return (
     <View style={styles.wrapper}>

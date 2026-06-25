@@ -107,7 +107,7 @@ function createStyles(
     actionText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.white,
+      color: colors.onPrimary,
     },
   });
 }

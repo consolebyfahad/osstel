@@ -565,7 +565,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     dueBanner: {
       flexDirection: "row",
       gap: vs(10),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
       borderWidth: 1,
       borderColor: colors.warning,
       borderRadius: vs(14),
@@ -620,16 +620,16 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       borderRadius: vs(20),
     },
     statusPaid: {
-      backgroundColor: isDark ? colors.secondary100 : "#DCFCE7",
+      backgroundColor: colors.successBg,
     },
     statusReview: {
-      backgroundColor: isDark ? colors.primary100 : "#DBEAFE",
+      backgroundColor: colors.infoBg,
     },
     statusPending: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FEF3C7",
+      backgroundColor: colors.warningBg,
     },
     statusRejected: {
-      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2",
+      backgroundColor: colors.errorBg,
     },
     statusText: {
       fontSize: FONT_SIZES.xs,
@@ -651,7 +651,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       borderRadius: vs(14),
       borderWidth: 1,
       borderColor: colors.white100,
-      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : colors.white100,
+      backgroundColor: isDark ? colors.surfaceMuted : colors.white100,
       padding: vs(12),
       marginBottom: vs(12),
       gap: vs(10),
@@ -730,7 +730,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     primaryBtnText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.white,
+      color: colors.onPrimary,
     },
     historyHeader: {
       flexDirection: "row",
@@ -814,7 +814,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     modalOverlay: {
       flex: 1,
       justifyContent: "flex-end",
-      backgroundColor: "rgba(0,0,0,0.45)",
+      backgroundColor: colors.overlay,
     },
     modalCard: {
       backgroundColor: colors.white,

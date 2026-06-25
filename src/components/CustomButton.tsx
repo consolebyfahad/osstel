@@ -1,18 +1,31 @@
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
-import { FONT_SIZES, FONTS } from "@constants/fonts";
+import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { useMemo, type ReactNode } from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
+
+type CustomButtonProps = {
+  title: string | ReactNode;
+  onPress: () => void | Promise<void>;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+};
 
 export default function CustomButton({
   title,
   onPress,
   disabled = false,
-}: {
-  title: string | ReactNode;
-  onPress: () => void | Promise<void>;
-  disabled?: boolean;
-}) {
+  style,
+  textStyle,
+}: CustomButtonProps) {
   const { colors, fonts } = useTheme();
   const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
 
@@ -23,11 +36,16 @@ export default function CustomButton({
 
   return (
     <TouchableOpacity
-      style={[styles.button, disabled && styles.buttonDisabled]}
+      style={[styles.button, disabled && styles.buttonDisabled, style]}
       onPress={handlePress}
       disabled={disabled}
+      activeOpacity={0.85}
     >
-      <Text style={styles.buttonText}>{title}</Text>
+      {typeof title === "string" ? (
+        <Text style={[styles.buttonText, textStyle]}>{title}</Text>
+      ) : (
+        title
+      )}
     </TouchableOpacity>
   );
 }
@@ -37,15 +55,15 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
     button: {
       backgroundColor: colors.primary,
       width: "100%",
-      height: 52,
-      borderRadius: 12,
+      paddingVertical: vs(14),
+      borderRadius: vs(12),
       alignItems: "center",
       justifyContent: "center",
-      shadowColor: colors.primary,
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
-      elevation: 3,
+      shadowOpacity: 0.18,
+      shadowRadius: 8,
+      elevation: 4,
     },
     buttonDisabled: {
       backgroundColor: colors.gray100,
@@ -54,7 +72,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
       elevation: 0,
     },
     buttonText: {
-      color: colors.white,
+      color: colors.onPrimary,
       fontSize: FONT_SIZES.xl,
       fontFamily: fonts.semiBold,
     },

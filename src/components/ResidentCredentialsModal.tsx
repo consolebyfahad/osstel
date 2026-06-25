@@ -102,7 +102,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     overlay: {
       flex: 1,
       justifyContent: "flex-end",
-      backgroundColor: "rgba(0,0,0,0.45)",
+      backgroundColor: colors.overlay,
     },
     card: {
       backgroundColor: colors.white,

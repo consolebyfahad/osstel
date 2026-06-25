@@ -1,3 +1,4 @@
+import { COLORS } from "@constants/colors";
 import { Images } from "@constants/images";
 import { vs } from "@constants/fonts";
 import { router } from "expo-router";
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#000000",
+    backgroundColor: COLORS.dark.background,
   },
   logoWrap: {
     alignItems: "center",

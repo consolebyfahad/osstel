@@ -1,6 +1,7 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import CustomLoading from "@/components/CustomLoading";
+import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useCreateHostelRoomMutation } from "../../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -82,7 +83,8 @@ export default function AddRoom() {
 
   if (!hostelId) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.inner}>
           <ScreenHeader title="Add Room" showBack />
           <View style={styles.missingHostelWrap}>
@@ -96,11 +98,13 @@ export default function AddRoom() {
           </View>
         </View>
       </SafeAreaView>
+    </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.inner}>
         <ScreenHeader title="Add Room" showBack />
 
@@ -164,6 +168,7 @@ export default function AddRoom() {
         </ScrollView>
       </View>
     </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -175,7 +180,10 @@ function createStyles(
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     inner: {
       flex: 1,

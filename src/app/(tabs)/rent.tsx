@@ -603,11 +603,11 @@ function createStyles(
       borderColor: isDark ? colors.white300 : colors.white100,
     },
     summaryCollected: {
-      backgroundColor: isDark ? colors.secondary100 : "#F0FDF4",
+      backgroundColor: colors.successBg,
       borderColor: isDark ? colors.secondary : colors.success,
     },
     summaryPending: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.12)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
       borderColor: colors.warning,
     },
     summaryLabel: {
@@ -686,7 +686,7 @@ function createStyles(
       width: vs(80),
       height: vs(80),
       borderRadius: vs(18),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFEDD5",
+      backgroundColor: colors.warningBg,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: vs(20),
@@ -768,13 +768,13 @@ function createStyles(
       borderRadius: vs(20),
     },
     statusPaid: {
-      backgroundColor: isDark ? colors.secondary100 : "#DCFCE7",
+      backgroundColor: colors.successBg,
     },
     statusReview: {
-      backgroundColor: isDark ? colors.primary100 : "#DBEAFE",
+      backgroundColor: colors.infoBg,
     },
     statusPending: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FEF3C7",
+      backgroundColor: colors.warningBg,
     },
     statusText: {
       fontSize: FONT_SIZES.xs,
@@ -801,10 +801,10 @@ function createStyles(
       alignItems: "center",
     },
     approveBtn: {
-      backgroundColor: isDark ? colors.secondary100 : "#DCFCE7",
+      backgroundColor: colors.successBg,
     },
     rejectBtn: {
-      backgroundColor: isDark ? "rgba(230, 80, 71, 0.15)" : "#FEE2E2",
+      backgroundColor: colors.errorBg,
     },
     approveBtnText: {
       fontSize: FONT_SIZES.sm,

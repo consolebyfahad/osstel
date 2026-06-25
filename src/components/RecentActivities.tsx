@@ -1,16 +1,19 @@
 import type { RecentActivity } from "@/types/dashboard";
 import EmptyState from "@/components/EmptyState";
+import RecentActivityCard from "@/components/RecentActivityCard";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type RecentActivitiesProps = {
   title?: string;
   activities: RecentActivity[];
   emptyMessage?: string;
   isLoading?: boolean;
+  showSectionTitle?: boolean;
+  onSeeAllPress?: () => void;
 };
 
 export default function RecentActivities({
@@ -18,21 +21,32 @@ export default function RecentActivities({
   activities,
   emptyMessage = "No recent activities",
   isLoading = false,
+  showSectionTitle = true,
+  onSeeAllPress,
 }: RecentActivitiesProps) {
   const { colors, fonts, isDark } = useTheme();
   const styles = useMemo(
-    () => createStyles(colors, fonts, isDark),
-    [colors, fonts, isDark],
+    () => createStyles(colors, fonts, isDark, showSectionTitle),
+    [colors, fonts, isDark, showSectionTitle],
   );
   const isEmpty = !isLoading && activities.length === 0;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      {showSectionTitle ? (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          {onSeeAllPress ? (
+            <Pressable onPress={onSeeAllPress} hitSlop={8}>
+              <Text style={styles.seeAllText}>See all</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
-      <View style={[styles.card, (isEmpty || isLoading) && styles.cardEmpty]}>
+      <View style={[styles.listCard, (isEmpty || isLoading) && styles.listCardEmpty]}>
         {isLoading ? (
-          <Text style={styles.emptyText}>Loading activities...</Text>
+          <Text style={styles.loadingText}>Loading activities...</Text>
         ) : isEmpty ? (
           <EmptyState
             title={emptyMessage}
@@ -41,23 +55,11 @@ export default function RecentActivities({
           />
         ) : (
           activities.map((activity, index) => (
-            <View
+            <RecentActivityCard
               key={activity.id}
-              style={[
-                styles.activityRow,
-                index < activities.length - 1 && styles.activityRowBorder,
-              ]}
-            >
-              <Text style={styles.activityTitle}>{activity.title}</Text>
-              {activity.description ? (
-                <Text style={styles.activityDescription}>
-                  {activity.description}
-                </Text>
-              ) : null}
-              {activity.timestamp ? (
-                <Text style={styles.activityTime}>{activity.timestamp}</Text>
-              ) : null}
-            </View>
+              activity={activity}
+              showBorder={index < activities.length - 1}
+            />
           ))
         )}
       </View>
@@ -65,18 +67,34 @@ export default function RecentActivities({
   );
 }
 
-function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
+function createStyles(
+  colors: AppColors,
+  fonts: typeof FONTS,
+  isDark: boolean,
+  showSectionTitle: boolean,
+) {
   return StyleSheet.create({
     section: {
-      marginTop: 28,
+      marginTop: showSectionTitle ? 28 : 0,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 14,
     },
     sectionTitle: {
       fontSize: FONT_SIZES.xl,
       fontFamily: fonts.bold,
       color: colors.text,
-      marginBottom: 14,
+      flex: 1,
     },
-    card: {
+    seeAllText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.primary,
+    },
+    listCard: {
       backgroundColor: isDark ? colors.white200 : colors.background,
       borderRadius: 16,
       borderWidth: isDark ? 1 : 0,
@@ -87,7 +105,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       shadowRadius: isDark ? 8 : 6,
       elevation: isDark ? 3 : 2,
     },
-    cardEmpty: {
+    listCardEmpty: {
       minHeight: 120,
       alignItems: "center",
       justifyContent: "center",
@@ -98,36 +116,11 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     emptyState: {
       paddingVertical: vs(8),
     },
-    emptyText: {
+    loadingText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.regular,
       color: colors.gray200,
       textAlign: "center",
-    },
-    activityRow: {
-      paddingVertical: 14,
-      paddingHorizontal: 16,
-    },
-    activityRowBorder: {
-      borderBottomWidth: 1,
-      borderBottomColor: isDark ? colors.white300 : colors.gray,
-    },
-    activityTitle: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    activityDescription: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.regular,
-      color: colors.gray200,
-      marginBottom: 4,
-    },
-    activityTime: {
-      fontSize: FONT_SIZES.xs,
-      fontFamily: fonts.medium,
-      color: colors.gray100,
     },
   });
 }

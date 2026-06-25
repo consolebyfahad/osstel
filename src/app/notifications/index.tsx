@@ -118,7 +118,7 @@ export default function NotificationsScreen() {
 
         {isLoading ? (
           <View style={styles.loadingWrap}>
-            <CustomLoading size="md" />
+            <CustomLoading size="xxxxxxxxxxxxl" />
           </View>
         ) : (
           <ScrollView

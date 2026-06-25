@@ -629,7 +629,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       width: vs(36),
       height: vs(36),
       borderRadius: vs(10),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -670,7 +670,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     emptyActionText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.white,
+      color: colors.onPrimary,
     },
   });
 }

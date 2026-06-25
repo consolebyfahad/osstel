@@ -11,6 +11,16 @@ const SIZES = {
   lg: vs(56),
   xl: vs(72),
   xxl: vs(96),
+  xxxl: vs(120),
+  xxxxl: vs(144),
+  xxxxxl: vs(168),
+  xxxxxxl: vs(192),
+  xxxxxxxl: vs(216),
+  xxxxxxxxl: vs(240),
+  xxxxxxxxxl: vs(264),
+  xxxxxxxxxxl: vs(288),
+  xxxxxxxxxxxl: vs(312),
+  xxxxxxxxxxxxl: vs(336),
 } as const;
 
 type LoadingSize = keyof typeof SIZES;

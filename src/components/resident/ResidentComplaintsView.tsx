@@ -460,13 +460,13 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       borderRadius: vs(20),
     },
     statusOpen: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.2)" : "#FEF3C7",
+      backgroundColor: colors.warningBg,
     },
     statusInProgress: {
-      backgroundColor: isDark ? "rgba(93, 183, 222, 0.2)" : "#DBEAFE",
+      backgroundColor: colors.infoBg,
     },
     statusResolved: {
-      backgroundColor: isDark ? "rgba(34, 197, 94, 0.2)" : "#DCFCE7",
+      backgroundColor: colors.successBg,
     },
     statusText: {
       fontSize: FONT_SIZES.xs,

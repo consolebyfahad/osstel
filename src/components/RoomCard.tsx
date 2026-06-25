@@ -2,6 +2,7 @@ import type { Resident } from "@/types/resident";
 import type { Room } from "@/types/room";
 import { getRoomTotalMonthlyRent } from "@/utils/room";
 import type { AppColors } from "@constants/colors";
+import { COLORS } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -11,11 +12,17 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 type RoomCardProps = {
   room: Room;
   residents: Resident[];
+  onPress?: (roomId: string) => void;
   onAddResident?: (roomId: string) => void;
   onEdit?: (roomId: string) => void;
 };
 
-const AVATAR_COLORS = ["#5DB7DE", "#4EDCA3", "#7C6CF0", "#EDA12F"];
+const AVATAR_COLORS = [
+  COLORS.light.primary,
+  COLORS.light.success,
+  COLORS.light.secondary,
+  COLORS.light.warning,
+];
 
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -27,6 +34,7 @@ function getInitials(name: string): string {
 export default function RoomCard({
   room,
   residents,
+  onPress,
   onAddResident,
   onEdit,
 }: RoomCardProps) {
@@ -53,7 +61,11 @@ export default function RoomCard({
       : `${room.capacity} Beds · Rs ${room.rent.toLocaleString()}/mo each`;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && onPress && styles.cardPressed]}
+      onPress={onPress ? () => onPress(room._id) : undefined}
+      disabled={!onPress}
+    >
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconWrap}>
@@ -84,7 +96,10 @@ export default function RoomCard({
         {onEdit ? (
           <Pressable
             style={styles.editButton}
-            onPress={() => onEdit(room._id)}
+            onPress={(event) => {
+              event.stopPropagation?.();
+              onEdit(room._id);
+            }}
             hitSlop={8}
           >
             <Ionicons name="create-outline" size={vs(18)} color={colors.primary} />
@@ -122,7 +137,10 @@ export default function RoomCard({
           {!isFull ? (
             <Pressable
               style={[styles.addButton, residents.length > 0 && styles.avatarOverlap]}
-              onPress={() => onAddResident?.(room._id)}
+              onPress={(event) => {
+                event.stopPropagation?.();
+                onAddResident?.(room._id);
+              }}
               hitSlop={8}
             >
               <Ionicons name="add" size={vs(18)} color={colors.primary} />
@@ -134,7 +152,7 @@ export default function RoomCard({
           {occupied}/{room.capacity} occupied
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -155,6 +173,9 @@ function createStyles(
       elevation: 3,
       borderWidth: isDark ? 1 : 0,
       borderColor: colors.white100,
+    },
+    cardPressed: {
+      opacity: 0.92,
     },
     header: {
       flexDirection: "row",
@@ -203,7 +224,7 @@ function createStyles(
       color: colors.secondary,
     },
     badgeFull: {
-      backgroundColor: isDark ? colors.white200 : "#FEE2E2",
+      backgroundColor: colors.errorBg,
       paddingHorizontal: vs(10),
       paddingVertical: vs(5),
       borderRadius: vs(20),
@@ -262,7 +283,7 @@ function createStyles(
     avatarText: {
       fontSize: FONT_SIZES.xs,
       fontFamily: fonts.bold,
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
     addButton: {
       width: vs(36),

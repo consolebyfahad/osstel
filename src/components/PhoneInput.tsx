@@ -13,6 +13,7 @@ type PhoneInputProps = {
   maxLength?: number;
   returnKeyType?: ReturnKeyType;
   onSubmitEditing?: () => void;
+  onFocus?: () => void;
 };
 
 export function PhonePrefix() {
@@ -60,6 +61,7 @@ export default function PhoneInput({
   maxLength = 10,
   returnKeyType,
   onSubmitEditing,
+  onFocus,
 }: PhoneInputProps) {
   const handleChange = (text: string) => {
     onChangeText(text.replace(/[^0-9]/g, "").slice(0, maxLength));
@@ -76,6 +78,7 @@ export default function PhoneInput({
       leftAdornment={<PhonePrefix />}
       returnKeyType={returnKeyType}
       onSubmitEditing={onSubmitEditing}
+      onFocus={onFocus}
     />
   );
 }

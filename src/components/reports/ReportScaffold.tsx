@@ -1,4 +1,5 @@
 import CustomButton from "@/components/CustomButton";
+import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -45,7 +46,8 @@ export default function ReportScaffold({
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader title={title} subtitle={subtitle} showBack />
 
       {controls ? <View style={styles.controls}>{controls}</View> : null}
@@ -80,7 +82,8 @@ export default function ReportScaffold({
           disabled={loading || downloading || downloadDisabled}
         />
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -88,7 +91,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     headerRow: {
       flexDirection: "row",
@@ -161,7 +167,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       paddingBottom: vs(16),
       borderTopWidth: 1,
       borderTopColor: colors.white100,
-      backgroundColor: colors.background,
+      backgroundColor: "transparent",
     },
   });
 }

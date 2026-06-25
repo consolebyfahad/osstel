@@ -1,13 +1,14 @@
 import type { CollectionBannerData } from "@/types/dashboard";
+import type { AppColors } from "@constants/colors";
+import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS } from "@constants/fonts";
 import { LinearGradient } from "expo-linear-gradient";
+import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type CollectionBannerProps = CollectionBannerData & {
   onComplaintsPress?: () => void;
 };
-
-const DEFAULT_GRADIENT: [string, string] = ["#5DB7DE", "#9ED4EB"];
 
 function formatAmount(amount: number | string, currency = "Rs"): string {
   const value = typeof amount === "number" ? amount.toLocaleString() : amount;
@@ -20,12 +21,16 @@ export default function CollectionBanner({
   pendingAmount,
   complaintsOpen,
   currency = "Rs",
-  gradientColors = DEFAULT_GRADIENT,
+  gradientColors,
   onComplaintsPress,
 }: CollectionBannerProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const gradient = gradientColors ?? colors.bannerGradient;
+
   return (
     <LinearGradient
-      colors={gradientColors}
+      colors={[...gradient]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.gradient}
@@ -64,51 +69,53 @@ export default function CollectionBanner({
   );
 }
 
-const styles = StyleSheet.create({
-  gradient: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    overflow: "hidden",
-  },
-  label: {
-    fontSize: FONT_SIZES.xs,
-    fontFamily: FONTS.semiBold,
-    color: "rgba(255, 255, 255, 0.85)",
-    letterSpacing: 1.2,
-    marginBottom: 8,
-  },
-  total: {
-    fontSize: FONT_SIZES.display,
-    fontFamily: FONTS.bold,
-    color: "#FFFFFF",
-    marginBottom: 20,
-  },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.25)",
-    paddingTop: 16,
-  },
-  footerItem: {
-    flex: 1,
-  },
-  footerLabel: {
-    fontSize: FONT_SIZES.sm,
-    fontFamily: FONTS.regular,
-    color: "rgba(255, 255, 255, 0.75)",
-    marginBottom: 4,
-  },
-  footerValue: {
-    fontSize: FONT_SIZES.lg,
-    fontFamily: FONTS.bold,
-    color: "#FFFFFF",
-  },
-  divider: {
-    width: 1,
-    height: 36,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    marginHorizontal: 16,
-  },
-});
+function createStyles(colors: AppColors) {
+  return StyleSheet.create({
+    gradient: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 24,
+      overflow: "hidden",
+    },
+    label: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: FONTS.semiBold,
+      color: colors.onGradientMuted,
+      letterSpacing: 1.2,
+      marginBottom: 8,
+    },
+    total: {
+      fontSize: FONT_SIZES.display,
+      fontFamily: FONTS.bold,
+      color: colors.onGradient,
+      marginBottom: 20,
+    },
+    footer: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderTopWidth: 1,
+      borderTopColor: colors.gradientDivider,
+      paddingTop: 16,
+    },
+    footerItem: {
+      flex: 1,
+    },
+    footerLabel: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: FONTS.regular,
+      color: colors.onGradientSubtle,
+      marginBottom: 4,
+    },
+    footerValue: {
+      fontSize: FONT_SIZES.lg,
+      fontFamily: FONTS.bold,
+      color: colors.onGradient,
+    },
+    divider: {
+      width: 1,
+      height: 36,
+      backgroundColor: colors.gradientDivider,
+      marginHorizontal: 16,
+    },
+  });
+}

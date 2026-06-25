@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useMemo, type ReactNode } from "react";
 import CustomLoading from "@/components/CustomLoading";
+import GradientBackground from "@/components/GradientBackground";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
@@ -36,11 +37,13 @@ export default function ManagerGuard({ children }: ManagerGuardProps) {
 
   if (!isAuthenticated || !isManager) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <View style={styles.center}>
-          <CustomLoading size="lg" />
-        </View>
-      </SafeAreaView>
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <View style={styles.center}>
+            <CustomLoading size="lg" />
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
@@ -58,16 +61,18 @@ export function ManagerAccessDenied({
   const styles = useMemo(() => createStyles(colors, fonts), [colors, fonts]);
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <View style={styles.center}>
-        <Ionicons name="lock-closed-outline" size={vs(36)} color={colors.primary} />
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-        <Pressable style={styles.button} onPress={() => router.replace("/(tabs)/home")}>
-          <Text style={styles.buttonText}>Go to Home</Text>
-        </Pressable>
-      </View>
-    </SafeAreaView>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <View style={styles.center}>
+          <Ionicons name="lock-closed-outline" size={vs(36)} color={colors.primary} />
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+          <Pressable style={styles.button} onPress={() => router.replace("/(tabs)/home")}>
+            <Text style={styles.buttonText}>Go to Home</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -75,7 +80,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     center: {
       flex: 1,
@@ -107,7 +115,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS) {
     buttonText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.white,
+      color: colors.onPrimary,
     },
   });
 }

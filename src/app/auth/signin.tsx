@@ -18,11 +18,12 @@ import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Images } from "@constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   ImageBackground,
   Keyboard,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -52,10 +53,19 @@ export default function SignIn() {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const styles = useMemo(
     () =>
-      createStyles(colors, fonts, height, insets.bottom, isDark, keyboardOpen),
-    [colors, fonts, height, insets.bottom, isDark, keyboardOpen],
+      createStyles(
+        colors,
+        fonts,
+        height,
+        insets.bottom,
+        isDark,
+        keyboardOpen,
+        keyboardHeight,
+      ),
+    [colors, fonts, height, insets.bottom, isDark, keyboardOpen, keyboardHeight],
   );
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -74,12 +84,14 @@ export default function SignIn() {
     const hideEvent =
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const showSub = Keyboard.addListener(showEvent, () =>
-      setKeyboardOpen(true),
-    );
-    const hideSub = Keyboard.addListener(hideEvent, () =>
-      setKeyboardOpen(false),
-    );
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardOpen(true);
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardOpen(false);
+      setKeyboardHeight(0);
+    });
 
     return () => {
       showSub.remove();
@@ -226,6 +238,18 @@ export default function SignIn() {
     }
   };
 
+  const scrollFocusedFieldIntoView = useCallback(() => {
+    const scrollToEnd = () => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    };
+
+    requestAnimationFrame(scrollToEnd);
+
+    if (Platform.OS === "android") {
+      setTimeout(scrollToEnd, 120);
+    }
+  }, []);
+
   const isSubmitDisabled =
     isSubmitting ||
     !password.trim() ||
@@ -251,49 +275,52 @@ export default function SignIn() {
         style={[styles.bottomFill, { backgroundColor: colors.gradientBg[1] }]}
       />
 
-      <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <View style={styles.containerInner}>
-          {!keyboardOpen ? (
-            <View style={styles.logoSection}>
-              <Image
-                source={Images.osstellogo}
-                style={styles.brandLogoImage}
-                resizeMode="contain"
-                accessibilityLabel="OSSTEL logo"
-              />
-            </View>
-          ) : null}
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            bounces={false}
+          >
+            {!keyboardOpen ? (
+              <View style={styles.logoSection}>
+                <Image
+                  source={Images.osstellogo}
+                  style={styles.brandLogoImage}
+                  resizeMode="contain"
+                  accessibilityLabel="OSSTEL logo"
+                />
+              </View>
+            ) : null}
 
-          <GradientBackground style={styles.cardSheet}>
-            <View style={styles.cardHeader}>
-              <View style={styles.headerGroup}>
-                <Text style={styles.welcomeText}>
-                  {isSignUp ? "Get started" : "Welcome back"}
-                </Text>
-                <Text style={styles.titleText}>
-                  {isSignUp && canSignUp ? "Create account" : "Sign in"}
+            <GradientBackground style={styles.cardSheet}>
+              <View style={styles.cardHeader}>
+                <View style={styles.headerGroup}>
+                  <Text style={styles.welcomeText}>
+                    {isSignUp ? "Get started" : "Welcome back"}
+                  </Text>
+                  <Text style={styles.titleText}>
+                    {isSignUp && canSignUp ? "Create account" : "Sign in"}
+                  </Text>
+                </View>
+                <Text style={styles.subtitle}>
+                  {isSignUp && canSignUp
+                    ? "Register to manage your hostel with OSSTEL."
+                    : selectedRole === "resident"
+                      ? "Sign in with your user ID and password."
+                      : "Sign in with your phone number and password."}
                 </Text>
               </View>
-              <Text style={styles.subtitle}>
-                {isSignUp && canSignUp
-                  ? "Register to manage your hostel with OSSTEL."
-                  : selectedRole === "resident"
-                    ? "Sign in with your user ID and password."
-                    : "Sign in with your phone number and password."}
-              </Text>
-            </View>
 
-            <ScrollView
-              ref={scrollRef}
-              style={styles.formScroll}
-              contentContainerStyle={styles.formContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="interactive"
-              automaticallyAdjustKeyboardInsets
-              contentInsetAdjustmentBehavior="automatic"
-            >
-              <Text style={styles.sectionLabel}>I am a</Text>
+              <View style={styles.formBody}>
+                <Text style={styles.sectionLabel}>I am a</Text>
               <View style={styles.roleRow}>
                 {ROLE_OPTIONS.map((role) => {
                   const isSelected = selectedRole === role;
@@ -326,7 +353,7 @@ export default function SignIn() {
                             : "business-outline"
                         }
                         size={vs(16)}
-                        color={isSelected ? "#FFFFFF" : colors.primary}
+                        color={isSelected ? colors.onPrimary : colors.primary}
                       />
                       <Text
                         style={[
@@ -348,6 +375,7 @@ export default function SignIn() {
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
+                  onFocus={scrollFocusedFieldIntoView}
                 />
               ) : null}
 
@@ -359,6 +387,7 @@ export default function SignIn() {
                   onChangeText={setUserId}
                   autoCapitalize="characters"
                   autoCorrect={false}
+                  onFocus={scrollFocusedFieldIntoView}
                 />
               ) : (
                 <CustomInput
@@ -368,6 +397,7 @@ export default function SignIn() {
                   onChangeText={handlePhoneChange}
                   keyboardType="phone-pad"
                   maxLength={10}
+                  onFocus={scrollFocusedFieldIntoView}
                   leftAdornment={
                     <>
                       <Text style={styles.flag}>🇵🇰</Text>
@@ -386,6 +416,7 @@ export default function SignIn() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
+                onFocus={scrollFocusedFieldIntoView}
                 onSubmitEditing={
                   isSignUp && canSignUp ? undefined : handleSubmit
                 }
@@ -398,6 +429,7 @@ export default function SignIn() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
+                  onFocus={scrollFocusedFieldIntoView}
                   onSubmitEditing={handleSubmit}
                 />
               ) : null}
@@ -460,9 +492,10 @@ export default function SignIn() {
                   </Text>
                 ) : null}
               </View>
-            </ScrollView>
-          </GradientBackground>
-        </View>
+              </View>
+            </GradientBackground>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
   );
@@ -475,8 +508,15 @@ function createStyles(
   bottomInset: number,
   isDark: boolean,
   keyboardOpen: boolean,
+  keyboardHeight: number,
 ) {
   const logoHeight = Math.max(screenHeight * 0.16, vs(72));
+  const keyboardPadding =
+    keyboardHeight > 0
+      ? Platform.OS === "ios"
+        ? vs(16)
+        : Math.max(keyboardHeight - bottomInset + vs(16), vs(16))
+      : 0;
 
   return StyleSheet.create({
     root: {
@@ -488,7 +528,7 @@ function createStyles(
     },
     darkOverlay: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: "rgba(0, 0, 0, 0.45)",
+      backgroundColor: colors.overlay,
     },
     bottomFill: {
       position: "absolute",
@@ -500,8 +540,15 @@ function createStyles(
     safeArea: {
       flex: 1,
     },
-    containerInner: {
+    keyboardView: {
       flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: Math.max(bottomInset, vs(16)) + keyboardPadding,
     },
     logoSection: {
       height: logoHeight,
@@ -516,22 +563,19 @@ function createStyles(
       maxWidth: "70%",
     },
     cardSheet: {
-      flex: 1,
+      flexGrow: 1,
       borderTopLeftRadius: vs(32),
       borderTopRightRadius: vs(32),
       overflow: "hidden",
+      minHeight: keyboardOpen ? undefined : screenHeight * 0.62,
     },
     cardHeader: {
       paddingHorizontal: vs(16),
       paddingTop: keyboardOpen ? vs(16) : vs(28),
       paddingBottom: vs(12),
     },
-    formScroll: {
-      flex: 1,
-    },
-    formContent: {
+    formBody: {
       paddingHorizontal: vs(16),
-      paddingBottom: Math.max(bottomInset, vs(16)) + vs(8),
     },
     headerGroup: {
       marginBottom: vs(8),
@@ -569,9 +613,9 @@ function createStyles(
       justifyContent: "center",
       gap: vs(6),
       borderRadius: vs(14),
-      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : colors.background,
+      backgroundColor: isDark ? colors.surfaceMuted : colors.background,
       borderWidth: 1.5,
-      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : colors.background,
+      borderColor: isDark ? colors.chipBorder : colors.background,
       paddingVertical: vs(12),
       paddingHorizontal: vs(10),
     },
@@ -585,7 +629,7 @@ function createStyles(
       color: colors.primary,
     },
     roleChipTextSelected: {
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
     flag: {
       fontSize: vs(18),
@@ -618,7 +662,7 @@ function createStyles(
     dividerLine: {
       flex: 1,
       height: 1,
-      backgroundColor: isDark ? "rgba(255, 255, 255, 0.12)" : colors.gray,
+      backgroundColor: isDark ? colors.chipBorder : colors.gray,
     },
     dividerText: {
       fontSize: FONT_SIZES.sm,
@@ -631,8 +675,8 @@ function createStyles(
       minHeight: vs(52),
       borderRadius: vs(14),
       borderWidth: 1.5,
-      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : colors.gray,
-      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : colors.white,
+      borderColor: isDark ? colors.chipBorder : colors.gray,
+      backgroundColor: isDark ? colors.surfaceMuted : colors.white,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",

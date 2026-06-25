@@ -98,25 +98,25 @@ export default function ResidentHomeDashboard() {
         id: "pay-rent",
         label: "Pay Rent",
         iconName: "cash-outline",
-        iconColor: "#15803D",
-        iconBackgroundColor: "#DCFCE7",
+        iconColor: colors.successText,
+        iconBackgroundColor: colors.successBg,
       },
       {
         id: "complaints",
         label: "Complaints",
         iconName: "chatbox-ellipses-outline",
-        iconColor: "#B45309",
-        iconBackgroundColor: "#FEF3C7",
+        iconColor: colors.warningText,
+        iconBackgroundColor: colors.warningBg,
       },
       {
         id: "support",
         label: "Support",
         iconName: "help-circle-outline",
-        iconColor: "#6D28D9",
-        iconBackgroundColor: "#EDE9FE",
+        iconColor: colors.purpleText,
+        iconBackgroundColor: colors.purpleBg,
       },
     ],
-    [],
+    [colors.purpleBg, colors.purpleText, colors.successBg, colors.successText, colors.warningBg, colors.warningText],
   );
 
   const handleQuickAction = (actionId: string) => {
@@ -338,7 +338,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     notificationBadgeText: {
       fontSize: FONT_SIZES.xs,
       fontFamily: fonts.bold,
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
     greeting: {
       fontSize: FONT_SIZES.md,
@@ -354,7 +354,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(10),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
       borderWidth: 1,
       borderColor: colors.warning,
       borderRadius: vs(14),
@@ -487,7 +487,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     payButtonText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.white,
+      color: colors.onPrimary,
     },
     sectionTitle: {
       fontSize: FONT_SIZES.xl,

@@ -1,3 +1,4 @@
+import { COLORS } from "@constants/colors";
 import type {
   RentCollectionReportData,
   ResidentsListReportData,
@@ -26,24 +27,26 @@ function imageSrc(value?: string | null) {
   return "";
 }
 
+const brand = COLORS.light;
+
 const BASE_STYLES = `
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    color: #0A0A0A;
+    color: ${brand.black};
     margin: 0;
     padding: 32px;
-    background: #fff;
+    background: ${brand.white};
   }
   .header {
-    border-bottom: 3px solid #5DB7DE;
+    border-bottom: 3px solid ${brand.primary};
     padding-bottom: 16px;
     margin-bottom: 24px;
   }
   .brand {
     font-size: 28px;
     font-weight: 700;
-    color: #5DB7DE;
+    color: ${brand.primary};
     letter-spacing: 1px;
   }
   .title {
@@ -53,7 +56,7 @@ const BASE_STYLES = `
   }
   .meta {
     font-size: 12px;
-    color: #666;
+    color: ${brand.gray};
     line-height: 1.6;
   }
   .summary-grid {
@@ -63,28 +66,28 @@ const BASE_STYLES = `
     margin: 20px 0;
   }
   .summary-card {
-    border: 1px solid #E4E4E4;
+    border: 1px solid ${brand.white200};
     border-radius: 10px;
     padding: 12px;
-    background: #F8FCFE;
+    background: ${brand.primary100};
   }
   .summary-label {
     font-size: 10px;
     text-transform: uppercase;
-    color: #858585;
+    color: ${brand.gray100};
     letter-spacing: 0.6px;
     margin-bottom: 6px;
   }
   .summary-value {
     font-size: 18px;
     font-weight: 700;
-    color: #0A0A0A;
+    color: ${brand.black};
   }
   .section-title {
     font-size: 16px;
     font-weight: 700;
     margin: 24px 0 10px;
-    color: #0A0A0A;
+    color: ${brand.black};
   }
   table {
     width: 100%;
@@ -93,18 +96,18 @@ const BASE_STYLES = `
     font-size: 12px;
   }
   th, td {
-    border: 1px solid #E4E4E4;
+    border: 1px solid ${brand.white200};
     padding: 8px 10px;
     text-align: left;
     vertical-align: top;
   }
   th {
-    background: #EAF6FB;
+    background: ${brand.primary100};
     font-weight: 700;
-    color: #0A0A0A;
+    color: ${brand.black};
   }
   tr:nth-child(even) td {
-    background: #FCFCFC;
+    background: ${brand.background};
   }
   .badge {
     display: inline-block;
@@ -114,15 +117,15 @@ const BASE_STYLES = `
     font-weight: 700;
     text-transform: uppercase;
   }
-  .badge-paid { background: #E6FAF2; color: #15803D; }
-  .badge-pending { background: #FEF3C7; color: #B45309; }
-  .badge-review { background: #EDE9FE; color: #6D28D9; }
+  .badge-paid { background: ${brand.successBg}; color: ${brand.successText}; }
+  .badge-pending { background: ${brand.warningBg}; color: ${brand.warningText}; }
+  .badge-review { background: ${brand.purpleBg}; color: ${brand.purpleText}; }
   .footer {
     margin-top: 32px;
     padding-top: 12px;
-    border-top: 1px solid #E4E4E4;
+    border-top: 1px solid ${brand.white200};
     font-size: 11px;
-    color: #858585;
+    color: ${brand.gray100};
     text-align: center;
   }
   .profile-wrap {
@@ -136,21 +139,21 @@ const BASE_STYLES = `
     height: 120px;
     border-radius: 16px;
     object-fit: cover;
-    border: 2px solid #C4E5F3;
-    background: #EAF6FB;
+    border: 2px solid ${brand.primary200};
+    background: ${brand.primary100};
   }
   .profile-placeholder {
     width: 120px;
     height: 120px;
     border-radius: 16px;
-    border: 2px solid #C4E5F3;
-    background: #EAF6FB;
+    border: 2px solid ${brand.primary200};
+    background: ${brand.primary100};
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 36px;
     font-weight: 700;
-    color: #5DB7DE;
+    color: ${brand.primary};
   }
   .detail-grid {
     display: grid;
@@ -159,22 +162,22 @@ const BASE_STYLES = `
     margin-bottom: 20px;
   }
   .detail-item {
-    border: 1px solid #E4E4E4;
+    border: 1px solid ${brand.white200};
     border-radius: 10px;
     padding: 12px;
-    background: #FCFCFC;
+    background: ${brand.background};
   }
   .detail-label {
     font-size: 10px;
     text-transform: uppercase;
-    color: #858585;
+    color: ${brand.gray100};
     letter-spacing: 0.5px;
     margin-bottom: 4px;
   }
   .detail-value {
     font-size: 14px;
     font-weight: 600;
-    color: #0A0A0A;
+    color: ${brand.black};
     word-break: break-word;
   }
   .id-grid {
@@ -187,15 +190,15 @@ const BASE_STYLES = `
     width: 100%;
     max-height: 180px;
     object-fit: contain;
-    border: 1px solid #E4E4E4;
+    border: 1px solid ${brand.white200};
     border-radius: 10px;
-    background: #F5F5F5;
+    background: ${brand.white100};
   }
   .id-label {
     font-size: 11px;
     font-weight: 700;
     margin-bottom: 6px;
-    color: #555;
+    color: ${brand.gray300};
   }
 `;
 

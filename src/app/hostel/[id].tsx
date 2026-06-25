@@ -1,4 +1,5 @@
 import CustomButton from "@/components/CustomButton";
+import GradientBackground from "@/components/GradientBackground";
 import RoomCard from "@/components/RoomCard";
 import ScreenHeader from "@/components/ScreenHeader";
 import type { Resident } from "@/types/resident";
@@ -94,6 +95,13 @@ export default function HostelDetailScreen() {
     );
   };
 
+  const handleOpenRoom = (roomId: string) => {
+    router.push({
+      pathname: "/rooms/[roomId]",
+      params: { hostelId: id!, roomId },
+    });
+  };
+
   const handleAddResident = (roomId: string) => {
     guardAddTenant(() =>
       router.push({
@@ -103,36 +111,34 @@ export default function HostelDetailScreen() {
     );
   };
 
-  const handleEditRoom = (roomId: string) => {
-    router.push({
-      pathname: "/rooms/edit",
-      params: { hostelId: id, roomId },
-    });
-  };
-
   if (isHostelLoading || isRoomsLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.loadingWrap}>
           <CustomLoading size="lg" />
         </View>
       </SafeAreaView>
+    </GradientBackground>
     );
   }
 
   if (isHostelError || !hostel) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScreenHeader title="Hostel" showBack />
         <View style={styles.notFoundWrap}>
           <Text style={styles.notFoundText}>Hostel not found.</Text>
         </View>
       </SafeAreaView>
+    </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <ScreenHeader
         title={hostel.name}
         showBack
@@ -211,8 +217,8 @@ export default function HostelDetailScreen() {
                 residents={residents.filter(
                   (resident) => resident.roomId === item._id,
                 )}
+                onPress={handleOpenRoom}
                 onAddResident={handleAddResident}
-                onEdit={handleEditRoom}
               />
             ))}
           </View>
@@ -223,6 +229,7 @@ export default function HostelDetailScreen() {
         <CustomButton title="Add Room" onPress={handleAddRoom} />
       </View>
     </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -235,7 +242,10 @@ function createStyles(
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     loadingWrap: {
       flex: 1,
@@ -366,7 +376,7 @@ function createStyles(
       paddingBottom: Math.max(bottomInset, vs(20)),
       borderTopWidth: 1,
       borderTopColor: colors.white100,
-      backgroundColor: colors.background,
+      backgroundColor: "transparent",
     },
   });
 }

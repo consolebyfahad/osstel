@@ -37,10 +37,12 @@ import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -89,9 +91,12 @@ export default function AddResident() {
   const { checkAddTenant } = useSubscription();
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const fieldPositions = useRef<Record<string, number>>({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const styles = useMemo(
-    () => createStyles(colors, fonts, insets.bottom),
-    [colors, fonts, insets.bottom],
+    () => createStyles(colors, fonts, insets.bottom, keyboardHeight),
+    [colors, fonts, insets.bottom, keyboardHeight],
   );
 
   const [allRooms, setAllRooms] = useState<Room[]>([]);
@@ -117,6 +122,47 @@ export default function AddResident() {
   const [fatherName, setFatherName] = useState("");
   const [fatherDigits, setFatherDigits] = useState("");
   const [agreedRent, setAgreedRent] = useState("");
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const registerFieldPosition = useCallback((key: string, y: number) => {
+    fieldPositions.current[key] = y;
+  }, []);
+
+  const scrollToField = useCallback((key: string) => {
+    const y = fieldPositions.current[key];
+    if (y === undefined) return;
+
+    const scroll = () => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, y - vs(20)),
+        animated: true,
+      });
+    };
+
+    requestAnimationFrame(scroll);
+
+    if (Platform.OS === "android") {
+      setTimeout(scroll, 120);
+    }
+  }, []);
 
   const { data: hostelsData, isLoading: isLoadingHostels } =
     useGetHostelsQuery(undefined);
@@ -349,18 +395,22 @@ export default function AddResident() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <View style={styles.inner}>
-          <ScreenHeader title="Add Resident" showBack />
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
+        >
+          <View style={styles.inner}>
+            <ScreenHeader title="Add Resident" showBack />
 
-          <ScrollView
-            style={styles.scroll}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            automaticallyAdjustKeyboardInsets
-            contentInsetAdjustmentBehavior="automatic"
-            contentContainerStyle={styles.scrollContent}
-          >
+            <ScrollView
+              ref={scrollRef}
+              style={styles.scroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={styles.scrollContent}
+            >
             <Text style={styles.subtitle}>
               Register a new resident and assign them to a room.
             </Text>
@@ -413,20 +463,34 @@ export default function AddResident() {
                   style={styles.photoField}
                 />
 
-                <CustomInput
-                  label="Full Name"
-                  placeholder="e.g. Sara Khan"
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                />
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition("name", event.nativeEvent.layout.y)
+                  }
+                >
+                  <CustomInput
+                    label="Full Name"
+                    placeholder="e.g. Sara Khan"
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                    onFocus={() => scrollToField("name")}
+                  />
+                </View>
 
-                <PhoneInput
-                  label="Mobile Number"
-                  value={phoneDigits}
-                  onChangeText={setPhoneDigits}
-                  placeholder="3001234567"
-                />
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition("phone", event.nativeEvent.layout.y)
+                  }
+                >
+                  <PhoneInput
+                    label="Mobile Number"
+                    value={phoneDigits}
+                    onChangeText={setPhoneDigits}
+                    placeholder="3001234567"
+                    onFocus={() => scrollToField("phone")}
+                  />
+                </View>
 
                 <View style={styles.dropdownField}>
                   <Text style={styles.dropdownLabel}>Assign Room</Text>
@@ -442,16 +506,26 @@ export default function AddResident() {
 
                 {selectedRoom ? (
                   <>
-                    <CustomInput
-                      label="Monthly Rent (Rs)"
-                      placeholder={String(selectedRoom.rent)}
-                      value={agreedRent}
-                      onChangeText={(text) =>
-                        setAgreedRent(text.replace(/[^0-9]/g, "").slice(0, 7))
+                    <View
+                      onLayout={(event) =>
+                        registerFieldPosition(
+                          "agreedRent",
+                          event.nativeEvent.layout.y,
+                        )
                       }
-                      keyboardType="number-pad"
-                      hint={`Room default is Rs ${selectedRoom.rent.toLocaleString()}/mo. Change this if the resident pays a different amount.`}
-                    />
+                    >
+                      <CustomInput
+                        label="Monthly Rent (Rs)"
+                        placeholder={String(selectedRoom.rent)}
+                        value={agreedRent}
+                        onChangeText={(text) =>
+                          setAgreedRent(text.replace(/[^0-9]/g, "").slice(0, 7))
+                        }
+                        keyboardType="number-pad"
+                        hint={`Room default is Rs ${selectedRoom.rent.toLocaleString()}/mo. Change this if the resident pays a different amount.`}
+                        onFocus={() => scrollToField("agreedRent")}
+                      />
+                    </View>
 
                     {projectedRoomTotal != null ? (
                       <View style={styles.rentSummaryCard}>
@@ -472,15 +546,22 @@ export default function AddResident() {
                   </>
                 ) : null}
 
-                <CustomInput
-                  label="CNIC (optional)"
-                  placeholder="35201-1234567-1"
-                  value={cnic}
-                  onChangeText={handleCnicChange}
-                  keyboardType="number-pad"
-                  maxLength={CNIC_FORMATTED_LENGTH}
-                  hint="Format: 35201-1234567-1"
-                />
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition("cnic", event.nativeEvent.layout.y)
+                  }
+                >
+                  <CustomInput
+                    label="CNIC (optional)"
+                    placeholder="35201-1234567-1"
+                    value={cnic}
+                    onChangeText={handleCnicChange}
+                    keyboardType="number-pad"
+                    maxLength={CNIC_FORMATTED_LENGTH}
+                    hint="Format: 35201-1234567-1"
+                    onFocus={() => scrollToField("cnic")}
+                  />
+                </View>
 
                 <Text style={styles.sectionTitle}>CNIC Photos</Text>
                 <View style={styles.idPhotoRow}>
@@ -503,27 +584,57 @@ export default function AddResident() {
                 </View>
 
                 <Text style={styles.sectionTitle}>Emergency Contact</Text>
-                <PhoneInput
-                  label="Emergency Number"
-                  value={emergencyDigits}
-                  onChangeText={setEmergencyDigits}
-                  placeholder="3009876543"
-                />
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition(
+                      "emergency",
+                      event.nativeEvent.layout.y,
+                    )
+                  }
+                >
+                  <PhoneInput
+                    label="Emergency Number"
+                    value={emergencyDigits}
+                    onChangeText={setEmergencyDigits}
+                    placeholder="3009876543"
+                    onFocus={() => scrollToField("emergency")}
+                  />
+                </View>
 
                 <Text style={styles.sectionTitle}>Father / Guardian</Text>
-                <CustomInput
-                  label="Father Name"
-                  placeholder="e.g. Ahmed Khan"
-                  value={fatherName}
-                  onChangeText={setFatherName}
-                  autoCapitalize="words"
-                />
-                <PhoneInput
-                  label="Father Number"
-                  value={fatherDigits}
-                  onChangeText={setFatherDigits}
-                  placeholder="3001112233"
-                />
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition(
+                      "fatherName",
+                      event.nativeEvent.layout.y,
+                    )
+                  }
+                >
+                  <CustomInput
+                    label="Father Name"
+                    placeholder="e.g. Ahmed Khan"
+                    value={fatherName}
+                    onChangeText={setFatherName}
+                    autoCapitalize="words"
+                    onFocus={() => scrollToField("fatherName")}
+                  />
+                </View>
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition(
+                      "fatherPhone",
+                      event.nativeEvent.layout.y,
+                    )
+                  }
+                >
+                  <PhoneInput
+                    label="Father Number"
+                    value={fatherDigits}
+                    onChangeText={setFatherDigits}
+                    placeholder="3001112233"
+                    onFocus={() => scrollToField("fatherPhone")}
+                  />
+                </View>
 
                 {selectedRoom ? (
                   <View style={styles.summaryCard}>
@@ -549,6 +660,7 @@ export default function AddResident() {
             )}
           </ScrollView>
         </View>
+        </KeyboardAvoidingView>
 
         <ResidentCredentialsModal
           visible={credentialsModal.visible}
@@ -572,7 +684,15 @@ function createStyles(
   colors: AppColors,
   fonts: typeof FONTS,
   bottomInset: number,
+  keyboardHeight: number,
 ) {
+  const keyboardPadding =
+    keyboardHeight > 0
+      ? Platform.OS === "ios"
+        ? vs(16)
+        : Math.max(keyboardHeight - bottomInset + vs(16), vs(16))
+      : 0;
+
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -581,6 +701,9 @@ function createStyles(
       flex: 1,
       backgroundColor: "transparent",
     },
+    keyboardView: {
+      flex: 1,
+    },
     inner: {
       flex: 1,
     },
@@ -588,8 +711,9 @@ function createStyles(
       flex: 1,
     },
     scrollContent: {
+      flexGrow: 1,
       paddingHorizontal: vs(20),
-      paddingBottom: Math.max(bottomInset, vs(24)),
+      paddingBottom: Math.max(bottomInset, vs(24)) + keyboardPadding,
     },
     subtitle: {
       fontSize: FONT_SIZES.md,
@@ -710,7 +834,7 @@ function createStyles(
     addRoomLinkText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
   });
 }

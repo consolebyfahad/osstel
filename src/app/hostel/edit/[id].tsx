@@ -1,4 +1,7 @@
 import CustomButton from "@/components/CustomButton";
+import CustomInput from "@/components/CustomInput";
+import CustomLoading from "@/components/CustomLoading";
+import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
 import {
   useDeleteHostelMutation,
@@ -8,10 +11,8 @@ import {
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
-import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
-import CustomLoading from "@/components/CustomLoading";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -21,8 +22,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import {
@@ -48,17 +47,61 @@ export default function EditHostelScreen() {
   const { data, isLoading } = useGetHostelQuery(id!, { skip: !id });
   const [updateHostel, { isLoading: isSaving }] = useUpdateHostelMutation();
   const [deleteHostel, { isLoading: isDeleting }] = useDeleteHostelMutation();
-  const { colors, fonts } = useTheme();
+  const { colors, fonts, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const fieldPositions = useRef<Record<string, number>>({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const styles = useMemo(
-    () => createStyles(colors, fonts, insets.bottom),
-    [colors, fonts, insets.bottom],
+    () => createStyles(colors, fonts, isDark, insets.bottom, keyboardHeight),
+    [colors, fonts, isDark, insets.bottom, keyboardHeight],
   );
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const registerFieldPosition = useCallback((key: string, y: number) => {
+    fieldPositions.current[key] = y;
+  }, []);
+
+  const scrollToField = useCallback((key: string) => {
+    const y = fieldPositions.current[key];
+    if (y === undefined) return;
+
+    const scroll = () => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, y - vs(20)),
+        animated: true,
+      });
+    };
+
+    requestAnimationFrame(scroll);
+
+    if (Platform.OS === "android") {
+      setTimeout(scroll, 120);
+    }
+  }, []);
 
   useEffect(() => {
     if (!data?.hostel) return;
@@ -122,113 +165,145 @@ export default function EditHostelScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={["top"]}>
+      <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.loadingWrap}>
           <CustomLoading size="lg" />
         </View>
       </SafeAreaView>
+    </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <GradientBackground style={styles.container}>
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.inner}>
-            <ScreenHeader title="Edit Hostel" showBack />
+        <View style={styles.inner}>
+          <ScreenHeader title="Edit Hostel" showBack />
 
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.scrollContent}
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={styles.scrollContent}
+          >
+            <Text style={styles.subtitle}>
+              Update hostel details shown to residents and on receipts.
+            </Text>
+
+            <View
+              onLayout={(event) =>
+                registerFieldPosition("name", event.nativeEvent.layout.y)
+              }
             >
-              <Text style={styles.subtitle}>
-                Update hostel details shown to residents and on receipts.
-              </Text>
+              <CustomInput
+                label="Hostel Name"
+                placeholder="e.g. Sunrise Hostel"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                onFocus={() => scrollToField("name")}
+              />
+            </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Hostel Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Sunrise Hostel"
-                  placeholderTextColor={colors.gray100}
-                  value={name}
-                  onChangeText={setName}
-                />
-              </View>
+            <View
+              onLayout={(event) =>
+                registerFieldPosition("address", event.nativeEvent.layout.y)
+              }
+            >
+              <CustomInput
+                label="Address"
+                placeholder="Street address"
+                value={address}
+                onChangeText={setAddress}
+                autoCapitalize="words"
+                onFocus={() => scrollToField("address")}
+              />
+            </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Address</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Street address"
-                  placeholderTextColor={colors.gray100}
-                  value={address}
-                  onChangeText={setAddress}
-                />
-              </View>
+            <View
+              onLayout={(event) =>
+                registerFieldPosition("city", event.nativeEvent.layout.y)
+              }
+            >
+              <CustomInput
+                label="City"
+                placeholder="e.g. Lahore"
+                value={city}
+                onChangeText={setCity}
+                autoCapitalize="words"
+                onFocus={() => scrollToField("city")}
+              />
+            </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>City</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. Lahore"
-                  placeholderTextColor={colors.gray100}
-                  value={city}
-                  onChangeText={setCity}
-                />
-              </View>
+            <View
+              onLayout={(event) =>
+                registerFieldPosition("contactPhone", event.nativeEvent.layout.y)
+              }
+            >
+              <CustomInput
+                label="Contact Phone"
+                placeholder="e.g. 03001234567"
+                value={contactPhone}
+                onChangeText={setContactPhone}
+                keyboardType="phone-pad"
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+                onFocus={() => scrollToField("contactPhone")}
+              />
+            </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Contact Phone</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="e.g. 03001234567"
-                  placeholderTextColor={colors.gray100}
-                  value={contactPhone}
-                  onChangeText={setContactPhone}
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <Pressable
-                style={styles.deleteBtn}
-                onPress={handleDelete}
-                disabled={isBusy}
-              >
-                <Text style={styles.deleteBtnText}>
-                  {isDeleting ? "Deleting..." : "Delete Hostel"}
-                </Text>
-              </Pressable>
-            </ScrollView>
-
-            <View style={styles.footer}>
+            <View style={styles.actions}>
               <CustomButton
-                title={isSaving ? "Saving..." : "Save Changes"}
+                title={
+                  isSaving ? <CustomLoading size="sm" /> : "Save Changes"
+                }
                 onPress={handleSave}
                 disabled={!isValid || isBusy}
               />
+              <CustomButton
+                title={isDeleting ? "Deleting..." : "Delete Hostel"}
+                onPress={handleDelete}
+                disabled={isBusy}
+                style={styles.deleteBtn}
+              />
             </View>
-          </View>
-        </TouchableWithoutFeedback>
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 function createStyles(
   colors: AppColors,
   fonts: typeof FONTS,
+  isDark: boolean,
   bottomInset: number,
+  keyboardHeight: number,
 ) {
+  const keyboardPadding =
+    keyboardHeight > 0
+      ? Platform.OS === "ios"
+        ? vs(16)
+        : Math.max(keyboardHeight - bottomInset + vs(16), vs(16))
+      : 0;
+
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: colors.background,
+    },
+    safeArea: {
+      flex: 1,
+      backgroundColor: "transparent",
     },
     keyboardView: {
       flex: 1,
@@ -236,37 +311,19 @@ function createStyles(
     inner: {
       flex: 1,
     },
+    scroll: {
+      flex: 1,
+    },
     loadingWrap: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
     },
-    header: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: vs(16),
-      paddingVertical: vs(12),
-    },
-    backButton: {
-      width: vs(40),
-      height: vs(40),
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: FONT_SIZES.xl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      textAlign: "center",
-    },
-    headerSpacer: {
-      width: vs(40),
-    },
     scrollContent: {
+      flexGrow: 1,
       paddingHorizontal: vs(20),
       paddingTop: vs(8),
-      paddingBottom: vs(24),
+      paddingBottom: Math.max(bottomInset, vs(24)) + keyboardPadding,
     },
     subtitle: {
       fontSize: FONT_SIZES.md,
@@ -275,46 +332,12 @@ function createStyles(
       lineHeight: vs(22),
       marginBottom: vs(24),
     },
-    field: {
-      marginBottom: vs(20),
-    },
-    label: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.text,
-      marginBottom: vs(8),
-    },
-    input: {
-      height: vs(52),
-      borderRadius: vs(14),
-      backgroundColor: colors.white,
-      borderWidth: 1,
-      borderColor: colors.white100,
-      paddingHorizontal: vs(16),
-      fontSize: FONT_SIZES.lg,
-      fontFamily: fonts.medium,
-      color: colors.text,
+    actions: {
+      marginTop: vs(8),
+      gap: vs(12),
     },
     deleteBtn: {
-      marginTop: vs(12),
-      paddingVertical: vs(14),
-      alignItems: "center",
-      borderRadius: vs(14),
-      borderWidth: 1,
-      borderColor: colors.error,
-    },
-    deleteBtnText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.error,
-    },
-    footer: {
-      paddingHorizontal: vs(20),
-      paddingTop: vs(12),
-      paddingBottom: Math.max(bottomInset, vs(20)),
-      borderTopWidth: 1,
-      borderTopColor: colors.white100,
-      backgroundColor: colors.background,
+      backgroundColor: colors.error,
     },
   });
 }

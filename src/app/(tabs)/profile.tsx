@@ -9,6 +9,7 @@ import { aggregateDashboard } from "@/types/dashboard";
 import { formatDateOfBirth, meToAuthProfile } from "@/types/auth";
 import { formatCnic } from "@/utils/cnic";
 import ProfileAvatar from "@/components/ProfileAvatar";
+import CustomButton from "@/components/CustomButton";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
 import { USER_ROLES, type UserRole } from "@/types/role";
@@ -475,20 +476,11 @@ export default function Profile() {
             />
           </View>
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.logoutButton,
-              pressed && styles.logoutPressed,
-            ]}
+          <CustomButton
+            title="Log Out"
             onPress={handleLogout}
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={vs(20)}
-              color={colors.error}
-            />
-            <Text style={styles.logoutText}>Log Out</Text>
-          </Pressable>
+            style={styles.logoutButton}
+          />
         </ScrollView>
       </SafeAreaView>
     </GradientBackground>
@@ -571,10 +563,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       borderRadius: vs(20),
     },
     statusVerified: {
-      backgroundColor: isDark ? colors.secondary100 : "#F0FDF4",
+      backgroundColor: colors.successBg,
     },
     statusPending: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
     },
     statusText: {
       fontSize: FONT_SIZES.sm,
@@ -615,7 +607,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(6),
-      backgroundColor: isDark ? colors.secondary100 : "#F0FDF4",
+      backgroundColor: colors.successBg,
       paddingHorizontal: vs(10),
       paddingVertical: vs(6),
       borderRadius: vs(20),
@@ -661,7 +653,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       justifyContent: "center",
     },
     menuIconWrapDestructive: {
-      backgroundColor: isDark ? "rgba(230, 80, 71, 0.15)" : "#FEE2E2",
+      backgroundColor: colors.errorBg,
     },
     menuContent: {
       flex: 1,
@@ -686,24 +678,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginLeft: vs(62),
     },
     logoutButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: vs(8),
-      backgroundColor: colors.white,
-      borderRadius: vs(14),
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(230, 80, 71, 0.3)" : "#FECACA",
-      paddingVertical: vs(16),
-      marginTop: vs(4),
-    },
-    logoutPressed: {
-      opacity: 0.85,
-    },
-    logoutText: {
-      fontSize: FONT_SIZES.lg,
-      fontFamily: fonts.semiBold,
-      color: colors.error,
+      backgroundColor: colors.error,
     },
   });
 }

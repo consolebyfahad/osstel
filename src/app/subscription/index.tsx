@@ -440,7 +440,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     pendingBanner: {
       flexDirection: "row",
       gap: vs(12),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
       borderRadius: vs(14),
       padding: vs(16),
       marginBottom: vs(16),
@@ -473,7 +473,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(8),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.12)" : "#FFFBEB",
+      backgroundColor: colors.warningBg,
       borderRadius: vs(12),
       padding: vs(14),
       marginBottom: vs(16),
@@ -485,7 +485,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.45)",
+      backgroundColor: colors.overlay,
       justifyContent: "flex-end",
     },
     modalCard: {

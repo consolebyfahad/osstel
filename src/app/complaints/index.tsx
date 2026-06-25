@@ -484,7 +484,7 @@ function createStyles(
       width: vs(80),
       height: vs(80),
       borderRadius: vs(18),
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FFEDD5",
+      backgroundColor: colors.warningBg,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: vs(20),
@@ -561,13 +561,13 @@ function createStyles(
       borderRadius: vs(20),
     },
     statusOpen: {
-      backgroundColor: isDark ? "rgba(237, 161, 47, 0.15)" : "#FEF3C7",
+      backgroundColor: colors.warningBg,
     },
     statusInProgress: {
-      backgroundColor: isDark ? colors.primary100 : "#DBEAFE",
+      backgroundColor: colors.infoBg,
     },
     statusResolved: {
-      backgroundColor: isDark ? colors.secondary100 : "#DCFCE7",
+      backgroundColor: colors.successBg,
     },
     statusText: {
       fontSize: FONT_SIZES.xs,

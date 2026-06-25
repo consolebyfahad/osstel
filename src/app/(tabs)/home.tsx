@@ -109,7 +109,7 @@ export default function Home() {
     isFetching: isActivitiesFetching,
     refetch: refetchActivities,
   } = useGetDashboardActivitiesQuery(
-    { hostelId: activitiesHostelId, limit: 20 },
+    { hostelId: activitiesHostelId, limit: 5 },
     { skip: !isManager || !activitiesHostelId },
   );
 
@@ -166,16 +166,16 @@ export default function Home() {
         title: "Total Rooms",
         value: summary.totalRooms,
         iconName: "home-outline",
-        iconColor: isDark ? "#FB923C" : "#F97316",
-        iconBackgroundColor: isDark ? "#3D2518" : "#FFEDD5",
+        iconColor: colors.warning,
+        iconBackgroundColor: colors.warningBg,
       },
       {
         id: "total-beds",
         title: "Total Beds",
         value: summary.totalBedrooms,
         iconName: "bed-outline",
-        iconColor: isDark ? "#A78BFA" : "#7C3AED",
-        iconBackgroundColor: isDark ? "#2D2640" : "#EDE9FE",
+        iconColor: colors.secondary,
+        iconBackgroundColor: colors.purpleBg,
       },
       {
         id: "occupied",
@@ -183,7 +183,7 @@ export default function Home() {
         value: summary.occupiedBeds,
         iconName: "trending-up-outline",
         iconColor: colors.success,
-        iconBackgroundColor: isDark ? "#1A3020" : "#DCFCE7",
+        iconBackgroundColor: colors.successBg,
       },
       {
         id: "vacant",
@@ -191,10 +191,10 @@ export default function Home() {
         value: summary.vacantBeds,
         iconName: "bed-outline",
         iconColor: colors.warning,
-        iconBackgroundColor: isDark ? "#302818" : "#FEF3C7",
+        iconBackgroundColor: colors.warningBg,
       },
     ],
-    [colors.success, colors.warning, isDark, summary],
+    [colors.success, colors.warning, colors.warningBg, colors.warningText, colors.successBg, colors.successText, colors.purpleBg, colors.purpleText, colors.secondary, summary],
   );
 
   const collectionData: CollectionBannerData = useMemo(() => {
@@ -224,26 +224,26 @@ export default function Home() {
               id: "add-room",
               label: "Add Room",
               iconName: "add",
-              iconColor: isDark ? "#FB923C" : "#C2410C",
-              iconBackgroundColor: isDark ? "#3D2518" : "#FFEDD5",
+              iconColor: colors.warningText,
+              iconBackgroundColor: colors.warningBg,
             },
             {
               id: "add-resident",
               label: "Add Resident",
               iconName: "person-add-outline",
-              iconColor: isDark ? "#4EDCA3" : "#15803D",
-              iconBackgroundColor: isDark ? "#1A3020" : "#DCFCE7",
+              iconColor: colors.successText,
+              iconBackgroundColor: colors.successBg,
             },
             {
               id: "reports",
               label: "Reports",
               iconName: "download-outline",
-              iconColor: isDark ? "#A78BFA" : "#6D28D9",
-              iconBackgroundColor: isDark ? "#2D2640" : "#EDE9FE",
+              iconColor: colors.purpleText,
+              iconBackgroundColor: colors.purpleBg,
             },
           ]
         : [],
-    [isDark, isManager],
+    [colors.successText, colors.successBg, colors.warningText, colors.warningBg, colors.purpleText, colors.purpleBg, isManager],
   );
 
   const handleQuickAction = (actionId: string) => {
@@ -374,6 +374,15 @@ export default function Home() {
               activities={recentActivities}
               isLoading={isActivitiesLoading}
               emptyMessage={activitiesEmptyMessage}
+              onSeeAllPress={
+                activitiesHostelId
+                  ? () =>
+                      router.push({
+                        pathname: "/activities",
+                        params: { hostelId: activitiesHostelId },
+                      })
+                  : undefined
+              }
             />
           ) : null}
         </ScrollView>
@@ -433,7 +442,7 @@ function createStyles(
     notificationBadgeText: {
       fontSize: FONT_SIZES.xs,
       fontFamily: fonts.bold,
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
     greeting: {
       fontSize: FONT_SIZES.lg,

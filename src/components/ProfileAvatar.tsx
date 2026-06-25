@@ -53,7 +53,7 @@ export default function ProfileAvatar({
       <Pressable style={styles.wrap} onPress={onPress}>
         <View style={styles.avatar}>{content}</View>
         <View style={styles.editBadge}>
-          <Ionicons name="camera" size={vs(14)} color="#FFFFFF" />
+          <Ionicons name="camera" size={vs(14)} color={colors.onPrimary} />
         </View>
       </Pressable>
     );
@@ -84,7 +84,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, size: number) {
     initials: {
       fontSize: size * 0.32,
       fontFamily: fonts.bold,
-      color: "#FFFFFF",
+      color: colors.onPrimary,
     },
     editBadge: {
       position: "absolute",

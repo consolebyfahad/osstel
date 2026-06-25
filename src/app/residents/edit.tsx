@@ -551,18 +551,12 @@ export default function EditResident() {
                   />
                 </View>
 
-                <Pressable
-                  style={[
-                    styles.removeButton,
-                    (isSaving || isRemoving) && styles.removeButtonDisabled,
-                  ]}
+                <CustomButton
+                  title={isRemoving ? "Removing..." : "Remove Resident"}
                   onPress={handleRemove}
                   disabled={isSaving || isRemoving}
-                >
-                  <Text style={styles.removeButtonText}>
-                    {isRemoving ? "Removing..." : "Remove Resident"}
-                  </Text>
-                </Pressable>
+                  style={styles.deleteBtn}
+                />
               </>
             )}
           </ScrollView>
@@ -623,7 +617,7 @@ function createStyles(
     backLinkText: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
-      color: colors.white,
+      color: colors.onPrimary,
     },
     infoCard: {
       backgroundColor: colors.white,
@@ -697,21 +691,9 @@ function createStyles(
     buttonWrap: {
       marginTop: vs(8),
     },
-    removeButton: {
+    deleteBtn: {
+      backgroundColor: colors.error,
       marginTop: vs(16),
-      paddingVertical: vs(14),
-      borderRadius: vs(12),
-      borderWidth: 1,
-      borderColor: colors.error,
-      alignItems: "center",
-    },
-    removeButtonDisabled: {
-      opacity: 0.6,
-    },
-    removeButtonText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.error,
     },
     loadingWrap: {
       alignItems: "center",
