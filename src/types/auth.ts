@@ -1,5 +1,5 @@
 import type { UserRole } from "./role";
-import type { SubscriptionPlanId } from "./subscription";
+import type { SubscriptionPlanId, TrialInfo } from "./subscription";
 import type { SubscriptionUsage } from "@/utils/subscription";
 import { unwrapApiResponse } from "@/utils/api";
 
@@ -21,10 +21,12 @@ export type GoogleAuthBody = {
   idToken: string;
 };
 
+export type AuthProvider = "local" | "google";
+
 export interface AuthUser {
   id?: string;
   userId?: string;
-  phone: string;
+  phone?: string;
   name?: string;
   cnic?: string;
   email?: string;
@@ -35,7 +37,11 @@ export interface AuthUser {
   accessToken: string | null;
   refreshToken: string | null;
   isVerified: boolean;
+  authProvider?: AuthProvider;
+  googleId?: string;
   subscriptionPlan?: SubscriptionPlanId;
+  baseSubscriptionPlan?: SubscriptionPlanId;
+  trial?: TrialInfo | null;
   subscriptionUsage?: SubscriptionUsage;
   hostels?: UserHostel[];
   hostel?: UserHostel | null;
@@ -47,14 +53,18 @@ export interface MeResponse {
     id: string;
     userId?: string;
     name: string;
-    phone: string;
+    phone?: string | null;
     cnic?: string;
     email?: string;
     address?: string;
     dateOfBirth?: string;
     profileImage?: string | null;
     role: UserRole;
+    authProvider?: AuthProvider;
+    googleId?: string | null;
     subscriptionPlan: SubscriptionPlanId;
+    baseSubscriptionPlan?: SubscriptionPlanId;
+    trial?: TrialInfo | null;
     subscriptionUsage?: SubscriptionUsage;
     hostels: UserHostel[];
     hostel: UserHostel | null;
@@ -69,6 +79,12 @@ export type UpdateProfileBody = {
   address?: string;
   dateOfBirth?: string;
   profileImage?: string | null;
+};
+
+export type ChangePasswordBody = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 };
 
 export interface AuthState {
@@ -93,6 +109,33 @@ export type ManagerLoginBody = {
 
 export type LoginBody = ResidentLoginBody | ManagerLoginBody;
 
+export function isLegacyGooglePhone(phone?: string | null) {
+  return typeof phone === "string" && phone.startsWith("google_");
+}
+
+export function isGoogleAuthUser(
+  user:
+    | {
+        authProvider?: AuthProvider;
+        phone?: string | null;
+      }
+    | null
+    | undefined,
+) {
+  if (!user) return false;
+  if (user.authProvider === "google") return true;
+  return isLegacyGooglePhone(user.phone);
+}
+
+export function normalizeAuthPhone(
+  phone: unknown,
+  authProvider?: AuthProvider,
+): string {
+  const value = String(phone ?? "");
+  if (authProvider === "google" || isLegacyGooglePhone(value)) return "";
+  return value;
+}
+
 export function parseAuthTokens(response: unknown): {
   accessToken: string | null;
   refreshToken: string | null;
@@ -111,11 +154,12 @@ export function toAuthUser(response: unknown): AuthUser {
       ? (payload.user as Record<string, unknown>)
       : payload;
   const tokens = parseAuthTokens(payload);
+  const authProvider = user.authProvider as AuthProvider | undefined;
 
   return {
     id: user.id ? String(user.id) : undefined,
     userId: user.userId ? String(user.userId) : undefined,
-    phone: String(user.phone ?? ""),
+    phone: normalizeAuthPhone(user.phone, authProvider),
     name: user.name ? String(user.name) : undefined,
     cnic: user.cnic ? String(user.cnic) : undefined,
     email: user.email ? String(user.email) : undefined,
@@ -123,6 +167,14 @@ export function toAuthUser(response: unknown): AuthUser {
     dateOfBirth: user.dateOfBirth ? String(user.dateOfBirth) : undefined,
     profileImage: user.profileImage ? String(user.profileImage) : undefined,
     role: user.role as UserRole,
+    authProvider:
+      authProvider ??
+      (isLegacyGooglePhone(
+        typeof user.phone === "string" ? user.phone : undefined,
+      )
+        ? "google"
+        : "local"),
+    googleId: user.googleId ? String(user.googleId) : undefined,
     accessToken:
       tokens.accessToken ??
       (String(user.accessToken ?? "") || null),
@@ -133,6 +185,13 @@ export function toAuthUser(response: unknown): AuthUser {
     subscriptionPlan: isSubscriptionPlan(user.subscriptionPlan)
       ? user.subscriptionPlan
       : undefined,
+    baseSubscriptionPlan: isSubscriptionPlan(user.baseSubscriptionPlan)
+      ? user.baseSubscriptionPlan
+      : undefined,
+    trial:
+      user.trial && typeof user.trial === "object"
+        ? (user.trial as TrialInfo)
+        : null,
     hostels: Array.isArray(user.hostels)
       ? (user.hostels as UserHostel[])
       : undefined,
@@ -146,14 +205,18 @@ export function meToAuthProfile(me: MeResponse["user"]): Partial<AuthUser> {
     id: me.id,
     userId: me.userId,
     name: me.name,
-    phone: me.phone,
+    phone: normalizeAuthPhone(me.phone, me.authProvider),
     cnic: me.cnic,
     email: me.email,
     address: me.address,
     dateOfBirth: me.dateOfBirth,
     profileImage: me.profileImage,
     role: me.role,
+    authProvider: me.authProvider ?? (isLegacyGooglePhone(me.phone) ? "google" : "local"),
+    googleId: me.googleId ?? undefined,
     subscriptionPlan: me.subscriptionPlan,
+    baseSubscriptionPlan: me.baseSubscriptionPlan,
+    trial: me.trial ?? null,
     subscriptionUsage: me.subscriptionUsage,
     hostels: me.hostels,
     hostel: me.hostel,

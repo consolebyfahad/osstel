@@ -68,7 +68,7 @@ function statusLabel(status: RentStatus) {
 
 function statusMessage(record: RentRecord) {
   if (record.rejectionReason) {
-    return "Your payment was rejected. Please submit a new proof.";
+    return "Your payment was rejected. Edit the screenshot or details below and resubmit.";
   }
   if (record.status === "paid") {
     return "Payment approved by your hostel manager.";
@@ -115,9 +115,15 @@ type PaymentProofCardProps = {
   record: RentRecord;
   styles: ReturnType<typeof createStyles>;
   colors: AppColors;
+  onEdit?: () => void;
 };
 
-function PaymentProofCard({ record, styles, colors }: PaymentProofCardProps) {
+function PaymentProofCard({
+  record,
+  styles,
+  colors,
+  onEdit,
+}: PaymentProofCardProps) {
   const rejected = Boolean(record.rejectionReason);
   const showProof =
     Boolean(record.paymentProof) ||
@@ -159,6 +165,13 @@ function PaymentProofCard({ record, styles, colors }: PaymentProofCardProps) {
         <Text style={styles.rejectionText}>
           Rejected: {record.rejectionReason}
         </Text>
+      ) : null}
+
+      {rejected && onEdit ? (
+        <Pressable style={styles.editProofBtn} onPress={onEdit}>
+          <Ionicons name="create-outline" size={vs(16)} color={colors.primary} />
+          <Text style={styles.editProofBtnText}>Edit Payment Proof</Text>
+        </Pressable>
       ) : null}
 
       <Text style={styles.proofMessage}>{statusMessage(record)}</Text>
@@ -236,9 +249,11 @@ export default function ResidentRentView() {
 
   const hasRentRecord = Boolean(currentRecord?.id);
   const currentStatus = currentRecord?.status;
+  const isRejected =
+    currentStatus === "rejected" || Boolean(currentRecord?.rejectionReason);
   const canSubmitPayment =
     hasRentRecord &&
-    (currentStatus === "pending" || Boolean(currentRecord?.rejectionReason));
+    (currentStatus === "pending" || isRejected);
   const showDueHighlight =
     isRentDueWindow() &&
     (!hasRentRecord || currentStatus === "pending");
@@ -250,6 +265,17 @@ export default function ResidentRentView() {
     setPaymentProof({ localUri: null, uploadValue: null });
     setPaymentNote("");
   };
+
+  const openPayModal = useCallback(() => {
+    const proof = currentRecord?.paymentProof;
+    setPaymentProof(
+      proof
+        ? { localUri: null, uploadValue: proof }
+        : { localUri: null, uploadValue: null },
+    );
+    setPaymentNote(currentRecord?.note?.trim() ?? "");
+    setShowPayModal(true);
+  }, [currentRecord?.note, currentRecord?.paymentProof]);
 
   const handleSubmitPayment = async () => {
     if (!paymentProof.uploadValue) {
@@ -406,17 +432,18 @@ export default function ResidentRentView() {
                   record={currentRecord}
                   styles={styles}
                   colors={colors}
+                  onEdit={isRejected ? openPayModal : undefined}
                 />
               ) : null}
               {canSubmitPayment && room ? (
                 <Pressable
                   style={styles.primaryBtn}
-                  onPress={() => setShowPayModal(true)}
+                  onPress={openPayModal}
                 >
                   <Ionicons name="cloud-upload-outline" size={vs(18)} color={colors.white} />
                   <Text style={styles.primaryBtnText}>
-                    {currentRecord?.rejectionReason
-                      ? "Resubmit Payment Proof"
+                    {isRejected
+                      ? "Edit Payment Proof"
                       : "Submit Payment Proof"}
                   </Text>
                 </Pressable>
@@ -502,10 +529,13 @@ export default function ResidentRentView() {
           style={styles.modalOverlay}
         >
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Submit Rent Payment</Text>
+            <Text style={styles.modalTitle}>
+              {isRejected ? "Edit Payment Proof" : "Submit Rent Payment"}
+            </Text>
             <Text style={styles.modalSub}>
-              Upload a screenshot of your bank transfer or payment receipt. It
-              will be sent to your hostel owner for approval.
+              {isRejected
+                ? "Update your payment screenshot or details, then send it back to your hostel owner for approval."
+                : "Upload a screenshot of your bank transfer or payment receipt. It will be sent to your hostel owner for approval."}
             </Text>
 
             <ImageUploadField
@@ -513,6 +543,11 @@ export default function ResidentRentView() {
               value={paymentProof}
               onChange={setPaymentProof}
               preset="document"
+              hint={
+                isRejected
+                  ? "Tap the image to replace it, or remove and upload a new screenshot."
+                  : undefined
+              }
             />
 
             <Text style={styles.noteLabel}>Details (optional)</Text>
@@ -532,7 +567,13 @@ export default function ResidentRentView() {
               </Pressable>
               <View style={styles.submitWrap}>
                 <CustomButton
-                  title={isSubmitting ? "Sending..." : "Send to Owner"}
+                  title={
+                    isSubmitting
+                      ? "Sending..."
+                      : isRejected
+                        ? "Resubmit for Review"
+                        : "Send to Owner"
+                  }
                   onPress={handleSubmitPayment}
                   disabled={isSubmitting || !paymentProof.uploadValue}
                 />
@@ -709,7 +750,22 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.medium,
       color: colors.error,
-      marginBottom: vs(8),
+    },
+    editProofBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: vs(6),
+      alignSelf: "flex-start",
+      paddingVertical: vs(8),
+      paddingHorizontal: vs(12),
+      borderRadius: vs(10),
+      backgroundColor: isDark ? colors.infoBg : colors.primary100,
+    },
+    editProofBtnText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.primary,
     },
     reviewText: {
       fontSize: FONT_SIZES.sm,

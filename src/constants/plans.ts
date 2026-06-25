@@ -4,10 +4,8 @@ export type PlanFeature =
   | "tenant_management"
   | "room_management"
   | "rent_tracking"
-  | "attendance"
   | "reports"
   | "notifications"
-  | "expense_tracking"
   | "tenant_mobile_app"
   | "data_export"
   | "multi_hostel"
@@ -32,10 +30,8 @@ export const PLAN_FEATURES = {
   tenant_management: "tenant_management",
   room_management: "room_management",
   rent_tracking: "rent_tracking",
-  attendance: "attendance",
   reports: "reports",
   notifications: "notifications",
-  expense_tracking: "expense_tracking",
   tenant_mobile_app: "tenant_mobile_app",
   data_export: "data_export",
   multi_hostel: "multi_hostel",
@@ -57,10 +53,8 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
       tenant_management: true,
       room_management: true,
       rent_tracking: true,
-      attendance: true,
       reports: false,
       notifications: false,
-      expense_tracking: false,
       tenant_mobile_app: false,
       data_export: false,
       multi_hostel: false,
@@ -81,10 +75,8 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
       tenant_management: true,
       room_management: true,
       rent_tracking: true,
-      attendance: true,
       reports: true,
       notifications: true,
-      expense_tracking: true,
       tenant_mobile_app: true,
       data_export: true,
       multi_hostel: false,
@@ -105,10 +97,8 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
       tenant_management: true,
       room_management: true,
       rent_tracking: true,
-      attendance: true,
       reports: true,
       notifications: true,
-      expense_tracking: true,
       tenant_mobile_app: true,
       data_export: true,
       multi_hostel: true,

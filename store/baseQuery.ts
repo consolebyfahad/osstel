@@ -1,6 +1,9 @@
 import { ENV } from "../config/env";
 import { parseAuthTokens } from "@/types/auth";
-import { unwrapApiResponse } from "@/utils/api";
+import {
+  shouldLogoutOnApiError,
+  unwrapApiResponse,
+} from "@/utils/api";
 import {
   fetchBaseQuery,
   type BaseQueryFn,
@@ -16,8 +19,6 @@ const AUTH_PATHS_WITHOUT_REFRESH = new Set([
   "/auth/refresh",
   "/auth/logout",
 ]);
-
-console.log("ENV.API_BASE_URL", ENV.API_BASE_URL);
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: ENV.API_BASE_URL,
@@ -112,12 +113,18 @@ export const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   let result = normalizeSuccessData(await rawBaseQuery(args, api, extraOptions));
 
-  if (result.error?.status === 403) {
-    const state = api.getState() as RootState;
-    if (state.auth.isAuthenticated) {
+  const state = api.getState() as RootState;
+  const isAuthenticated = state.auth.isAuthenticated;
+
+  if (
+    result.error &&
+    isAuthenticated &&
+    shouldLogoutOnApiError(result.error.status, result.error)
+  ) {
+    if (result.error.status === 403) {
       api.dispatch(logout());
+      return result;
     }
-    return result;
   }
 
   if (result.error?.status !== 401) {
@@ -129,8 +136,7 @@ export const baseQueryWithReauth: BaseQueryFn<
     return result;
   }
 
-  const state = api.getState() as RootState;
-  if (!state.auth.isAuthenticated) {
+  if (!isAuthenticated) {
     return result;
   }
 
@@ -142,7 +148,10 @@ export const baseQueryWithReauth: BaseQueryFn<
 
   result = normalizeSuccessData(await rawBaseQuery(args, api, extraOptions));
 
-  if (result.error?.status === 401) {
+  if (
+    result.error &&
+    shouldLogoutOnApiError(result.error.status, result.error)
+  ) {
     api.dispatch(logout());
   }
 

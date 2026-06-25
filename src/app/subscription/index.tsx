@@ -11,6 +11,10 @@ import {
   type SubscriptionPlanId,
 } from "@/types/subscription";
 import {
+  getApiErrorMessage,
+  isBlockedAccountMessage,
+} from "@/utils/api";
+import {
   api,
   useGetMeQuery,
   useGetPlanRequestQuery,
@@ -47,7 +51,7 @@ import { persistor } from "../../../store/store";
 const PAYMENT_INSTRUCTIONS = `Transfer payment to:
 Bank: Meezan Bank
 Account: 1234567890
-Title: OSSTEL Services
+Title: Osstel Services
 
 Then submit your request. Admin will verify and activate your plan.`;
 
@@ -57,12 +61,16 @@ function getErrorMessage(error: unknown, fallback: string) {
     data?: { message?: string; errors?: { msg: string }[] } | string;
   };
 
-  if (err.status === 403) return "BLOCKED";
+  const apiMessage = getApiErrorMessage(error);
+  if (err.status === 403 && isBlockedAccountMessage(apiMessage)) {
+    return "BLOCKED";
+  }
   if (typeof err.data === "string") return err.data;
   if (err.data?.errors?.length) {
     return err.data.errors.map((e) => e.msg).join("\n");
   }
   if (err.data?.message) return err.data.message;
+  if (apiMessage) return apiMessage;
   return fallback;
 }
 
@@ -135,6 +143,7 @@ export default function SubscriptionScreen() {
     requestData?.currentPlan ??
     user?.subscriptionPlan ??
     "free";
+  const activeTrial = meData?.user.trial ?? user?.trial ?? null;
 
   const pendingRequest =
     requestData?.request?.status === "pending" ? requestData.request : null;
@@ -265,6 +274,30 @@ export default function SubscriptionScreen() {
             />
           }
         >
+          {activeTrial?.active ? (
+            <View style={styles.pendingBanner}>
+              <Ionicons
+                name="gift-outline"
+                size={vs(22)}
+                color={colors.primary}
+              />
+              <View style={styles.pendingContent}>
+                <Text style={styles.pendingTitle}>
+                  Pro trial active — {activeTrial.daysRemaining} day
+                  {activeTrial.daysRemaining === 1 ? "" : "s"} remaining
+                </Text>
+                <Text style={styles.pendingSubtext}>
+                  You have full Pro access during the trial. After it ends, your
+                  plan returns to{" "}
+                  {getPlanDisplayName(
+                    meData?.user.baseSubscriptionPlan ?? "free",
+                  )}
+                  .
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           {hasPending && pendingRequest ? (
             <View style={styles.pendingBanner}>
               <Ionicons
@@ -291,7 +324,7 @@ export default function SubscriptionScreen() {
             </View>
           ) : null}
 
-          {currentPlanId === "premium" && !hasPending ? (
+          {currentPlanId === "premium" && !hasPending && !activeTrial?.active ? (
             <View style={styles.bestPlanBanner}>
               <Ionicons
                 name="diamond-outline"

@@ -22,6 +22,7 @@ export interface RentRecord {
   resident: RentResident;
   room: RentRoom;
   paymentProof: string | null;
+  note?: string | null;
   submittedAt: string | null;
   rejectionReason: string | null;
 }

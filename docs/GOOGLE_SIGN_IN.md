@@ -1,6 +1,6 @@
-# Google Sign-In Setup Guide (OSSTEL)
+# Google Sign-In Setup Guide (Osstel)
 
-This guide documents the full Google Sign-In configuration for OSSTEL. It covers Google Cloud Console, Firebase, the mobile app (`osstel`), and the backend (`osstel-backend`).
+This guide documents the full Google Sign-In configuration for Osstel. It covers Google Cloud Console, Firebase, the mobile app (`osstel`), and the backend (`osstel-backend`).
 
 Google Sign-In is **manager-only**. Residents continue to sign in with **User ID + password**.
 
@@ -10,7 +10,7 @@ Google Sign-In is **manager-only**. Residents continue to sign in with **User ID
 
 ```mermaid
 sequenceDiagram
-  participant App as OSSTEL App
+  participant App as Osstel App
   participant Google as Google Sign-In SDK
   participant API as Backend API
   participant DB as MongoDB
@@ -24,7 +24,7 @@ sequenceDiagram
   API-->>App: accessToken + refreshToken + user
 ```
 
-**Important:** OSSTEL uses **native Google Sign-In** (`@react-native-google-signin/google-signin`). It does **not** open a browser OAuth flow, so you do **not** need to add custom redirect URIs like `osstel://oauthredirect` to the **Web** OAuth client.
+**Important:** Osstel uses **native Google Sign-In** (`@react-native-google-signin/google-signin`). It does **not** open a browser OAuth flow, so you do **not** need to add custom redirect URIs like `osstel://oauthredirect` to the **Web** OAuth client.
 
 ---
 
@@ -44,7 +44,7 @@ sequenceDiagram
 3. Go to **APIs & Services → OAuth consent screen**.
 4. Configure:
    - **User type:** External (for public app) or Internal (workspace only)
-   - **App name:** OSSTEL
+   - **App name:** Osstel
    - **Support email:** your email
    - **Scopes:** `email`, `profile`, `openid` (default basic scopes are enough)
 5. While in **Testing** mode, add your Google account(s) under **Test users**.
@@ -63,7 +63,7 @@ You need **three** clients:
 | Field | Value |
 |-------|-------|
 | Application type | Web application |
-| Name | OSSTEL Web (or similar) |
+| Name | Osstel Web (or similar) |
 
 **Authorized redirect URIs:** leave default / only add `https://` URIs if you use web OAuth elsewhere. Do **not** add `osstel://` here — Web clients reject custom URL schemes.
 

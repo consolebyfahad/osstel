@@ -267,7 +267,7 @@ export default function SignIn() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {isDark ? <View style={styles.darkOverlay} /> : null}
+        <View style={styles.backgroundOverlay} />
       </ImageBackground>
 
       <View
@@ -292,10 +292,10 @@ export default function SignIn() {
             {!keyboardOpen ? (
               <View style={styles.logoSection}>
                 <Image
-                  source={Images.osstellogo}
+                  source={Images.osstel}
                   style={styles.brandLogoImage}
                   resizeMode="contain"
-                  accessibilityLabel="OSSTEL logo"
+                  accessibilityLabel="Osstel logo"
                 />
               </View>
             ) : null}
@@ -312,7 +312,7 @@ export default function SignIn() {
                 </View>
                 <Text style={styles.subtitle}>
                   {isSignUp && canSignUp
-                    ? "Register to manage your hostel with OSSTEL."
+                    ? "Register to manage your hostel with Osstel."
                     : selectedRole === "resident"
                       ? "Sign in with your user ID and password."
                       : "Sign in with your phone number and password."}
@@ -526,9 +526,9 @@ function createStyles(
     backgroundImage: {
       ...StyleSheet.absoluteFill,
     },
-    darkOverlay: {
+    backgroundOverlay: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: colors.overlay,
+      backgroundColor: colors.authBackgroundOverlay,
     },
     bottomFill: {
       position: "absolute",

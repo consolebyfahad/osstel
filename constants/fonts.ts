@@ -11,6 +11,7 @@ export const FONTS = {
 export const vs = (size: number) => verticalScale(size);
 
 const BASE_FONT_SIZES = {
+  xxs: 8,
   xs: 11,
   sm: 12,
   md: 14,
@@ -23,6 +24,7 @@ const BASE_FONT_SIZES = {
 } as const;
 
 export const FONT_SIZES = {
+  xxs: vs(BASE_FONT_SIZES.xxs),
   xs: vs(BASE_FONT_SIZES.xs),
   sm: vs(BASE_FONT_SIZES.sm),
   md: vs(BASE_FONT_SIZES.md),

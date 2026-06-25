@@ -272,12 +272,19 @@ export default function ResidentHomeDashboard() {
                 Payment sent to owner for approval.
               </Text>
             ) : null}
-            {(rentStatus === "pending" || !rentRecord) && room ? (
+            {(rentStatus === "pending" ||
+              rentStatus === "rejected" ||
+              rentRecord?.rejectionReason) &&
+            room ? (
               <Pressable
                 style={styles.payButton}
                 onPress={() => router.push("/(tabs)/rent")}
               >
-                <Text style={styles.payButtonText}>Submit Payment</Text>
+                <Text style={styles.payButtonText}>
+                  {rentStatus === "rejected" || rentRecord?.rejectionReason
+                    ? "Edit Payment Proof"
+                    : "Submit Payment"}
+                </Text>
               </Pressable>
             ) : null}
           </>

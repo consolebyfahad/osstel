@@ -9,7 +9,7 @@ import type {
   UpdateComplaintStatusParams,
   UpdateComplaintStatusResponse,
 } from "@/types/complaint";
-import type { GoogleAuthBody, LoginBody, MeResponse, UpdateProfileBody } from "@/types/auth";
+import type { GoogleAuthBody, LoginBody, MeResponse, UpdateProfileBody, ChangePasswordBody } from "@/types/auth";
 import type {
   HostelResponse,
   HostelsResponse,
@@ -76,6 +76,14 @@ export const api = createApi({
         body,
       }),
       invalidatesTags: ["User"],
+    }),
+
+    changePassword: builder.mutation<{ message: string }, ChangePasswordBody>({
+      query: (body) => ({
+        url: "/users/me/password",
+        method: "PATCH",
+        body,
+      }),
     }),
 
     login: builder.mutation<unknown, LoginBody>({
@@ -549,6 +557,7 @@ export const api = createApi({
 export const {
   useGetMeQuery,
   useUpdateMeMutation,
+  useChangePasswordMutation,
   useLazyGetMeQuery,
   useLoginMutation,
   useGoogleAuthMutation,

@@ -1,4 +1,5 @@
 import ResidentComplaintsView from "@/components/resident/ResidentComplaintsView";
+import AnimatedFilterBar from "@/components/AnimatedFilterBar";
 import EmptyState from "@/components/EmptyState";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
@@ -299,27 +300,12 @@ function ManagerComplaintsView() {
           </View>
         ) : null}
 
-        <View style={styles.filterBar}>
-          {COMPLAINT_FILTERS.map((filter) => {
-            const isActive = activeFilter === filter.id;
-            return (
-              <Pressable
-                key={filter.id}
-                style={[styles.filterTab, isActive && styles.filterTabActive]}
-                onPress={() => setActiveFilter(filter.id)}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    isActive && styles.filterTextActive,
-                  ]}
-                >
-                  {filter.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <AnimatedFilterBar
+          filters={COMPLAINT_FILTERS}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          style={styles.filterBarSpacing}
+        />
       </View>
 
       {isLoading ? (
@@ -446,34 +432,12 @@ function createStyles(
       marginBottom: vs(2),
     },
     summaryChipLabel: {
-      fontSize: FONT_SIZES.xs,
+      fontSize: FONT_SIZES.xxs,
       fontFamily: fonts.medium,
       color: colors.gray200,
     },
-    filterBar: {
-      flexDirection: "row",
-      backgroundColor: colors.white100,
-      borderRadius: vs(14),
-      padding: vs(4),
+    filterBarSpacing: {
       marginBottom: vs(12),
-    },
-    filterTab: {
-      flex: 1,
-      paddingVertical: vs(10),
-      alignItems: "center",
-      borderRadius: vs(10),
-    },
-    filterTabActive: {
-      backgroundColor: colors.white,
-    },
-    filterText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-    },
-    filterTextActive: {
-      fontFamily: fonts.semiBold,
-      color: colors.text,
     },
     emptyState: {
       alignItems: "center",

@@ -39,7 +39,7 @@ export default function ResidentCredentialsModal({
     try {
       await Share.share({
         message: credentials.shareMessage,
-        title: `${residentName} — OSSTEL Login`,
+        title: `${residentName} — Osstel Login`,
       });
     } catch {
       // User cancelled share

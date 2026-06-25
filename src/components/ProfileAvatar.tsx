@@ -8,14 +8,19 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 type ProfileAvatarProps = {
   name: string;
-  phone: string;
+  phone?: string;
+  fallback?: string;
   imageUri?: string | null;
   size?: number;
   editable?: boolean;
   onPress?: () => void;
 };
 
-export function getProfileInitials(name: string, phone: string) {
+export function getProfileInitials(
+  name: string,
+  phone?: string,
+  fallback?: string,
+) {
   const trimmed = name.trim();
   if (trimmed) {
     const parts = trimmed.split(" ").filter(Boolean);
@@ -24,12 +29,25 @@ export function getProfileInitials(name: string, phone: string) {
     }
     return trimmed.slice(0, 2).toUpperCase();
   }
-  return phone.slice(-2);
+
+  const phoneTrimmed = phone?.trim();
+  if (phoneTrimmed && !phoneTrimmed.startsWith("google_")) {
+    return phoneTrimmed.slice(-2);
+  }
+
+  const fallbackTrimmed = fallback?.trim();
+  if (fallbackTrimmed) {
+    const localPart = fallbackTrimmed.split("@")[0];
+    return localPart.slice(0, 2).toUpperCase();
+  }
+
+  return "??";
 }
 
 export default function ProfileAvatar({
   name,
   phone,
+  fallback,
   imageUri,
   size = vs(96),
   editable = false,
@@ -40,7 +58,7 @@ export default function ProfileAvatar({
     () => createStyles(colors, fonts, size),
     [colors, fonts, size],
   );
-  const initials = getProfileInitials(name, phone);
+  const initials = getProfileInitials(name, phone, fallback);
 
   const content = imageUri ? (
     <Image source={{ uri: imageUri }} style={styles.image} contentFit="cover" />

@@ -6,7 +6,7 @@ import {
   useLogoutMutation,
 } from "../../../store/api";
 import { aggregateDashboard } from "@/types/dashboard";
-import { formatDateOfBirth, meToAuthProfile } from "@/types/auth";
+import { formatDateOfBirth, isGoogleAuthUser, meToAuthProfile } from "@/types/auth";
 import { formatCnic } from "@/utils/cnic";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import CustomButton from "@/components/CustomButton";
@@ -26,8 +26,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import Fontisto from "@expo/vector-icons/Fontisto";
+import { showConfirmModal } from "@/context/AppModalProvider";
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -131,9 +131,12 @@ export default function Profile() {
 
   const displayName =
     meData?.user.name?.trim() || user?.name?.trim() || "Guest User";
-  const phone = meData?.user.phone ?? user?.phone ?? "—";
+  const profileUser = meData?.user ?? user;
+  const isGoogleUser = isGoogleAuthUser(profileUser);
+  const phone = profileUser?.phone?.trim() || "—";
   const email =
     meData?.user.email?.trim() || user?.email?.trim() || "Not added";
+  const heroContact = isGoogleUser ? email : phone;
   const address =
     meData?.user.address?.trim() || user?.address?.trim() || "Not added";
   const dateOfBirth =
@@ -171,26 +174,27 @@ export default function Profile() {
     : "Not assigned";
 
   const handleLogout = () => {
-    Alert.alert("Log out", "Are you sure you want to log out of OSSTEL?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log out",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await logoutApi(undefined).unwrap();
-          } catch {
-            // Clear local session even if server logout fails
-          }
+    showConfirmModal({
+      title: "Log out",
+      message: "Are you sure you want to log out of Osstel?",
+      confirmText: "Log out",
+      cancelText: "Cancel",
+      destructive: true,
+      icon: "log-out-outline",
+      onConfirm: async () => {
+        try {
+          await logoutApi(undefined).unwrap();
+        } catch {
+          // Clear local session even if server logout fails
+        }
 
-          dispatch(logout());
-          dispatch(api.util.resetApiState());
-          await persistor.purge();
-          if (router.canDismiss()) router.dismissAll();
-          router.replace("/auth/signin");
-        },
+        dispatch(logout());
+        dispatch(api.util.resetApiState());
+        await persistor.purge();
+        if (router.canDismiss()) router.dismissAll();
+        router.replace("/auth/signin");
       },
-    ]);
+    });
   };
 
   return (
@@ -214,7 +218,8 @@ export default function Profile() {
 
             <ProfileAvatar
               name={displayName}
-              phone={phone}
+              phone={isGoogleUser ? undefined : phone}
+              fallback={email}
               imageUri={profileImage}
               size={vs(80)}
             />
@@ -233,7 +238,7 @@ export default function Profile() {
               </Pressable>
             </View>
 
-            <Text style={styles.heroPhone}>{phone}</Text>
+            <Text style={styles.heroPhone}>{heroContact}</Text>
 
             {isManager ? (
               <View style={styles.badgeRow}>
@@ -247,6 +252,13 @@ export default function Profile() {
                     {getPlanDisplayName(activePlanId)}
                   </Text>
                 </View>
+                {user?.trial?.active ? (
+                  <View style={styles.trialBadge}>
+                    <Text style={styles.trialBadgeText}>
+                      Trial · {user.trial.daysRemaining}d left
+                    </Text>
+                  </View>
+                ) : null}
                 <View
                   style={[
                     styles.statusBadge,
@@ -299,6 +311,19 @@ export default function Profile() {
               styles={styles}
               colors={colors}
             />
+            {!isGoogleUser ? (
+              <>
+                <View style={styles.divider} />
+                <MenuRow
+                  icon="lock-closed-outline"
+                  label="Change Password"
+                  value="Update your sign-in password"
+                  onPress={() => router.push("/profile/change-password")}
+                  styles={styles}
+                  colors={colors}
+                />
+              </>
+            ) : null}
             <View style={styles.divider} />
             {!isManager ? (
               <>
@@ -313,9 +338,9 @@ export default function Profile() {
               </>
             ) : null}
             <MenuRow
-              icon="call-outline"
-              label="Phone Number"
-              value={phone}
+              icon={isGoogleUser ? "mail-outline" : "call-outline"}
+              label={isGoogleUser ? "Email" : "Phone Number"}
+              value={isGoogleUser ? email : phone}
               styles={styles}
               colors={colors}
             />
@@ -477,9 +502,10 @@ export default function Profile() {
           </View>
 
           <CustomButton
-            title="Log Out"
+            title="Sign out"
+            variant="destructive"
+            icon={<Ionicons name="log-out-outline" size={vs(18)} color={colors.onPrimary} />}
             onPress={handleLogout}
-            style={styles.logoutButton}
           />
         </ScrollView>
       </SafeAreaView>
@@ -617,6 +643,17 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontFamily: fonts.semiBold,
       color: colors.success,
     },
+    trialBadge: {
+      backgroundColor: colors.primary100,
+      paddingHorizontal: vs(10),
+      paddingVertical: vs(6),
+      borderRadius: vs(20),
+    },
+    trialBadgeText: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: fonts.semiBold,
+      color: colors.primary,
+    },
     sectionTitle: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.semiBold,
@@ -676,9 +713,6 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       height: 1,
       backgroundColor: colors.white100,
       marginLeft: vs(62),
-    },
-    logoutButton: {
-      backgroundColor: colors.error,
     },
   });
 }

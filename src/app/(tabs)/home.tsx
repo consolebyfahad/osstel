@@ -1,7 +1,6 @@
 import CollectionBanner from "@/components/CollectionBanner";
 import GradientBackground from "@/components/GradientBackground";
 import HostelDropdown from "@/components/HostelDropdown";
-import QuickActionCard from "@/components/QuickActionCard";
 import RecentActivities from "@/components/RecentActivities";
 import ResidentHomeDashboard from "@/components/resident/ResidentHomeDashboard";
 import StatCard from "@/components/StatCard";
@@ -11,7 +10,6 @@ import {
   type CollectionBannerData,
   type DashboardStat,
   type HostelDashboardItem,
-  type QuickAction,
 } from "@/types/dashboard";
 import { getTimeGreeting } from "@/utils/greeting";
 import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
@@ -63,7 +61,7 @@ export default function Home() {
   );
   const user = useSelector((state: RootState) => state.auth.user);
   const isManager = user?.role === "manager";
-  const { guardFeature, guardAddTenant, guardAddRoom, checkFeature } = useSubscription();
+  const { guardFeature, checkFeature } = useSubscription();
   const notificationsAllowed = checkFeature(PLAN_FEATURES.notifications).allowed;
   const { data: unreadData } = useUnreadNotificationCount(
     !user?.accessToken || (isManager && !notificationsAllowed),
@@ -216,50 +214,6 @@ export default function Home() {
     };
   }, [colors.primary, colors.primary200, colors.primary300, colors.primary500, isDark, summary]);
 
-  const quickActions: QuickAction[] = useMemo(
-    () =>
-      isManager
-        ? [
-            {
-              id: "add-room",
-              label: "Add Room",
-              iconName: "add",
-              iconColor: colors.warningText,
-              iconBackgroundColor: colors.warningBg,
-            },
-            {
-              id: "add-resident",
-              label: "Add Resident",
-              iconName: "person-add-outline",
-              iconColor: colors.successText,
-              iconBackgroundColor: colors.successBg,
-            },
-            {
-              id: "reports",
-              label: "Reports",
-              iconName: "download-outline",
-              iconColor: colors.purpleText,
-              iconBackgroundColor: colors.purpleBg,
-            },
-          ]
-        : [],
-    [colors.successText, colors.successBg, colors.warningText, colors.warningBg, colors.purpleText, colors.purpleBg, isManager],
-  );
-
-  const handleQuickAction = (actionId: string) => {
-    if (actionId === "add-room") {
-      guardAddRoom(() => router.push("/(tabs)/hostels"));
-      return;
-    }
-    if (actionId === "add-resident") {
-      guardAddTenant(() => router.push("/residents/add"));
-      return;
-    }
-    if (actionId === "reports") {
-      guardFeature(PLAN_FEATURES.reports, () => router.push("/reports"));
-    }
-  };
-
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -356,18 +310,6 @@ export default function Home() {
               ) : null}
             </>
           )}
-
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsRow}>
-            {quickActions.map((action) => (
-              <View key={action.id} style={styles.actionItem}>
-                <QuickActionCard
-                  {...action}
-                  onPress={() => handleQuickAction(action.id)}
-                />
-              </View>
-            ))}
-          </View>
 
           {isManager ? (
             <RecentActivities
@@ -470,21 +412,6 @@ function createStyles(
       width: "50%",
       paddingHorizontal: 6,
       marginBottom: 12,
-    },
-    sectionTitle: {
-      fontSize: FONT_SIZES.xl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      marginBottom: 14,
-    },
-    actionsRow: {
-      flexDirection: "row",
-      marginHorizontal: -6,
-      marginBottom: 4,
-    },
-    actionItem: {
-      flex: 1,
-      paddingHorizontal: 6,
     },
   });
 }

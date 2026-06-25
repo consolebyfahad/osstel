@@ -3,7 +3,7 @@ import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
 import ProfileAvatar from "@/components/ProfileAvatar";
-import { meToAuthProfile, toIsoDateString } from "@/types/auth";
+import { isGoogleAuthUser, meToAuthProfile, toIsoDateString } from "@/types/auth";
 import {
   formatCnic,
   getCnicDigits,
@@ -68,6 +68,16 @@ function isValidEmail(value: string) {
 
 function parseDateOfBirth(value?: string) {
   if (!value) return new Date(1995, 0, 1);
+
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    const parsed = new Date(year, month, day);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? new Date(1995, 0, 1) : parsed;
 }
@@ -156,7 +166,9 @@ export default function EditProfileScreen() {
   }, [meData?.user]);
 
   const displayImage = localImageUri ?? profileImage;
-  const phone = meData?.user.phone ?? authUser?.phone ?? "";
+  const profileUser = meData?.user ?? authUser;
+  const isGoogleUser = isGoogleAuthUser(profileUser);
+  const phone = profileUser?.phone?.trim() ?? "";
 
   const isValid =
     name.trim().length > 0 && (!email.trim() || isValidEmail(email.trim()));
@@ -185,14 +197,27 @@ export default function EditProfileScreen() {
   };
 
   const handleOpenDatePicker = () => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(true);
+      return;
+    }
+
     setDateDraft(dateOfBirth ?? new Date(1995, 0, 1));
     setShowDatePicker(true);
   };
 
-  const handleDateDraftChange = (
-    _event: DateTimePickerEvent,
+  const handleDateChange = (
+    event: DateTimePickerEvent,
     selected?: Date,
   ) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+      if (event.type === "set" && selected) {
+        setDateOfBirth(selected);
+      }
+      return;
+    }
+
     if (selected) {
       setDateDraft(selected);
     }
@@ -245,7 +270,7 @@ export default function EditProfileScreen() {
 
       const result = await updateMe({
         name: trimmedName,
-        ...(trimmedEmail ? { email: trimmedEmail } : {}),
+        ...(!isGoogleUser && trimmedEmail ? { email: trimmedEmail } : {}),
         ...(trimmedAddress ? { address: trimmedAddress } : {}),
         ...(cnicDigits.length === 13 ? { cnic: formatCnic(cnicDigits) } : {}),
         ...(dateOfBirth ? { dateOfBirth: toIsoDateString(dateOfBirth) } : {}),
@@ -300,7 +325,8 @@ export default function EditProfileScreen() {
             >
               <ProfileAvatar
                 name={name || "User"}
-                phone={phone}
+                phone={isGoogleUser ? undefined : phone}
+                fallback={email}
                 imageUri={displayImage}
                 editable={!isProcessingImage}
                 onPress={handlePickImage}
@@ -330,40 +356,59 @@ export default function EditProfileScreen() {
                 />
               </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>Phone Number</Text>
-                <View style={styles.readOnlyInput}>
-                  <Text style={styles.readOnlyText}>{phone || "—"}</Text>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={vs(16)}
-                    color={colors.gray200}
-                  />
+              {isGoogleUser ? (
+                <View style={styles.field}>
+                  <Text style={styles.label}>Email Address</Text>
+                  <View style={styles.readOnlyInput}>
+                    <Text style={styles.readOnlyText}>{email || "—"}</Text>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={vs(16)}
+                      color={colors.gray200}
+                    />
+                  </View>
+                  <Text style={styles.hint}>
+                    Email is managed by your Google account.
+                  </Text>
                 </View>
-                <Text style={styles.hint}>
-                  Phone number cannot be changed here.
-                </Text>
-              </View>
+              ) : (
+                <>
+                  <View style={styles.field}>
+                    <Text style={styles.label}>Phone Number</Text>
+                    <View style={styles.readOnlyInput}>
+                      <Text style={styles.readOnlyText}>{phone || "—"}</Text>
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={vs(16)}
+                        color={colors.gray200}
+                      />
+                    </View>
+                    <Text style={styles.hint}>
+                      Phone number cannot be changed here.
+                    </Text>
+                  </View>
 
-              <View
-                style={styles.field}
-                onLayout={(event) =>
-                  registerFieldPosition("email", event.nativeEvent.layout.y)
-                }
-              >
-                <Text style={styles.label}>Email Address</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="you@example.com"
-                  placeholderTextColor={colors.gray100}
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onFocus={() => scrollToField("email")}
-                />
-              </View>
+                  <View
+                    style={styles.field}
+                    onLayout={(event) =>
+                      registerFieldPosition("email", event.nativeEvent.layout.y)
+                    }
+                  >
+                    <Text style={styles.label}>Email Address</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="you@example.com"
+                      placeholderTextColor={colors.gray100}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      onFocus={() => scrollToField("email")}
+                    />
+                  </View>
+                </>
+              )}
 
               <View
                 style={styles.field}
@@ -445,47 +490,57 @@ export default function EditProfileScreen() {
               </View>
             </ScrollView>
 
-            <Modal
-              visible={showDatePicker}
-              transparent
-              animationType="slide"
-              onRequestClose={handleDateCancel}
-            >
-              <Pressable
-                style={styles.dateModalOverlay}
-                onPress={handleDateCancel}
+            {Platform.OS === "ios" ? (
+              <Modal
+                visible={showDatePicker}
+                transparent
+                animationType="slide"
+                onRequestClose={handleDateCancel}
               >
-                <Pressable style={styles.dateModalSheet} onPress={() => {}}>
-                  <View style={styles.dateModalHeader}>
-                    <Pressable
-                      style={styles.dateModalAction}
-                      onPress={handleDateCancel}
-                    >
-                      <Text style={styles.dateModalCancel}>Cancel</Text>
-                    </Pressable>
-                    <Text style={styles.dateModalTitle}>Date of Birth</Text>
-                    <Pressable
-                      style={styles.dateModalAction}
-                      onPress={handleDateDone}
-                    >
-                      <Text style={styles.dateModalDone}>Done</Text>
-                    </Pressable>
-                  </View>
+                <Pressable
+                  style={styles.dateModalOverlay}
+                  onPress={handleDateCancel}
+                >
+                  <Pressable style={styles.dateModalSheet} onPress={() => {}}>
+                    <View style={styles.dateModalHeader}>
+                      <Pressable
+                        style={styles.dateModalAction}
+                        onPress={handleDateCancel}
+                      >
+                        <Text style={styles.dateModalCancel}>Cancel</Text>
+                      </Pressable>
+                      <Text style={styles.dateModalTitle}>Date of Birth</Text>
+                      <Pressable
+                        style={styles.dateModalAction}
+                        onPress={handleDateDone}
+                      >
+                        <Text style={styles.dateModalDone}>Done</Text>
+                      </Pressable>
+                    </View>
 
-                  <View style={styles.datePickerWrap}>
-                    <DateTimePicker
-                      value={dateDraft}
-                      mode="date"
-                      display="spinner"
-                      maximumDate={new Date()}
-                      onChange={handleDateDraftChange}
-                      textColor={colors.text}
-                      style={styles.datePicker}
-                    />
-                  </View>
+                    <View style={styles.datePickerWrap}>
+                      <DateTimePicker
+                        value={dateDraft}
+                        mode="date"
+                        display="spinner"
+                        maximumDate={new Date()}
+                        onChange={handleDateChange}
+                        textColor={colors.text}
+                        style={styles.datePicker}
+                      />
+                    </View>
+                  </Pressable>
                 </Pressable>
-              </Pressable>
-            </Modal>
+              </Modal>
+            ) : showDatePicker ? (
+              <DateTimePicker
+                value={dateOfBirth ?? new Date(1995, 0, 1)}
+                mode="date"
+                display="default"
+                maximumDate={new Date()}
+                onChange={handleDateChange}
+              />
+            ) : null}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

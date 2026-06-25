@@ -129,10 +129,10 @@ export default function Splash() {
       >
         <Animated.View style={logoAnimatedStyle}>
           <Image
-            source={Images.osstellogo}
+            source={Images.osstel}
             style={styles.logoImage}
             resizeMode="contain"
-            accessibilityLabel="OSSTEL logo"
+            accessibilityLabel="Osstel logo"
           />
         </Animated.View>
       </Animated.View>

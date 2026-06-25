@@ -1,83 +1,116 @@
+import type { HostelDashboardItem } from "@/types/dashboard";
 import type { Hostel } from "@/types/hostel";
+import type { Resident } from "@/types/resident";
+import type { Room } from "@/types/room";
+import { formatCompactCurrency } from "@/utils/currency";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  useGetHostelRoomsQuery,
+  useGetResidentsQuery,
+} from "../../store/api";
 
 type HostelCardProps = {
   hostel: Hostel;
-  roomCount?: number;
+  stats?: HostelDashboardItem;
   onPress?: () => void;
 };
 
-function getManagerName(hostel: Hostel) {
-  if (typeof hostel.manager === "object" && hostel.manager?.name) {
-    return hostel.manager.name;
-  }
-  return null;
-}
-
-export default function HostelCard({
-  hostel,
-  roomCount = 0,
-  onPress,
-}: HostelCardProps) {
+export default function HostelCard({ hostel, stats, onPress }: HostelCardProps) {
   const { colors, fonts, isDark } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, fonts, isDark),
     [colors, fonts, isDark],
   );
-  const managerName = getManagerName(hostel);
+
+  const { data: roomsData } = useGetHostelRoomsQuery(hostel._id);
+  const { data: residentsData } = useGetResidentsQuery({ hostelId: hostel._id });
+
+  const rooms: Room[] = roomsData?.rooms ?? [];
+  const residents: Resident[] = residentsData?.residents ?? [];
+
+  const totalRooms = stats?.rooms.totalRooms ?? rooms.length;
+  const totalBeds =
+    stats?.rooms.totalBedrooms ??
+    rooms.reduce((sum: number, room: Room) => sum + room.capacity, 0);
+  const occupiedBeds = stats?.rooms.occupiedBeds ?? residents.length;
+  const occupancyPercent =
+    totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+  const monthlyCollected = stats?.monthlyCollection.collected ?? 0;
+
+  const headerGradient = isDark
+    ? ([colors.secondary300, colors.secondary] as [string, string])
+    : ([colors.secondary, "#8B5CF6"] as [string, string]);
 
   const content = (
-    <>
-      <View style={styles.header}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="business-outline" size={vs(22)} color={colors.primary} />
-        </View>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>{hostel.name}</Text>
-          <Text style={styles.subtitle}>{hostel.city}</Text>
-        </View>
-        {onPress ? (
-          <Ionicons name="chevron-forward" size={vs(20)} color={colors.gray200} />
-        ) : null}
-      </View>
+    <View style={styles.card}>
+      <LinearGradient
+        colors={headerGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <View style={styles.activeBadge}>
+              <Ionicons name="business-outline" size={vs(14)} color={colors.onPrimary} />
+              <Text style={styles.activeBadgeText}>Active Hostel</Text>
+            </View>
+            <Text style={styles.title} numberOfLines={2}>
+              {hostel.name}
+            </Text>
+            <View style={styles.locationRow}>
+              <Ionicons name="location-outline" size={vs(14)} color={colors.onGradientMuted} />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {hostel.city}
+              </Text>
+            </View>
+          </View>
 
-      <View style={styles.detailRow}>
-        <Ionicons name="location-outline" size={vs(16)} color={colors.gray200} />
-        <Text style={styles.detailText} numberOfLines={2}>
-          {hostel.address}
-        </Text>
-      </View>
-
-      {hostel.contactPhone ? (
-        <View style={styles.detailRow}>
-          <Ionicons name="call-outline" size={vs(16)} color={colors.gray200} />
-          <Text style={styles.detailText}>{hostel.contactPhone}</Text>
+          <View style={styles.amountBlock}>
+            <Text style={styles.amountValue}>
+              {formatCompactCurrency(monthlyCollected)}
+            </Text>
+            <Text style={styles.amountLabel}>Monthly</Text>
+          </View>
         </View>
-      ) : null}
 
-      <View style={styles.footer}>
-        <View style={styles.roomBadge}>
-          <Ionicons name="bed-outline" size={vs(14)} color={colors.primary} />
-          <Text style={styles.roomBadgeText}>
-            {roomCount} room{roomCount === 1 ? "" : "s"}
-          </Text>
+        <View style={styles.occupancyRow}>
+          <Text style={styles.occupancyLabel}>Occupancy</Text>
+          <Text style={styles.occupancyValue}>{occupancyPercent}%</Text>
         </View>
-        {managerName ? (
-          <Text style={styles.managerText}>{managerName}</Text>
-        ) : null}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${occupancyPercent}%` }]} />
+        </View>
+      </LinearGradient>
+
+      <View style={styles.body}>
+        <View style={styles.bodyHeader}>
+          <Text style={styles.roomsTitle}>Rooms ({totalRooms})</Text>
+          {onPress ? (
+            <Pressable
+              onPress={onPress}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Manage ${hostel.name}`}
+            >
+              <Text style={styles.manageLink}>Manage ›</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
-    </>
+    </View>
   );
 
   if (onPress) {
     return (
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+        style={({ pressed }) => [styles.pressable, pressed && styles.pressablePressed]}
         onPress={onPress}
       >
         {content}
@@ -85,7 +118,7 @@ export default function HostelCard({
     );
   }
 
-  return <View style={styles.card}>{content}</View>;
+  return <View style={styles.pressable}>{content}</View>;
 }
 
 function createStyles(
@@ -94,82 +127,127 @@ function createStyles(
   isDark: boolean,
 ) {
   return StyleSheet.create({
-    card: {
-      backgroundColor: isDark ? colors.white100 : colors.white,
-      borderRadius: vs(18),
-      padding: vs(16),
-      marginBottom: vs(12),
-      borderWidth: 1,
-      borderColor: isDark ? colors.white200 : colors.white100,
+    pressable: {
+      marginBottom: vs(16),
     },
-    cardPressed: {
-      opacity: 0.92,
+    pressablePressed: {
+      opacity: 0.96,
+      transform: [{ scale: 0.995 }],
+    },
+    card: {
+      borderRadius: vs(24),
+      overflow: "hidden",
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: isDark ? 0.2 : 0.1,
+      shadowRadius: 16,
+      elevation: 6,
     },
     header: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: vs(12),
-      gap: vs(12),
+      paddingHorizontal: vs(18),
+      paddingTop: vs(18),
+      paddingBottom: vs(16),
     },
-    iconWrap: {
-      width: vs(48),
-      height: vs(48),
-      borderRadius: vs(14),
-      backgroundColor: colors.primary100,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    headerText: {
-      flex: 1,
-    },
-    title: {
-      fontSize: FONT_SIZES.lg,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      marginBottom: vs(2),
-    },
-    subtitle: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-    },
-    detailRow: {
+    headerTop: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: vs(8),
-      marginBottom: vs(8),
-    },
-    detailText: {
-      flex: 1,
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.regular,
-      color: colors.text,
-      lineHeight: vs(20),
-    },
-    footer: {
-      flexDirection: "row",
-      alignItems: "center",
       justifyContent: "space-between",
-      marginTop: vs(4),
+      gap: vs(12),
+      marginBottom: vs(16),
     },
-    roomBadge: {
+    headerLeft: {
+      flex: 1,
+    },
+    activeBadge: {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(6),
-      backgroundColor: colors.primary100,
-      paddingHorizontal: vs(10),
-      paddingVertical: vs(4),
-      borderRadius: vs(12),
+      marginBottom: vs(8),
     },
-    roomBadgeText: {
+    activeBadgeText: {
+      fontSize: FONT_SIZES.xs,
+      fontFamily: fonts.medium,
+      color: colors.onGradientMuted,
+    },
+    title: {
+      fontSize: FONT_SIZES.xxl,
+      fontFamily: fonts.bold,
+      color: colors.onPrimary,
+      marginBottom: vs(6),
+    },
+    locationRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: vs(4),
+    },
+    locationText: {
+      flex: 1,
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.medium,
-      color: colors.primary,
+      color: colors.onGradientMuted,
     },
-    managerText: {
+    amountBlock: {
+      alignItems: "flex-end",
+    },
+    amountValue: {
+      fontSize: FONT_SIZES.xl,
+      fontFamily: fonts.bold,
+      color: colors.onPrimary,
+    },
+    amountLabel: {
+      marginTop: vs(2),
+      fontSize: FONT_SIZES.xs,
+      fontFamily: fonts.medium,
+      color: colors.onGradientSubtle,
+    },
+    occupancyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: vs(8),
+    },
+    occupancyLabel: {
       fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.regular,
-      color: colors.gray200,
+      fontFamily: fonts.medium,
+      color: colors.onGradientMuted,
+    },
+    occupancyValue: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.onPrimary,
+    },
+    progressTrack: {
+      height: vs(6),
+      borderRadius: vs(999),
+      backgroundColor: "rgba(255, 255, 255, 0.28)",
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      borderRadius: vs(999),
+      backgroundColor: colors.onPrimary,
+    },
+    body: {
+      paddingHorizontal: vs(18),
+      paddingTop: vs(16),
+      paddingBottom: vs(18),
+      backgroundColor: isDark ? colors.white100 : colors.white,
+    },
+    bodyHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    roomsTitle: {
+      fontSize: FONT_SIZES.lg,
+      fontFamily: fonts.bold,
+      color: colors.text,
+    },
+    manageLink: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.secondary,
     },
   });
 }

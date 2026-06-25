@@ -16,13 +16,13 @@ export const PRIVACY_POLICY: LegalDocument = {
   title: "Privacy Policy",
   lastUpdated: "June 12, 2026",
   intro:
-    "OSSTEL (“we”, “our”, or “us”) operates a hostel and property management platform for managers and residents. This Privacy Policy explains how we collect, use, store, and protect your information when you use the OSSTEL mobile application and related services.",
+    "Osstel (“we”, “our”, or “us”) operates a hostel and property management platform for managers and residents. This Privacy Policy explains how we collect, use, store, and protect your information when you use the Osstel mobile application and related services.",
   contactEmail: "admin.osstel@gmail.com",
   sections: [
     {
       title: "Information We Collect",
       body: [
-        "We collect information you provide directly and information generated when you use OSSTEL.",
+        "We collect information you provide directly and information generated when you use Osstel.",
       ],
       bullets: [
         "Account details: name, phone number, email, password, and role (manager or resident).",
@@ -35,7 +35,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     },
     {
       title: "How We Use Your Information",
-      body: ["We use your information to provide and improve OSSTEL, including to:"],
+      body: ["We use your information to provide and improve Osstel, including to:"],
       bullets: [
         "Create and manage your account and authenticate your access.",
         "Enable managers to operate hostels, rooms, rent, complaints, and residents.",
@@ -60,7 +60,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     {
       title: "Data Retention",
       body: [
-        "We retain your information for as long as your account is active or as needed to provide OSSTEL services, resolve disputes, enforce agreements, and meet legal requirements. You may request account deletion subject to applicable law and legitimate business needs such as financial record keeping.",
+        "We retain your information for as long as your account is active or as needed to provide Osstel services, resolve disputes, enforce agreements, and meet legal requirements. You may request account deletion subject to applicable law and legitimate business needs such as financial record keeping.",
       ],
     },
     {
@@ -82,13 +82,13 @@ export const PRIVACY_POLICY: LegalDocument = {
     {
       title: "Children's Privacy",
       body: [
-        "OSSTEL is not intended for users under 18 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us data, contact us so we can take appropriate action.",
+        "Osstel is not intended for users under 18 years of age. We do not knowingly collect personal information from children. If you believe a child has provided us data, contact us so we can take appropriate action.",
       ],
     },
     {
       title: "Changes to This Policy",
       body: [
-        "We may update this Privacy Policy from time to time. When we do, we will revise the “Last updated” date above. Continued use of OSSTEL after changes become effective means you accept the updated policy.",
+        "We may update this Privacy Policy from time to time. When we do, we will revise the “Last updated” date above. Continued use of Osstel after changes become effective means you accept the updated policy.",
       ],
     },
   ],
@@ -98,18 +98,18 @@ export const TERMS_OF_SERVICE: LegalDocument = {
   title: "Terms of Service",
   lastUpdated: "June 12, 2026",
   intro:
-    "These Terms of Service (“Terms”) govern your access to and use of the OSSTEL mobile application and related services. By creating an account or using OSSTEL, you agree to these Terms.",
+    "These Terms of Service (“Terms”) govern your access to and use of the Osstel mobile application and related services. By creating an account or using Osstel, you agree to these Terms.",
   contactEmail: "admin.osstel@gmail.com",
   sections: [
     {
       title: "Eligibility and Accounts",
       body: [
-        "You must be at least 18 years old and able to enter a binding agreement to use OSSTEL. You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account. Provide accurate information and notify us promptly of unauthorized access.",
+        "You must be at least 18 years old and able to enter a binding agreement to use Osstel. You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account. Provide accurate information and notify us promptly of unauthorized access.",
       ],
     },
     {
       title: "Roles and Responsibilities",
-      body: ["OSSTEL supports different user roles with distinct permissions."],
+      body: ["Osstel supports different user roles with distinct permissions."],
       bullets: [
         "Managers may create and manage hostels, rooms, residents, rent records, and related operations for properties they control.",
         "Residents may access information and features related to their assigned stay.",
@@ -118,12 +118,12 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     },
     {
       title: "Acceptable Use",
-      body: ["You agree not to misuse OSSTEL. Prohibited conduct includes:"],
+      body: ["You agree not to misuse Osstel. Prohibited conduct includes:"],
       bullets: [
         "Uploading false, misleading, or unlawful information.",
         "Attempting to access accounts, data, or systems without authorization.",
         "Interfering with platform security, performance, or other users.",
-        "Using OSSTEL for fraud, harassment, or any illegal purpose.",
+        "Using Osstel for fraud, harassment, or any illegal purpose.",
         "Reverse engineering or copying the service except as permitted by law.",
       ],
     },
@@ -136,31 +136,31 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     {
       title: "Subscriptions and Payments",
       body: [
-        "Some manager features may require a paid subscription plan. Plan details, pricing, and limits are shown in the app. Upgrade requests may require manual review and approval by OSSTEL administrators. Fees paid are subject to the billing terms communicated at the time of purchase unless otherwise required by law.",
+        "Some manager features may require a paid subscription plan. Plan details, pricing, and limits are shown in the app. Upgrade requests may require manual review and approval by Osstel administrators. Fees paid are subject to the billing terms communicated at the time of purchase unless otherwise required by law.",
       ],
     },
     {
       title: "Intellectual Property",
       body: [
-        "OSSTEL, including its software, branding, and content provided by us, is owned by us or our licensors and protected by applicable intellectual property laws. You receive a limited, non-exclusive, non-transferable license to use the app for its intended purpose while your account remains in good standing.",
+        "Osstel, including its software, branding, and content provided by us, is owned by us or our licensors and protected by applicable intellectual property laws. You receive a limited, non-exclusive, non-transferable license to use the app for its intended purpose while your account remains in good standing.",
       ],
     },
     {
       title: "Disclaimer of Warranties",
       body: [
-        "OSSTEL is provided on an “as is” and “as available” basis. To the fullest extent permitted by law, we disclaim all warranties, whether express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We do not guarantee uninterrupted or error-free operation.",
+        "Osstel is provided on an “as is” and “as available” basis. To the fullest extent permitted by law, we disclaim all warranties, whether express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We do not guarantee uninterrupted or error-free operation.",
       ],
     },
     {
       title: "Limitation of Liability",
       body: [
-        "To the fullest extent permitted by law, OSSTEL and its operators will not be liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, data, or goodwill arising from your use of the service. Our total liability for any claim relating to OSSTEL will not exceed the amount you paid us, if any, in the twelve months before the event giving rise to the claim.",
+        "To the fullest extent permitted by law, Osstel and its operators will not be liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, data, or goodwill arising from your use of the service. Our total liability for any claim relating to Osstel will not exceed the amount you paid us, if any, in the twelve months before the event giving rise to the claim.",
       ],
     },
     {
       title: "Suspension and Termination",
       body: [
-        "We may suspend or terminate access to OSSTEL if you violate these Terms, create security or legal risk, or if required for operational or legal reasons. You may stop using the service at any time. Provisions that by nature should survive termination will remain in effect.",
+        "We may suspend or terminate access to Osstel if you violate these Terms, create security or legal risk, or if required for operational or legal reasons. You may stop using the service at any time. Provisions that by nature should survive termination will remain in effect.",
       ],
     },
     {
@@ -172,7 +172,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     {
       title: "Changes to These Terms",
       body: [
-        "We may modify these Terms from time to time. Material changes will be reflected by updating the “Last updated” date. Your continued use of OSSTEL after changes take effect constitutes acceptance of the revised Terms.",
+        "We may modify these Terms from time to time. Material changes will be reflected by updating the “Last updated” date. Your continued use of Osstel after changes take effect constitutes acceptance of the revised Terms.",
       ],
     },
   ],

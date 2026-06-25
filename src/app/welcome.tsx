@@ -24,7 +24,7 @@ import {
 
 export default function Welcome() {
   const dispatch = useDispatch<AppDispatch>();
-  const { colors, fonts, isDark } = useTheme();
+  const { colors, fonts } = useTheme();
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const styles = useMemo(
@@ -43,23 +43,23 @@ export default function Welcome() {
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      {isDark ? <View style={styles.darkOverlay} /> : null}
+      <View style={styles.backgroundOverlay} />
 
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <View style={styles.containerInner}>
           <View style={styles.logoSection}>
             <Image
-              source={Images.osstellogo}
+              source={Images.osstel}
               style={styles.brandLogoImage}
               resizeMode="contain"
-              accessibilityLabel="OSSTEL logo"
+              accessibilityLabel="Osstel logo"
             />
           </View>
 
           <GradientBackground style={styles.cardSheet}>
             <View style={styles.headerGroup}>
               <Text style={styles.welcomeText}>Smart hostel management</Text>
-              <Text style={styles.titleText}>Welcome to OSSTEL</Text>
+              <Text style={styles.titleText}>Welcome to Osstel</Text>
             </View>
 
             <Text style={styles.tagline}>
@@ -89,9 +89,9 @@ function createStyles(
       width: "100%",
       height: "100%",
     },
-    darkOverlay: {
+    backgroundOverlay: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: colors.overlay,
+      backgroundColor: colors.authBackgroundOverlay,
     },
     safeArea: {
       flex: 1,

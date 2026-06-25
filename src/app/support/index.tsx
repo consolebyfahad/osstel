@@ -207,7 +207,7 @@ export default function SupportScreen() {
           <View style={styles.centerWrap}>
             <Text style={styles.emptyTitle}>Help & Support</Text>
             <Text style={styles.emptyDescription}>
-              Sign in to contact the OSSTEL support team.
+              Sign in to contact the Osstel support team.
             </Text>
           </View>
         </SafeAreaView>
@@ -244,7 +244,7 @@ export default function SupportScreen() {
                   size={vs(24)}
                   color={colors.primary}
                 />
-                <Text style={styles.infoTitle}>Contact OSSTEL Admin</Text>
+                <Text style={styles.infoTitle}>Contact Osstel Admin</Text>
                 <Text style={styles.infoText}>
                   Send a message and it will appear directly in the admin panel
                   for review.

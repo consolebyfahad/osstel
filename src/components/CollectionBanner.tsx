@@ -1,4 +1,5 @@
 import type { CollectionBannerData } from "@/types/dashboard";
+import { formatCompactCurrency } from "@/utils/currency";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS } from "@constants/fonts";
@@ -11,8 +12,10 @@ type CollectionBannerProps = CollectionBannerData & {
 };
 
 function formatAmount(amount: number | string, currency = "Rs"): string {
-  const value = typeof amount === "number" ? amount.toLocaleString() : amount;
-  return `${currency} ${value}`;
+  if (typeof amount === "number") {
+    return formatCompactCurrency(amount, currency);
+  }
+  return `${currency} ${amount}`;
 }
 
 export default function CollectionBanner({

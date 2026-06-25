@@ -1,10 +1,13 @@
 import EmptyState from "@/components/EmptyState";
+import AnimatedFilterBar from "@/components/AnimatedFilterBar";
+import CustomButton from "@/components/CustomButton";
 import GradientBackground from "@/components/GradientBackground";
 import HostelDropdown from "@/components/HostelDropdown";
 import ResidentRentView from "@/components/resident/ResidentRentView";
 import ScreenHeader from "@/components/ScreenHeader";
 import type { Hostel } from "@/types/hostel";
 import type { RentFilter, RentRecord, RentStatus } from "@/types/rent";
+import { formatCompactCurrency } from "@/utils/currency";
 import { useGetHostelsQuery, useGetRentQuery, useSendRentAlertMutation, useUpdateRentStatusMutation } from "../../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PLAN_FEATURES } from "@/constants/plans";
@@ -18,7 +21,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import CustomLoading from "@/components/CustomLoading";
 import {
   Alert,
-  LayoutChangeEvent,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -29,15 +31,10 @@ import {
 import Animated, {
   FadeIn,
   FadeOut,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store/store";
-
-const FILTER_SPRING = { damping: 18, stiffness: 180 };
 
 const FILTERS: { id: RentFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -69,7 +66,7 @@ const STATUS_LABELS: Record<RentStatus, string> = {
 };
 
 function formatAmount(amount: number) {
-  return `Rs ${amount.toLocaleString()}`;
+  return formatCompactCurrency(amount);
 }
 
 function formatMonthYear(month: number, year: number) {
@@ -107,61 +104,8 @@ function SummaryCard({ label, value, variant, styles }: SummaryCardProps) {
 
   return (
     <View style={[styles.summaryCard, variantStyle]}>
-      <Text style={[styles.summaryLabel, labelStyle]}>{label}</Text>
       <Text style={[styles.summaryValue, valueStyle]}>{value}</Text>
-    </View>
-  );
-}
-
-type AnimatedFilterBarProps = {
-  activeFilter: RentFilter;
-  onFilterChange: (filter: RentFilter) => void;
-  styles: ReturnType<typeof createStyles>;
-};
-
-function AnimatedFilterBar({
-  activeFilter,
-  onFilterChange,
-  styles,
-}: AnimatedFilterBarProps) {
-  const activeIndex = FILTERS.findIndex((f) => f.id === activeFilter);
-  const sliderIndex = useSharedValue(activeIndex);
-  const tabWidth = useSharedValue(0);
-
-  useEffect(() => {
-    sliderIndex.value = withSpring(activeIndex, FILTER_SPRING);
-  }, [activeIndex, sliderIndex]);
-
-  const indicatorStyle = useAnimatedStyle(() => ({
-    width: tabWidth.value,
-    transform: [{ translateX: sliderIndex.value * tabWidth.value }],
-  }));
-
-  const handleLayout = (event: LayoutChangeEvent) => {
-    const barPadding = vs(8);
-    tabWidth.value =
-      (event.nativeEvent.layout.width - barPadding) / FILTERS.length;
-  };
-
-  return (
-    <View style={styles.filterBar} onLayout={handleLayout}>
-      <Animated.View style={[styles.filterIndicator, indicatorStyle]} />
-      {FILTERS.map((filter) => {
-        const isActive = activeFilter === filter.id;
-        return (
-          <Pressable
-            key={filter.id}
-            style={styles.filterTab}
-            onPress={() => onFilterChange(filter.id)}
-          >
-            <Text
-              style={[styles.filterText, isActive && styles.filterTextActive]}
-            >
-              {filter.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+      <Text style={[styles.summaryLabel, labelStyle]}>{label}</Text>
     </View>
   );
 }
@@ -171,6 +115,7 @@ type RentRecordCardProps = {
   styles: ReturnType<typeof createStyles>;
   onReview: (rentId: string, approve: boolean) => void;
   onSendAlert: (rentId: string, residentName: string) => void;
+  onMarkPaid: (rentId: string, residentName: string) => void;
   isUpdating: boolean;
   isSendingAlert: boolean;
 };
@@ -180,6 +125,7 @@ function RentRecordCard({
   styles,
   onReview,
   onSendAlert,
+  onMarkPaid,
   isUpdating,
   isSendingAlert,
 }: RentRecordCardProps) {
@@ -248,20 +194,40 @@ function RentRecordCard({
       ) : null}
 
       {record.status !== "paid" && record.status !== "review" ? (
-        <Pressable
-          style={styles.alertBtn}
-          disabled={isSendingAlert}
-          onPress={() => onSendAlert(record.id, record.resident.name)}
-        >
-          <MaterialCommunityIcons
-            name="bell-ring-outline"
-            size={vs(16)}
-            color={colors.primary}
+        <View style={styles.pendingActions}>
+          <CustomButton
+            variant="outline"
+            size="sm"
+            fullWidth={false}
+            style={styles.pendingActionBtn}
+            disabled={isSendingAlert || isUpdating}
+            icon={
+              <MaterialCommunityIcons
+                name="bell-ring-outline"
+                size={vs(16)}
+                color={colors.primary}
+              />
+            }
+            title={isSendingAlert ? "Sending..." : "Send Alert"}
+            onPress={() => onSendAlert(record.id, record.resident.name)}
           />
-          <Text style={styles.alertBtnText}>
-            {isSendingAlert ? "Sending..." : "Send Alert"}
-          </Text>
-        </Pressable>
+          <CustomButton
+            variant="success"
+            size="sm"
+            fullWidth={false}
+            style={styles.pendingActionBtn}
+            disabled={isSendingAlert || isUpdating}
+            icon={
+              <MaterialCommunityIcons
+                name="check-circle-outline"
+                size={vs(16)}
+                color={colors.success}
+              />
+            }
+            title={isUpdating ? "..." : "Mark as Paid"}
+            onPress={() => onMarkPaid(record.id, record.resident.name)}
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -394,6 +360,36 @@ function ManagerRentView() {
     );
   };
 
+  const handleMarkPaid = (rentId: string, residentName: string) => {
+    if (!selectedHostelId || updatingRentId) return;
+
+    Alert.alert(
+      "Mark as paid",
+      `Mark ${residentName}'s rent as paid manually?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Mark as Paid",
+          onPress: async () => {
+            setUpdatingRentId(rentId);
+            try {
+              await updateRentStatus({
+                rentId,
+                hostelId: selectedHostelId,
+                status: "paid",
+              }).unwrap();
+              refetch();
+            } catch {
+              Alert.alert("Update failed", "Could not mark rent as paid.");
+            } finally {
+              setUpdatingRentId(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleSendAlert = (rentId: string, residentName: string) => {
     if (sendingAlertRentId) return;
 
@@ -480,9 +476,10 @@ function ManagerRentView() {
           </View>
 
           <AnimatedFilterBar
+            filters={FILTERS}
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
-            styles={styles}
+            style={styles.filterBarSpacing}
           />
         </View>
 
@@ -525,6 +522,7 @@ function ManagerRentView() {
                   styles={styles}
                   onReview={handleReview}
                   onSendAlert={handleSendAlert}
+                  onMarkPaid={handleMarkPaid}
                   isUpdating={updatingRentId === record.id}
                   isSendingAlert={sendingAlertRentId === record.id}
                 />
@@ -588,9 +586,10 @@ function createStyles(
     },
     summaryCard: {
       flex: 1,
+      gap: vs(4),
       borderRadius: vs(14),
-      paddingVertical: vs(14),
-      paddingHorizontal: vs(10),
+      paddingVertical: vs(8),
+      paddingHorizontal: vs(6),
       borderWidth: 1,
       shadowColor: colors.black,
       shadowOffset: { width: 0, height: 2 },
@@ -611,7 +610,7 @@ function createStyles(
       borderColor: colors.warning,
     },
     summaryLabel: {
-      fontSize: FONT_SIZES.xs,
+      fontSize: FONT_SIZES.xxs,
       fontFamily: fonts.semiBold,
       letterSpacing: 0.8,
       marginBottom: vs(6),
@@ -638,44 +637,8 @@ function createStyles(
     summaryValuePending: {
       color: colors.warning,
     },
-    filterBar: {
-      flexDirection: "row",
-      backgroundColor: isDark ? colors.white200 : colors.white100,
-      borderRadius: vs(14),
-      padding: vs(4),
+    filterBarSpacing: {
       marginBottom: vs(12),
-      position: "relative",
-      borderWidth: isDark ? 1 : 0,
-      borderColor: isDark ? colors.white300 : "transparent",
-    },
-    filterIndicator: {
-      position: "absolute",
-      top: vs(4),
-      left: vs(4),
-      bottom: vs(4),
-      borderRadius: vs(10),
-      backgroundColor: isDark ? colors.white300 : colors.white,
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    filterTab: {
-      flex: 1,
-      paddingVertical: vs(10),
-      alignItems: "center",
-      borderRadius: vs(10),
-      zIndex: 1,
-    },
-    filterText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.medium,
-      color: colors.gray200,
-    },
-    filterTextActive: {
-      fontFamily: fonts.semiBold,
-      color: colors.text,
     },
     emptyState: {
       alignItems: "center",
@@ -816,22 +779,13 @@ function createStyles(
       fontFamily: fonts.semiBold,
       color: colors.error,
     },
-    alertBtn: {
+    pendingActions: {
       flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: vs(8),
+      gap: vs(10),
       marginTop: vs(12),
-      paddingVertical: vs(10),
-      borderRadius: vs(10),
-      borderWidth: 1,
-      borderColor: colors.primary200,
-      backgroundColor: isDark ? colors.primary100 : colors.primary100,
     },
-    alertBtnText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.primary,
+    pendingActionBtn: {
+      flex: 1,
     },
   });
 }

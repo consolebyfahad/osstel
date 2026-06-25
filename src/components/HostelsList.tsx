@@ -1,3 +1,4 @@
+import type { HostelDashboardItem } from "@/types/dashboard";
 import EmptyState from "@/components/EmptyState";
 import GradientBackground from "@/components/GradientBackground";
 import HostelCard from "@/components/HostelCard";
@@ -39,12 +40,12 @@ export default function HostelsList({
     useGetDashboardQuery(undefined);
   const { guardAddHostel } = useSubscription();
 
-  const roomCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
+  const dashboardByHostelId = useMemo(() => {
+    const map: Record<string, HostelDashboardItem> = {};
     for (const item of dashboardData?.hostels ?? []) {
-      counts[item.hostel.id] = item.rooms.totalRooms;
+      map[item.hostel.id] = item;
     }
-    return counts;
+    return map;
   }, [dashboardData?.hostels]);
 
   useFocusEffect(
@@ -130,7 +131,7 @@ export default function HostelsList({
         renderItem={({ item }) => (
           <HostelCard
             hostel={item}
-            roomCount={roomCounts[item._id] ?? 0}
+            stats={dashboardByHostelId[item._id]}
             onPress={() => handleOpenHostel(item._id)}
           />
         )}

@@ -1,5 +1,12 @@
 export type SubscriptionPlanId = "free" | "standard" | "premium";
 
+export interface TrialInfo {
+  active: boolean;
+  plan: SubscriptionPlanId;
+  endsAt: string;
+  daysRemaining: number;
+}
+
 export type PlanRequestStatus = "pending" | "approved" | "rejected" | string;
 
 export interface ApiPlan {

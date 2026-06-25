@@ -2,10 +2,12 @@ import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
+import PhoneInput from "@/components/PhoneInput";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useCreateHostelMutation } from "../../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
+import { formatPhoneForApi, isCompletePhone } from "@/utils/phone";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -42,7 +44,7 @@ export default function HostelDetailsScreen() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
+  const [contactPhoneDigits, setContactPhoneDigits] = useState("");
 
   useEffect(() => {
     const showEvent =
@@ -88,7 +90,8 @@ export default function HostelDetailsScreen() {
   const isValid =
     name.trim().length > 0 &&
     address.trim().length > 0 &&
-    city.trim().length > 0;
+    city.trim().length > 0 &&
+    isCompletePhone(contactPhoneDigits);
 
   const handleSave = async () => {
     if (!isValid || isSaving) return;
@@ -106,7 +109,7 @@ export default function HostelDetailsScreen() {
         name: name.trim(),
         address: address.trim(),
         city: city.trim(),
-        contactPhone: contactPhone.trim(),
+        contactPhone: formatPhoneForApi(contactPhoneDigits),
       }).unwrap();
 
       router.back();
@@ -203,13 +206,11 @@ export default function HostelDetailsScreen() {
                 registerFieldPosition("contactPhone", event.nativeEvent.layout.y)
               }
             >
-              <CustomInput
-                label="Contact Phone"
-                placeholder="e.g. +92421234567"
-                maxLength={13}
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                keyboardType="phone-pad"
+              <PhoneInput
+                label="Phone Number"
+                value={contactPhoneDigits}
+                onChangeText={setContactPhoneDigits}
+                placeholder="3001234567"
                 returnKeyType="done"
                 onSubmitEditing={Keyboard.dismiss}
                 onFocus={() => scrollToField("contactPhone")}

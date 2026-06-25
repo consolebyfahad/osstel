@@ -1,4 +1,5 @@
 import AuthProvider from "@/context/AuthProvider";
+import AppModalProvider from "@/context/AppModalProvider";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
 import { ThemeProvider, useTheme } from "@constants/constant";
 import { useFonts } from "expo-font";
@@ -80,8 +81,10 @@ export default function RootLayout() {
         <AuthProvider>
           <PushNotificationProvider>
             <ThemeProvider>
-              <AppContent />
-              <Toast />
+              <AppModalProvider>
+                <AppContent />
+                <Toast />
+              </AppModalProvider>
             </ThemeProvider>
           </PushNotificationProvider>
         </AuthProvider>

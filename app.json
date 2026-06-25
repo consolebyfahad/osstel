@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "OSSTEL",
+    "name": "Osstel",
     "slug": "osstel",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -35,10 +35,10 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0F172A",
-          "image": "./assets/images/osstellogo.png",
+          "image": "./assets/images/osstel.png",
           "imageWidth": 220,
           "android": {
-            "image": "./assets/images/osstellogo.png",
+            "image": "./assets/images/osstel.png",
             "imageWidth": 220
           }
         }
@@ -46,14 +46,14 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/applogo.png",
+          "icon": "./assets/images/osstel.png",
           "color": "#3B82F6"
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow OSSTEL to access your photos to update your profile picture."
+          "photosPermission": "Allow Osstel to access your photos to update your profile picture."
         }
       ],
       "@react-native-community/datetimepicker",

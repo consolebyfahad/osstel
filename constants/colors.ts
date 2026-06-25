@@ -1,5 +1,5 @@
 /**
- * OSSTEL brand palette — derived from logo
+ * Osstel brand palette — derived from logo
  * Blue #3B82F6 · Purple #A78BFA · Sky #60A5FA · Navy #0F172A · Yellow #FDE047
  */
 export const COLORS = {
@@ -18,11 +18,11 @@ export const COLORS = {
     gray400: "#334155",
     gray500: "#1E293B",
 
-    primary: "#3B82F6",
-    primary100: "#EFF6FF",
-    primary200: "#DBEAFE",
-    primary300: "#93C5FD",
-    primary400: "#2563EB",
+    primary: "#6365FA",
+    primary100: "#8D8FFB",
+    primary200: "#BABBFD",
+    primary300: "#E6E7FE",
+    primary400: "#3437F9",
     primary500: "#1D4ED8",
     secondary: "#A78BFA",
     secondary100: "#F5F3FF",
@@ -49,6 +49,7 @@ export const COLORS = {
     purpleText: "#6D28D9",
 
     overlay: "rgba(15, 23, 42, 0.45)",
+    authBackgroundOverlay: "rgba(15, 23, 42, 0.34)",
     onPrimary: "#FFFFFF",
     onGradient: "#FFFFFF",
     onGradientMuted: "rgba(255, 255, 255, 0.85)",
@@ -108,6 +109,7 @@ export const COLORS = {
     purpleText: "#C4B5FD",
 
     overlay: "rgba(0, 0, 0, 0.55)",
+    authBackgroundOverlay: "rgba(0, 0, 0, 0.62)",
     onPrimary: "#FFFFFF",
     onGradient: "#FFFFFF",
     onGradientMuted: "rgba(255, 255, 255, 0.85)",
@@ -119,7 +121,7 @@ export const COLORS = {
     chipBorder: "rgba(255, 255, 255, 0.12)",
 
     gradientBg: ["#0F172A", "#1E1B4B"] as const,
-    bannerGradient: ["#2563EB", "#7C3AED"] as const,
+    bannerGradient: ["#2A2754", "#3A2E54"] as const,
   },
 } as const;
 

@@ -6,7 +6,7 @@ import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons, Octicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "expo-router/build/react-navigation/bottom-tabs/types";
 import { router } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   Modal,
@@ -20,7 +20,9 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
@@ -39,6 +41,9 @@ const ARC_RADIUS = 92;
 const ACTION_HIT_WIDTH = 80;
 const ACTION_HIT_HEIGHT = 88;
 const SPRING_CONFIG = { damping: 18, stiffness: 210, mass: 0.75 };
+const TAB_ICON_SIZE = 24;
+const TAB_ICON_ACTIVE_SCALE = 1.22;
+const TAB_ICON_POP_CONFIG = { damping: 13, stiffness: 280, mass: 0.55 };
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -65,7 +70,7 @@ const RESIDENT_TABS = [
 const QUICK_ACTIONS = [
   {
     id: "add-room",
-    label: "Add Room",
+    // label: "Add Room",
     icon: "bed-outline" as const,
     iconColorKey: "warningText" as const,
     iconBgKey: "warningBg" as const,
@@ -73,7 +78,7 @@ const QUICK_ACTIONS = [
   },
   {
     id: "add-resident",
-    label: "Add Resident",
+    // label: "Add Resident",
     icon: "person-add-outline" as const,
     iconColorKey: "successText" as const,
     iconBgKey: "successBg" as const,
@@ -81,7 +86,7 @@ const QUICK_ACTIONS = [
   },
   {
     id: "reports",
-    label: "Reports",
+    // label: "Reports",
     icon: "download-outline" as const,
     iconColorKey: "purpleText" as const,
     iconBgKey: "purpleBg" as const,
@@ -113,7 +118,7 @@ type TabConfigItem = {
 };
 
 type ArcActionProps = {
-  label: string;
+  // label: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   iconBackgroundColor: string;
@@ -126,7 +131,7 @@ type ArcActionProps = {
 };
 
 function ArcActionButton({
-  label,
+  // label,
   icon,
   iconColor,
   iconBackgroundColor,
@@ -161,19 +166,18 @@ function ArcActionButton({
         ]}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={label}
+        // accessibilityLabel={label}
       >
         <View style={[styles.actionIconWrap, { backgroundColor: iconBackgroundColor }]}>
           <Ionicons name={icon} size={22} color={iconColor} />
         </View>
-        <Text style={styles.actionLabel}>{label}</Text>
+        {/* <Text style={styles.actionLabel}>{label}</Text> */}
       </Pressable>
     </Animated.View>
   );
 }
 
 function TabButton({
-  route,
   tab,
   isFocused,
   onPress,
@@ -182,7 +186,6 @@ function TabButton({
   styles,
   colors,
 }: {
-  route: { key: string; name: string };
   tab: TabConfigItem;
   isFocused: boolean;
   onPress: () => void;
@@ -191,6 +194,24 @@ function TabButton({
   styles: ReturnType<typeof createStyles>;
   colors: AppColors;
 }) {
+  const iconScale = useSharedValue(isFocused ? TAB_ICON_ACTIVE_SCALE : 1);
+
+  useEffect(() => {
+    if (isFocused) {
+      iconScale.value = withSequence(
+        withTiming(0.82, { duration: 60 }),
+        withSpring(TAB_ICON_ACTIVE_SCALE, TAB_ICON_POP_CONFIG),
+      );
+      return;
+    }
+
+    iconScale.value = withSpring(1, TAB_ICON_POP_CONFIG);
+  }, [iconScale, isFocused]);
+
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -200,12 +221,13 @@ function TabButton({
       onLongPress={onLongPress}
       style={styles.tabItem}
     >
-      <Octicons
-        name={isFocused ? tab.activeIcon : tab.icon}
-        size={26}
-        color={isFocused ? colors.primary : colors.black100}
-      />
-      {isFocused ? <View style={styles.activeDot} /> : null}
+      <Animated.View style={iconAnimatedStyle}>
+        <Octicons
+          name={isFocused ? tab.activeIcon : tab.icon}
+          size={TAB_ICON_SIZE}
+          color={isFocused ? colors.primary : colors.black100}
+        />
+      </Animated.View>
     </Pressable>
   );
 }
@@ -347,7 +369,6 @@ export default function CustomTabBar({
     return (
       <TabButton
         key={route.key}
-        route={route}
         tab={tab}
         isFocused={isFocused}
         onPress={() => navigateToTab(route, isFocused)}
@@ -450,7 +471,7 @@ export default function CustomTabBar({
               {QUICK_ACTIONS.map((action) => (
                 <ArcActionButton
                   key={action.id}
-                  label={action.label}
+                  // label={action.label}
                   icon={action.icon}
                   iconColor={colors[action.iconColorKey]}
                   iconBackgroundColor={colors[action.iconBgKey]}
@@ -504,7 +525,7 @@ function createStyles(colors: AppColors) {
       position: "absolute",
       left: 0,
       right: 0,
-      bottom: -30,
+      bottom: -25,
     },
     modalRoot: {
       flex: 1,
@@ -537,7 +558,7 @@ function createStyles(colors: AppColors) {
       position: "absolute",
       left: 0,
       right: 0,
-      bottom: 0,
+      bottom: 6,
       flexDirection: "row",
       alignItems: "flex-end",
       zIndex: 5,
@@ -554,13 +575,6 @@ function createStyles(colors: AppColors) {
       alignItems: "center",
       justifyContent: "center",
       paddingBottom: 18,
-      gap: vs(4),
-    },
-    activeDot: {
-      width: vs(5),
-      height: vs(5),
-      borderRadius: vs(3),
-      backgroundColor: colors.primary,
     },
     fabWrap: {
       position: "absolute",
