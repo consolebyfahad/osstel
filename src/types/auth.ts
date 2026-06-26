@@ -211,11 +211,24 @@ export function toAuthUser(response: unknown): AuthUser {
       user.subscription && typeof user.subscription === "object"
         ? (user.subscription as SubscriptionPeriodInfo)
         : null,
+    subscriptionUsage:
+      user.subscriptionUsage && typeof user.subscriptionUsage === "object"
+        ? (user.subscriptionUsage as SubscriptionUsage)
+        : undefined,
     hostels: Array.isArray(user.hostels)
       ? (user.hostels as UserHostel[])
       : undefined,
     hostel: (user.hostel as UserHostel | null) ?? undefined,
     room: (user.room as UserRoom | null) ?? undefined,
+    checkInDate: user.checkInDate ? String(user.checkInDate) : undefined,
+    tenancyId: user.tenancyId ? String(user.tenancyId) : undefined,
+    managerPlan: isSubscriptionPlan(user.managerPlan)
+      ? user.managerPlan
+      : undefined,
+    planFeatures:
+      user.planFeatures && typeof user.planFeatures === "object"
+        ? (user.planFeatures as Partial<Record<PlanFeature, boolean>>)
+        : undefined,
   };
 }
 

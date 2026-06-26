@@ -4,6 +4,7 @@ import {
   shouldLogoutOnApiError,
   unwrapApiResponse,
 } from "@/utils/api";
+import { notifyBlockedAccount } from "@/utils/blockedAccount";
 import {
   fetchBaseQuery,
   type BaseQueryFn,
@@ -122,7 +123,10 @@ export const baseQueryWithReauth: BaseQueryFn<
     shouldLogoutOnApiError(result.error.status, result.error)
   ) {
     if (result.error.status === 403) {
-      api.dispatch(logout());
+      const handled = await notifyBlockedAccount();
+      if (!handled) {
+        api.dispatch(logout());
+      }
       return result;
     }
   }
@@ -152,7 +156,14 @@ export const baseQueryWithReauth: BaseQueryFn<
     result.error &&
     shouldLogoutOnApiError(result.error.status, result.error)
   ) {
-    api.dispatch(logout());
+    if (result.error.status === 403) {
+      const handled = await notifyBlockedAccount();
+      if (!handled) {
+        api.dispatch(logout());
+      }
+    } else {
+      api.dispatch(logout());
+    }
   }
 
   return result;

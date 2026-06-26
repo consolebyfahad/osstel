@@ -102,6 +102,9 @@ export default function Home() {
         ? hostelItems[0].hostel.id
         : "";
 
+  const shouldFetchActivities =
+    isManager && !!activitiesHostelId && reportsAllowed;
+
   const {
     data: activitiesData,
     isLoading: isActivitiesLoading,
@@ -109,7 +112,7 @@ export default function Home() {
     refetch: refetchActivities,
   } = useGetDashboardActivitiesQuery(
     { hostelId: activitiesHostelId, limit: 5 },
-    { skip: !isManager || !activitiesHostelId || !reportsAllowed },
+    { skip: !shouldFetchActivities },
   );
 
   const recentActivities = useMemo(
@@ -123,21 +126,23 @@ export default function Home() {
       : "No recent activities yet.";
 
   const handleRefresh = useCallback(() => {
-    refetch();
-    if (activitiesHostelId) {
+    if (isManager) {
+      refetch();
+    }
+    if (shouldFetchActivities) {
       refetchActivities();
     }
-  }, [activitiesHostelId, refetch, refetchActivities]);
+  }, [isManager, shouldFetchActivities, refetch, refetchActivities]);
 
   useFocusEffect(
     useCallback(() => {
       if (isManager) {
         refetch();
-        if (activitiesHostelId) {
-          refetchActivities();
-        }
       }
-    }, [activitiesHostelId, isManager, refetch, refetchActivities]),
+      if (shouldFetchActivities) {
+        refetchActivities();
+      }
+    }, [isManager, shouldFetchActivities, refetch, refetchActivities]),
   );
 
   const filteredItems = useMemo(() => {

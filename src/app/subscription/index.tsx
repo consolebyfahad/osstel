@@ -14,8 +14,8 @@ import {
   getApiErrorMessage,
   isBlockedAccountMessage,
 } from "@/utils/api";
+import { showBlockedAccountAlert } from "@/utils/blockedAccountActions";
 import {
-  api,
   useGetMeQuery,
   useGetPlanRequestQuery,
   useGetPlansQuery,
@@ -44,9 +44,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useDispatch, useSelector } from "react-redux";
-import { logout, updateUser } from "../../../store/reducers/authSlice";
+import { updateUser } from "../../../store/reducers/authSlice";
 import type { AppDispatch, RootState } from "../../../store/store";
-import { persistor } from "../../../store/store";
 
 const PAYMENT_INSTRUCTIONS = `Transfer payment to:
 Bank: Meezan Bank
@@ -177,23 +176,15 @@ export default function SubscriptionScreen() {
     }
   }, [isManager, refetchMe, refetchPlans, refetchRequest]);
 
-  const handleBlocked = useCallback(async () => {
-    Alert.alert(
-      "Account blocked",
-      "Your account has been blocked. Please contact support.",
-      [
-        {
-          text: "OK",
-          onPress: async () => {
-            dispatch(logout());
-            dispatch(api.util.resetApiState());
-            await persistor.purge();
-            router.replace("/auth/signin");
-          },
-        },
-      ],
-    );
+  const handleBlocked = useCallback(() => {
+    showBlockedAccountAlert(dispatch);
   }, [dispatch]);
+
+  const plansErrorMessage = useMemo(() => {
+    if (!plansError) return "";
+    const message = getErrorMessage(plansError, "Could not load plans.");
+    return message === "BLOCKED" ? "" : message;
+  }, [plansError]);
 
   useEffect(() => {
     const plansMsg = plansError ? getErrorMessage(plansError, "") : "";
@@ -291,6 +282,23 @@ export default function SubscriptionScreen() {
             />
           }
         >
+          {plansErrorMessage ? (
+            <View style={styles.errorBanner}>
+              <Ionicons
+                name="cloud-offline-outline"
+                size={vs(22)}
+                color={colors.error}
+              />
+              <View style={styles.pendingContent}>
+                <Text style={styles.errorTitle}>Could not load plans</Text>
+                <Text style={styles.pendingSubtext}>{plansErrorMessage}</Text>
+                <Pressable onPress={() => refetchPlans()} style={styles.retryBtn}>
+                  <Text style={styles.retryText}>Tap to retry</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
           {activeTrial?.active ? (
             <View style={styles.pendingBanner}>
               <Ionicons
@@ -582,6 +590,29 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.semiBold,
       color: colors.warning,
+    },
+    errorBanner: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: vs(12),
+      backgroundColor: colors.errorBg,
+      borderRadius: vs(12),
+      padding: vs(14),
+      marginBottom: vs(16),
+    },
+    errorTitle: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.error,
+      marginBottom: vs(4),
+    },
+    retryBtn: {
+      marginTop: vs(8),
+    },
+    retryText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.primary,
     },
     modalOverlay: {
       flex: 1,

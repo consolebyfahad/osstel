@@ -1,3 +1,4 @@
+import BlockedAccountHandler from "@/components/BlockedAccountHandler";
 import AuthProvider from "@/context/AuthProvider";
 import AppModalProvider from "@/context/AppModalProvider";
 import PushNotificationProvider from "@/components/PushNotificationProvider";
@@ -79,6 +80,7 @@ export default function RootLayout() {
         persistor={persistor}
       >
         <AuthProvider>
+          <BlockedAccountHandler />
           <PushNotificationProvider>
             <ThemeProvider>
               <AppModalProvider>

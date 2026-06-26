@@ -582,7 +582,7 @@ export default function AddResident() {
                   }
                 >
                   <CustomInput
-                    label="CNIC (optional)"
+                    label="CNIC"
                     placeholder="35201-1234567-1"
                     value={cnic}
                     onChangeText={handleCnicChange}
