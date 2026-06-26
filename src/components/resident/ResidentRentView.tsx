@@ -4,7 +4,9 @@ import GradientBackground from "@/components/GradientBackground";
 import ImageUploadField, {
   type UploadedImageValue,
 } from "@/components/ImageUploadField";
+import ResidentRentBanner from "@/components/resident/ResidentRentBanner";
 import ScreenHeader from "@/components/ScreenHeader";
+import { getCardShadow } from "@/components/SectionCard";
 import type { RentRecord, RentStatus } from "@/types/rent";
 import {
   getEligibleRentMonths,
@@ -120,14 +122,12 @@ type PaymentProofCardProps = {
   record: RentRecord;
   styles: ReturnType<typeof createStyles>;
   colors: AppColors;
-  onEdit?: () => void;
 };
 
 function PaymentProofCard({
   record,
   styles,
   colors,
-  onEdit,
 }: PaymentProofCardProps) {
   const rejected = Boolean(record.rejectionReason);
   const showProof =
@@ -141,15 +141,8 @@ function PaymentProofCard({
   return (
     <View style={styles.proofCard}>
       <View style={styles.proofHeader}>
-        <View style={styles.proofHeaderLeft}>
-          <Ionicons name="receipt-outline" size={vs(18)} color={colors.primary} />
-          <Text style={styles.proofTitle}>Payment Proof</Text>
-        </View>
-        <StatusBadge
-          status={record.status}
-          rejected={rejected}
-          styles={styles}
-        />
+        <Ionicons name="receipt-outline" size={vs(18)} color={colors.primary} />
+        <Text style={styles.proofTitle}>Submitted proof</Text>
       </View>
 
       {record.paymentProof ? (
@@ -170,13 +163,6 @@ function PaymentProofCard({
         <Text style={styles.rejectionText}>
           Rejected: {record.rejectionReason}
         </Text>
-      ) : null}
-
-      {rejected && onEdit ? (
-        <Pressable style={styles.editProofBtn} onPress={onEdit}>
-          <Ionicons name="create-outline" size={vs(16)} color={colors.primary} />
-          <Text style={styles.editProofBtnText}>Edit Payment Proof</Text>
-        </Pressable>
       ) : null}
 
       <Text style={styles.proofMessage}>{statusMessage(record)}</Text>
@@ -422,59 +408,53 @@ export default function ResidentRentView() {
           </View>
         ) : null}
 
-        <View style={styles.currentCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>
-              {MONTH_NAMES[month - 1]} {now.getFullYear()}
-            </Text>
-            {hasRentRecord && currentStatus ? (
-              <StatusBadge
-                status={currentStatus}
-                rejected={Boolean(currentRecord?.rejectionReason)}
+        {currentLoading ? (
+          <CustomLoading size="md" style={styles.loader} />
+        ) : currentError ? (
+          <Text style={styles.errorText}>
+            Could not load this month&apos;s rent. Pull to refresh.
+          </Text>
+        ) : (
+          <>
+            <ResidentRentBanner
+              label={`${MONTH_NAMES[month - 1]?.toUpperCase() ?? "MONTHLY"} ${now.getFullYear()} RENT`}
+              amount={currentRecord?.amount ?? room?.rent ?? 0}
+              status={isRejected ? "rejected" : currentStatus}
+            />
+
+            {!hasRentRecord ? (
+              <Text style={styles.infoText}>
+                Your rent record for this month is not set up yet. Please
+                contact your hostel manager.
+              </Text>
+            ) : currentRecord ? (
+              <PaymentProofCard
+                record={currentRecord}
                 styles={styles}
+                colors={colors}
               />
             ) : null}
-          </View>
-          {currentLoading ? (
-            <CustomLoading size="md" style={styles.loader} />
-          ) : currentError ? (
-            <Text style={styles.errorText}>
-              Could not load this month&apos;s rent. Pull to refresh.
-            </Text>
-          ) : (
-            <>
-              <Text style={styles.amount}>
-                Rs {(currentRecord?.amount ?? room?.rent ?? 0).toLocaleString()}
-              </Text>
-              {!hasRentRecord ? (
-                <Text style={styles.reviewText}>
-                  Your rent record for this month is not set up yet. Please
-                  contact your hostel manager.
-                </Text>
-              ) : currentRecord ? (
-                <PaymentProofCard
-                  record={currentRecord}
-                  styles={styles}
-                  colors={colors}
-                  onEdit={isRejected ? openPayModal : undefined}
-                />
-              ) : null}
-              {canSubmitPayment && room ? (
-                <Pressable
-                  style={styles.primaryBtn}
-                  onPress={openPayModal}
-                >
-                  <Ionicons name="cloud-upload-outline" size={vs(18)} color={colors.white} />
-                  <Text style={styles.primaryBtnText}>
-                    {isRejected
-                      ? "Edit Payment Proof"
-                      : "Submit Payment Proof"}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </>
-          )}
-        </View>
+
+            {canSubmitPayment && room ? (
+              <CustomButton
+                title={
+                  isRejected
+                    ? "Edit Payment Proof"
+                    : "Submit Payment Proof"
+                }
+                icon={
+                  <Ionicons
+                    name="cloud-upload-outline"
+                    size={vs(18)}
+                    color={colors.onPrimary}
+                  />
+                }
+                onPress={openPayModal}
+                style={styles.rentActionBtn}
+              />
+            ) : null}
+          </>
+        )}
 
         <View style={styles.historyHeader}>
           <Text style={styles.sectionTitle}>Payment History</Text>
@@ -506,7 +486,7 @@ export default function ResidentRentView() {
         </View>
 
         {historyLoading ? (
-          <CustomLoading size="md" style={styles.loader} />
+          <CustomLoading size="xl" style={styles.loader} />
         ) : historyRecords.length === 0 ? (
           <EmptyState
             title="No rent records"
@@ -592,10 +572,14 @@ export default function ResidentRentView() {
             />
 
             <View style={styles.modalActions}>
-              <Pressable style={styles.cancelBtn} onPress={closePayModal}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </Pressable>
-              <View style={styles.submitWrap}>
+              <View style={styles.modalActionBtn}>
+                <CustomButton
+                  title="Cancel"
+                  variant="outline"
+                  onPress={closePayModal}
+                />
+              </View>
+              <View style={styles.modalActionBtn}>
                 <CustomButton
                   title={isRejected ? "Resubmit for Review" : "Send to Owner"}
                   onPress={handleSubmitPayment}
@@ -613,6 +597,8 @@ export default function ResidentRentView() {
 }
 
 function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
+  const cardShadow = getCardShadow(colors, isDark);
+
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -653,32 +639,17 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginTop: vs(4),
       lineHeight: vs(18),
     },
-    currentCard: {
-      backgroundColor: isDark ? colors.white100 : colors.white,
-      borderRadius: vs(18),
-      borderWidth: 1,
-      borderColor: isDark ? colors.white200 : colors.white100,
-      padding: vs(16),
-      marginBottom: vs(20),
+    rentActionBtn: {
+      marginBottom: vs(24),
     },
-    cardHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: vs(10),
-      marginBottom: vs(10),
-    },
-    cardTitle: {
-      flex: 1,
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.bold,
-      color: colors.text,
-    },
-    amount: {
-      fontSize: FONT_SIZES.xxl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      marginBottom: vs(12),
+    infoText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.medium,
+      color: colors.gray200,
+      lineHeight: vs(20),
+      marginTop: vs(-8),
+      marginBottom: vs(16),
+      paddingHorizontal: vs(4),
     },
     statusBadge: {
       paddingHorizontal: vs(10),
@@ -714,25 +685,19 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.error,
     },
     proofCard: {
-      borderRadius: vs(14),
+      ...cardShadow,
+      borderRadius: vs(16),
       borderWidth: 1,
-      borderColor: colors.white100,
-      backgroundColor: isDark ? colors.surfaceMuted : colors.white100,
-      padding: vs(12),
-      marginBottom: vs(12),
+      borderColor: isDark ? colors.white200 : colors.white100,
+      backgroundColor: colors.white,
+      padding: vs(14),
+      marginBottom: vs(16),
       gap: vs(10),
     },
     proofHeader: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
       gap: vs(8),
-    },
-    proofHeaderLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(8),
-      flex: 1,
     },
     proofTitle: {
       fontSize: FONT_SIZES.sm,
@@ -776,43 +741,6 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontFamily: fonts.medium,
       color: colors.error,
     },
-    editProofBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: vs(6),
-      alignSelf: "flex-start",
-      paddingVertical: vs(8),
-      paddingHorizontal: vs(12),
-      borderRadius: vs(10),
-      backgroundColor: isDark ? colors.infoBg : colors.primary100,
-    },
-    editProofBtnText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.primary,
-    },
-    reviewText: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.medium,
-      color: colors.primary,
-      marginBottom: vs(8),
-    },
-    primaryBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: vs(8),
-      backgroundColor: colors.primary,
-      borderRadius: vs(12),
-      paddingVertical: vs(12),
-      marginTop: vs(8),
-    },
-    primaryBtnText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.onPrimary,
-    },
     historyHeader: {
       flexDirection: "row",
       alignItems: "center",
@@ -820,9 +748,11 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginBottom: vs(12),
     },
     sectionTitle: {
-      fontSize: FONT_SIZES.lg,
-      fontFamily: fonts.bold,
-      color: colors.text,
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.gray200,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
     },
     yearRow: {
       flexDirection: "row",
@@ -843,6 +773,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       textAlign: "center",
     },
     historyCard: {
+      ...cardShadow,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
@@ -885,7 +816,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginTop: vs(16),
     },
     loader: {
-      marginVertical: vs(12),
+      alignSelf: "center",
     },
     errorText: {
       fontSize: FONT_SIZES.sm,
@@ -938,19 +869,10 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     },
     modalActions: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "stretch",
       gap: vs(12),
     },
-    cancelBtn: {
-      paddingVertical: vs(14),
-      paddingHorizontal: vs(12),
-    },
-    cancelBtnText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.gray200,
-    },
-    submitWrap: {
+    modalActionBtn: {
       flex: 1,
     },
   });

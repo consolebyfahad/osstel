@@ -234,8 +234,9 @@ export default function CustomTabBar({
   descriptors,
   navigation,
 }: BottomTabBarProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const tabBarFill = isDark ? colors.white100 : colors.white;
   const insets = useSafeAreaInsets();
   const user = useSelector((state: RootState) => state.auth.user);
   const isManager = user?.role === "manager";
@@ -396,7 +397,7 @@ export default function CustomTabBar({
         height={totalHeight + NOTCH_DEPTH}
         style={styles.svg}
       >
-        <AnimatedPath animatedProps={animatedPathProps} fill={colors.primary100} />
+        <AnimatedPath animatedProps={animatedPathProps} fill={tabBarFill} />
       </Svg>
 
       <View
@@ -545,7 +546,7 @@ function createStyles(colors: AppColors) {
       bottom: 0,
       shadowColor: colors.black,
       shadowOffset: { width: 0, height: -4 },
-      shadowOpacity: 0.08,
+      shadowOpacity: 0.12,
       shadowRadius: 12,
       elevation: 12,
     },

@@ -462,7 +462,6 @@ export default function AddResident() {
               <>
                 <ImageUploadField
                   label="Resident Photo"
-                  hint="Optional"
                   value={profileImage}
                   onChange={setProfileImage}
                   preset="avatar"

@@ -7,7 +7,7 @@ import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -38,17 +38,61 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function ChangePasswordScreen() {
-  const { colors, fonts, isDark } = useTheme();
+  const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(
-    () => createStyles(colors, fonts, isDark),
-    [colors, fonts, isDark],
-  );
-
+  const scrollRef = useRef<ScrollView>(null);
+  const fieldPositions = useRef<Record<string, number>>({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changePassword, { isLoading }] = useChangePasswordMutation();
+
+  const styles = useMemo(
+    () => createStyles(colors, fonts, insets.bottom, keyboardHeight),
+    [colors, fonts, insets.bottom, keyboardHeight],
+  );
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const registerFieldPosition = useCallback((key: string, y: number) => {
+    fieldPositions.current[key] = y;
+  }, []);
+
+  const scrollToField = useCallback((key: string) => {
+    const y = fieldPositions.current[key];
+    if (y === undefined) return;
+
+    const scroll = () => {
+      scrollRef.current?.scrollTo({
+        y: Math.max(0, y - vs(24)),
+        animated: true,
+      });
+    };
+
+    requestAnimationFrame(scroll);
+
+    if (Platform.OS === "android") {
+      setTimeout(scroll, 120);
+    }
+  }, []);
 
   const isValid =
     currentPassword.trim().length > 0 &&
@@ -106,6 +150,7 @@ export default function ChangePasswordScreen() {
             <ScreenHeader title="Change Password" showBack />
 
             <ScrollView
+              ref={scrollRef}
               style={styles.scroll}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
@@ -117,34 +162,55 @@ export default function ChangePasswordScreen() {
                 6 characters.
               </Text>
 
-              <CustomInput
-                label="Current Password"
-                placeholder="Enter current password"
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                secureTextEntry
-                returnKeyType="next"
-              />
+              <View
+                onLayout={(event) =>
+                  registerFieldPosition("current", event.nativeEvent.layout.y)
+                }
+              >
+                <CustomInput
+                  label="Current Password"
+                  placeholder="Enter current password"
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  secureTextEntry
+                  returnKeyType="next"
+                  onFocus={() => scrollToField("current")}
+                />
+              </View>
 
-              <CustomInput
-                label="New Password"
-                placeholder="Enter new password"
-                value={newPassword}
-                onChangeText={setNewPassword}
-                secureTextEntry
-                hint="At least 6 characters"
-                returnKeyType="next"
-              />
+              <View
+                onLayout={(event) =>
+                  registerFieldPosition("new", event.nativeEvent.layout.y)
+                }
+              >
+                <CustomInput
+                  label="New Password"
+                  placeholder="Enter new password"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  secureTextEntry
+                  hint="At least 6 characters"
+                  returnKeyType="next"
+                  onFocus={() => scrollToField("new")}
+                />
+              </View>
 
-              <CustomInput
-                label="Confirm New Password"
-                placeholder="Re-enter new password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry
-                returnKeyType="done"
-                onSubmitEditing={handleSubmit}
-              />
+              <View
+                onLayout={(event) =>
+                  registerFieldPosition("confirm", event.nativeEvent.layout.y)
+                }
+              >
+                <CustomInput
+                  label="Confirm New Password"
+                  placeholder="Re-enter new password"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                  onFocus={() => scrollToField("confirm")}
+                />
+              </View>
 
               <CustomButton
                 title="Update Password"
@@ -163,8 +229,16 @@ export default function ChangePasswordScreen() {
 function createStyles(
   colors: AppColors,
   fonts: typeof FONTS,
-  isDark: boolean,
+  bottomInset: number,
+  keyboardHeight: number,
 ) {
+  const keyboardPadding =
+    keyboardHeight > 0
+      ? Platform.OS === "ios"
+        ? vs(16)
+        : Math.max(keyboardHeight - bottomInset + vs(16), vs(16))
+      : 0;
+
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -184,7 +258,7 @@ function createStyles(
     },
     scrollContent: {
       paddingHorizontal: vs(20),
-      paddingBottom: vs(40),
+      paddingBottom: Math.max(bottomInset, vs(24)) + keyboardPadding,
     },
     description: {
       fontSize: FONT_SIZES.md,

@@ -3,6 +3,7 @@ import AnimatedFilterBar from "@/components/AnimatedFilterBar";
 import EmptyState from "@/components/EmptyState";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
+import SectionCard, { getCardShadow } from "@/components/SectionCard";
 import {
   COMPLAINT_FILTERS,
   COMPLAINT_STATUS_LABELS,
@@ -222,8 +223,7 @@ export default function ResidentComplaintsView() {
                 />
               ) : (
                 <>
-                  <Text style={styles.sectionTitle}>New complaint</Text>
-                  <View style={styles.formCard}>
+                  <SectionCard title="New Complaint">
                     <Text style={styles.inputLabel}>Title</Text>
                     <TextInput
                       style={styles.input}
@@ -252,7 +252,7 @@ export default function ResidentComplaintsView() {
                       disabled={!canSubmit}
                       loading={isSubmitting}
                     />
-                  </View>
+                  </SectionCard>
                 </>
               )}
 
@@ -294,6 +294,8 @@ export default function ResidentComplaintsView() {
 }
 
 function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
+  const cardShadow = getCardShadow(colors, isDark);
+
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -340,16 +342,9 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       fontFamily: fonts.semiBold,
       color: colors.gray200,
       textTransform: "uppercase",
-      letterSpacing: 0.6,
+      letterSpacing: 0.8,
       marginBottom: vs(10),
-    },
-    formCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
-      borderWidth: 1,
-      borderColor: colors.white100,
-      padding: vs(16),
-      marginBottom: vs(24),
+      marginLeft: vs(4),
     },
     inputLabel: {
       fontSize: FONT_SIZES.sm,
@@ -358,9 +353,9 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginBottom: vs(8),
     },
     input: {
-      backgroundColor: colors.background,
+      backgroundColor: isDark ? colors.white100 : colors.background,
       borderWidth: 1,
-      borderColor: colors.white100,
+      borderColor: isDark ? colors.white200 : colors.white100,
       borderRadius: vs(12),
       paddingHorizontal: vs(14),
       paddingVertical: vs(12),
@@ -379,10 +374,11 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginVertical: vs(24),
     },
     recordCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
+      ...cardShadow,
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      borderRadius: vs(18),
       borderWidth: 1,
-      borderColor: colors.white100,
+      borderColor: isDark ? colors.white200 : colors.white100,
       padding: vs(16),
       marginBottom: vs(12),
     },

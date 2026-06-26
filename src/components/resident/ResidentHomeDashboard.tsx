@@ -1,7 +1,9 @@
+import CustomButton from "@/components/CustomButton";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import QuickActionCard from "@/components/QuickActionCard";
+import SectionCard from "@/components/SectionCard";
+import ResidentRentBanner from "@/components/resident/ResidentRentBanner";
 import type { QuickAction } from "@/types/dashboard";
-import type { RentStatus } from "@/types/rent";
 import { isRentDueWindow } from "@/utils/rent";
 import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
 import { useGetMeQuery, useGetMyRentQuery } from "../../../store/api";
@@ -37,22 +39,6 @@ const MONTH_NAMES = [
   "November",
   "December",
 ];
-
-function statusLabel(status: RentStatus | undefined) {
-  if (status === "paid") return "Paid";
-  if (status === "review") return "Under Review";
-  if (status === "rejected") return "Rejected";
-  if (status === "pending") return "Pending";
-  return "Not available";
-}
-
-function statusColor(status: RentStatus | undefined, colors: AppColors) {
-  if (status === "paid") return colors.success;
-  if (status === "review") return colors.primary;
-  if (status === "rejected") return colors.error;
-  if (status === "pending") return colors.warning;
-  return colors.gray200;
-}
 
 export default function ResidentHomeDashboard() {
   const { colors, fonts, isDark } = useTheme();
@@ -196,11 +182,7 @@ export default function ResidentHomeDashboard() {
         </Pressable>
       ) : null}
 
-      <View style={styles.hostelCard}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="business-outline" size={vs(20)} color={colors.primary} />
-          <Text style={styles.cardTitle}>My Hostel</Text>
-        </View>
+      <SectionCard title="My Hostel" contentStyle={styles.cardContent}>
         {hostel ? (
           <>
             <Text style={styles.hostelName}>{hostel.name}</Text>
@@ -208,100 +190,74 @@ export default function ResidentHomeDashboard() {
             <Text style={styles.hostelMeta}>
               {hostel.city} · {hostel.contactPhone}
             </Text>
+            {room ? (
+              <View style={styles.stayRow}>
+                <View style={styles.stayStat}>
+                  <Text style={styles.stayStatLabel}>Room</Text>
+                  <Text style={styles.stayStatValue}>Room {room.roomNumber}</Text>
+                </View>
+                <View style={styles.stayStat}>
+                  <Text style={styles.stayStatLabel}>Monthly Rent</Text>
+                  <Text style={styles.stayStatValue}>
+                    Rs {room.rent.toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </>
         ) : (
           <Text style={styles.hostelMeta}>No hostel assigned yet.</Text>
         )}
-      </View>
+      </SectionCard>
 
-      <View style={styles.row}>
-        <View style={[styles.infoCard, styles.infoCardHalf]}>
-          <Ionicons name="bed-outline" size={vs(20)} color={colors.primary} />
-          <Text style={styles.infoLabel}>Room</Text>
-          <Text style={styles.infoValue}>
-            {room ? `Room ${room.roomNumber}` : "—"}
-          </Text>
-        </View>
-        <View style={[styles.infoCard, styles.infoCardHalf]}>
-          <Ionicons name="cash-outline" size={vs(20)} color={colors.success} />
-          <Text style={styles.infoLabel}>Monthly Rent</Text>
-          <Text style={styles.infoValue}>
-            {room ? `Rs ${room.rent.toLocaleString()}` : "—"}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.rentCard}>
-        <View style={styles.cardHeader}>
-          <Ionicons name="calendar-outline" size={vs(20)} color={colors.primary} />
-          <Text style={styles.cardTitle}>
-            {MONTH_NAMES[month - 1]} {year} Rent
-          </Text>
-        </View>
-        {rentLoading ? (
-          <CustomLoading size="md" style={styles.rentLoader} />
-        ) : (
-          <>
-            <View style={styles.rentStatusRow}>
-              <Text style={styles.rentAmount}>
-                Rs {(rentRecord?.amount ?? room?.rent ?? 0).toLocaleString()}
-              </Text>
-              <View
-                style={[
-                  styles.statusPill,
-                  { backgroundColor: `${statusColor(rentStatus, colors)}22` },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusPillText,
-                    { color: statusColor(rentStatus, colors) },
-                  ]}
-                >
-                  {statusLabel(rentStatus)}
-                </Text>
-              </View>
-            </View>
-            {rentRecord?.rejectionReason ? (
-              <Text style={styles.rejectionText}>
-                Rejected: {rentRecord.rejectionReason}
-              </Text>
-            ) : null}
-            {rentStatus === "review" ? (
-              <Text style={styles.reviewText}>
-                Payment sent to owner for approval.
-              </Text>
-            ) : null}
-            {(rentStatus === "pending" ||
-              rentStatus === "rejected" ||
-              rentRecord?.rejectionReason) &&
-            room ? (
-              <Pressable
-                style={styles.payButton}
-                onPress={() => router.push("/(tabs)/rent")}
-              >
-                <Text style={styles.payButtonText}>
-                  {rentStatus === "rejected" || rentRecord?.rejectionReason
-                    ? "Edit Payment Proof"
-                    : "Submit Payment"}
-                </Text>
-              </Pressable>
-            ) : null}
-          </>
-        )}
-      </View>
-
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
-      <View style={styles.actionsRow}>
-        {quickActions.map((action) => (
-          <View key={action.id} style={styles.actionItem}>
-            <QuickActionCard
-              {...action}
-              onPress={() => handleQuickAction(action.id)}
+      {rentLoading ? (
+        <CustomLoading size="md" style={styles.rentLoader} />
+      ) : (
+        <>
+          <ResidentRentBanner
+            label={`${MONTH_NAMES[month - 1]?.toUpperCase() ?? "MONTHLY"} ${year} RENT`}
+            amount={rentRecord?.amount ?? room?.rent ?? 0}
+            status={rentStatus}
+          />
+          {rentRecord?.rejectionReason ? (
+            <Text style={styles.rejectionText}>
+              Rejected: {rentRecord.rejectionReason}
+            </Text>
+          ) : null}
+          {rentStatus === "review" ? (
+            <Text style={styles.reviewText}>
+              Payment sent to owner for approval.
+            </Text>
+          ) : null}
+          {(rentStatus === "pending" ||
+            rentStatus === "rejected" ||
+            rentRecord?.rejectionReason) &&
+          room ? (
+            <CustomButton
+              title={
+                rentStatus === "rejected" || rentRecord?.rejectionReason
+                  ? "Edit Payment Proof"
+                  : "Submit Payment"
+              }
+              onPress={() => router.push("/(tabs)/rent")}
+              style={styles.rentActionBtn}
             />
-          </View>
-        ))}
-      </View>
+          ) : null}
+        </>
+      )}
+
+      <SectionCard title="Quick Actions" contentStyle={styles.actionsContent}>
+        <View style={styles.actionsRow}>
+          {quickActions.map((action) => (
+            <View key={action.id} style={styles.actionItem}>
+              <QuickActionCard
+                {...action}
+                onPress={() => handleQuickAction(action.id)}
+              />
+            </View>
+          ))}
+        </View>
+      </SectionCard>
     </ScrollView>
   );
 }
@@ -317,7 +273,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       gap: vs(14),
-      marginBottom: vs(20),
+      marginBottom: vs(24),
     },
     headerText: {
       flex: 1,
@@ -348,9 +304,9 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.onPrimary,
     },
     greeting: {
-      fontSize: FONT_SIZES.md,
+      fontSize: FONT_SIZES.lg,
       fontFamily: fonts.medium,
-      color: colors.gray200,
+      color: colors.text,
     },
     userName: {
       fontSize: FONT_SIZES.title,
@@ -383,25 +339,6 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.gray200,
       lineHeight: vs(18),
     },
-    hostelCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
-      borderWidth: 1,
-      borderColor: colors.white100,
-      padding: vs(16),
-      marginBottom: vs(12),
-    },
-    cardHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(8),
-      marginBottom: vs(10),
-    },
-    cardTitle: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.bold,
-      color: colors.text,
-    },
     hostelName: {
       fontSize: FONT_SIZES.lg,
       fontFamily: fonts.bold,
@@ -414,101 +351,68 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.gray200,
       lineHeight: vs(20),
     },
-    row: {
+    cardContent: {
+      paddingHorizontal: vs(14),
+      paddingBottom: vs(14),
+    },
+    stayRow: {
       flexDirection: "row",
       gap: vs(10),
-      marginBottom: vs(12),
+      marginTop: vs(16),
     },
-    infoCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(14),
-      borderWidth: 1,
-      borderColor: colors.white100,
-      padding: vs(14),
-    },
-    infoCardHalf: {
+    stayStat: {
       flex: 1,
+      backgroundColor: colors.white100,
+      borderRadius: vs(14),
+      paddingVertical: vs(12),
+      paddingHorizontal: vs(10),
+      alignItems: "center",
     },
-    infoLabel: {
+    stayStatLabel: {
       fontSize: FONT_SIZES.xs,
       fontFamily: fonts.medium,
       color: colors.gray200,
-      marginTop: vs(8),
       marginBottom: vs(4),
     },
-    infoValue: {
+    stayStatValue: {
       fontSize: FONT_SIZES.md,
       fontFamily: fonts.bold,
       color: colors.text,
-    },
-    rentCard: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
-      borderWidth: 1,
-      borderColor: colors.white100,
-      padding: vs(16),
-      marginBottom: vs(20),
+      textAlign: "center",
     },
     rentLoader: {
-      marginVertical: vs(12),
+      marginVertical: vs(24),
     },
-    rentStatusRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: vs(10),
-    },
-    rentAmount: {
-      fontSize: FONT_SIZES.xl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-    },
-    statusPill: {
-      paddingHorizontal: vs(10),
-      paddingVertical: vs(6),
-      borderRadius: vs(20),
-    },
-    statusPillText: {
-      fontSize: FONT_SIZES.xs,
-      fontFamily: fonts.semiBold,
+    rentActionBtn: {
+      marginBottom: vs(24),
     },
     rejectionText: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.medium,
       color: colors.error,
-      marginTop: vs(10),
+      marginTop: vs(-8),
+      marginBottom: vs(12),
+      paddingHorizontal: vs(4),
     },
     reviewText: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.medium,
       color: colors.primary,
-      marginTop: vs(10),
+      marginTop: vs(-8),
+      marginBottom: vs(12),
+      paddingHorizontal: vs(4),
     },
-    payButton: {
-      marginTop: vs(14),
-      backgroundColor: colors.primary,
-      borderRadius: vs(12),
-      paddingVertical: vs(12),
-      alignItems: "center",
-    },
-    payButtonText: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.onPrimary,
-    },
-    sectionTitle: {
-      fontSize: FONT_SIZES.xl,
-      fontFamily: fonts.bold,
-      color: colors.text,
-      marginBottom: vs(14),
+    actionsContent: {
+      paddingHorizontal: vs(10),
+      paddingBottom: vs(14),
     },
     actionsRow: {
       flexDirection: "row",
-      marginHorizontal: -6,
+      marginHorizontal: -4,
     },
     actionItem: {
       flex: 1,
-      paddingHorizontal: 6,
+      paddingHorizontal: 4,
     },
   });
 }
