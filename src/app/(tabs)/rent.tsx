@@ -324,6 +324,12 @@ function ManagerRentView() {
   const isEmpty = !isLoading && records.length === 0;
 
   const handleReview = (rentId: string, approve: boolean) => {
+    const proofCheck = checkFeature(PLAN_FEATURES.payment_proof);
+    if (!proofCheck.allowed) {
+      showSubscriptionBlocked(proofCheck.message);
+      return;
+    }
+
     if (!selectedHostelId || updatingRentId) return;
 
     const submit = async (rejectionReason?: string) => {

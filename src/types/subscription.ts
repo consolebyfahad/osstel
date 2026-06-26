@@ -2,9 +2,10 @@ export type SubscriptionPlanId = "free" | "standard" | "premium";
 
 export interface TrialInfo {
   active: boolean;
-  plan: SubscriptionPlanId;
   endsAt: string;
   daysRemaining: number;
+  /** @deprecated Trial is always Pro; kept for older API payloads */
+  plan?: SubscriptionPlanId;
 }
 
 export interface SubscriptionPeriodInfo {
@@ -87,7 +88,7 @@ export function canRequestPlan(
 
 export function getPlanDisplayName(planId: SubscriptionPlanId): string {
   if (planId === "free") return "Free";
-  if (planId === "standard") return "Starter";
+  if (planId === "standard") return "Standard";
   return "Pro";
 }
 

@@ -6,7 +6,11 @@ export type PlanFeature =
   | "rent_tracking"
   | "reports"
   | "notifications"
-  | "tenant_mobile_app"
+  | "expense_tracking"
+  | "complaints"
+  | "payment_proof"
+  | "support"
+  | "rent_reminders"
   | "data_export"
   | "multi_hostel"
   | "advanced_reports"
@@ -15,7 +19,7 @@ export type PlanFeature =
 export type PlanLimits = {
   maxHostels: number;
   maxRooms: number;
-  maxTenants: number;
+  maxTenants: number | null;
 };
 
 export type PlanDefinition = {
@@ -32,7 +36,11 @@ export const PLAN_FEATURES = {
   rent_tracking: "rent_tracking",
   reports: "reports",
   notifications: "notifications",
-  tenant_mobile_app: "tenant_mobile_app",
+  expense_tracking: "expense_tracking",
+  complaints: "complaints",
+  payment_proof: "payment_proof",
+  support: "support",
+  rent_reminders: "rent_reminders",
   data_export: "data_export",
   multi_hostel: "multi_hostel",
   advanced_reports: "advanced_reports",
@@ -47,7 +55,7 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
     limits: {
       maxHostels: 1,
       maxRooms: 10,
-      maxTenants: 30,
+      maxTenants: null,
     },
     features: {
       tenant_management: true,
@@ -55,7 +63,11 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
       rent_tracking: true,
       reports: false,
       notifications: false,
-      tenant_mobile_app: false,
+      expense_tracking: false,
+      complaints: false,
+      payment_proof: false,
+      support: false,
+      rent_reminders: false,
       data_export: false,
       multi_hostel: false,
       advanced_reports: false,
@@ -64,12 +76,12 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
   },
   standard: {
     id: "standard",
-    name: "Starter",
+    name: "Standard",
     price: 1999,
     limits: {
       maxHostels: 1,
       maxRooms: 25,
-      maxTenants: 75,
+      maxTenants: null,
     },
     features: {
       tenant_management: true,
@@ -77,7 +89,11 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
       rent_tracking: true,
       reports: true,
       notifications: true,
-      tenant_mobile_app: true,
+      expense_tracking: true,
+      complaints: true,
+      payment_proof: true,
+      support: true,
+      rent_reminders: true,
       data_export: true,
       multi_hostel: false,
       advanced_reports: false,
@@ -91,7 +107,7 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
     limits: {
       maxHostels: 5,
       maxRooms: 75,
-      maxTenants: 250,
+      maxTenants: null,
     },
     features: {
       tenant_management: true,
@@ -99,7 +115,11 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
       rent_tracking: true,
       reports: true,
       notifications: true,
-      tenant_mobile_app: true,
+      expense_tracking: true,
+      complaints: true,
+      payment_proof: true,
+      support: true,
+      rent_reminders: true,
       data_export: true,
       multi_hostel: true,
       advanced_reports: true,
@@ -109,7 +129,7 @@ export const PLANS: Record<SubscriptionPlanId, PlanDefinition> = {
 };
 
 const UPGRADE_LABELS: Record<SubscriptionPlanId, string> = {
-  free: "Starter",
+  free: "Standard",
   standard: "Pro",
   premium: "Pro",
 };

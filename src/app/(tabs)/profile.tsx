@@ -398,7 +398,11 @@ export default function Profile() {
                   icon="wallet-outline"
                   label="Expenses"
                   value="Track hostel spending"
-                  onPress={() => router.push("/expenses")}
+                  onPress={() =>
+                    guardFeature(PLAN_FEATURES.expense_tracking, () =>
+                      router.push("/expenses"),
+                    )
+                  }
                   styles={styles}
                   colors={colors}
                 />
@@ -447,7 +451,11 @@ export default function Profile() {
                   icon="chatbox-ellipses-outline"
                   label="My Complaints"
                   value="Report hostel issues"
-                  onPress={() => router.push("/complaints")}
+                  onPress={() =>
+                    guardFeature(PLAN_FEATURES.complaints, () =>
+                      router.push("/complaints"),
+                    )
+                  }
                   styles={styles}
                   colors={colors}
                 />
@@ -460,13 +468,9 @@ export default function Profile() {
               icon="notifications-outline"
               label="Notifications"
               onPress={() => {
-                if (isManager) {
-                  guardFeature(PLAN_FEATURES.notifications, () =>
-                    router.push("/notifications"),
-                  );
-                  return;
-                }
-                router.push("/notifications");
+                guardFeature(PLAN_FEATURES.notifications, () =>
+                  router.push("/notifications"),
+                );
               }}
               styles={styles}
               colors={colors}
@@ -475,7 +479,11 @@ export default function Profile() {
             <MenuRow
               icon="help-circle-outline"
               label="Help & Support"
-              onPress={() => router.push("/support")}
+              onPress={() =>
+                guardFeature(PLAN_FEATURES.support, () =>
+                  router.push("/support"),
+                )
+              }
               styles={styles}
               colors={colors}
             />

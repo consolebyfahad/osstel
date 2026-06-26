@@ -7,6 +7,8 @@ import ImageUploadField, {
 import ResidentRentBanner from "@/components/resident/ResidentRentBanner";
 import ScreenHeader from "@/components/ScreenHeader";
 import { getCardShadow } from "@/components/SectionCard";
+import { PLAN_FEATURES } from "@/constants/plans";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { RentRecord, RentStatus } from "@/types/rent";
 import {
   getEligibleRentMonths,
@@ -187,6 +189,8 @@ export default function ResidentRentView() {
     [colors, fonts, isDark],
   );
   const user = useSelector((state: RootState) => state.auth.user);
+  const { checkFeature } = useSubscription();
+  const paymentProofAllowed = checkFeature(PLAN_FEATURES.payment_proof).allowed;
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const month = now.getMonth() + 1;
@@ -252,6 +256,7 @@ export default function ResidentRentView() {
   const isRejected =
     currentStatus === "rejected" || Boolean(currentRecord?.rejectionReason);
   const canSubmitPayment =
+    paymentProofAllowed &&
     hasRentRecord &&
     (currentStatus === "pending" || isRejected);
   const showDueHighlight =

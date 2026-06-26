@@ -5,6 +5,8 @@ import SectionCard from "@/components/SectionCard";
 import ResidentRentBanner from "@/components/resident/ResidentRentBanner";
 import type { QuickAction } from "@/types/dashboard";
 import { isRentDueWindow } from "@/utils/rent";
+import { PLAN_FEATURES } from "@/constants/plans";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
 import { useGetMeQuery, useGetMyRentQuery } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
@@ -47,7 +49,12 @@ export default function ResidentHomeDashboard() {
     [colors, fonts, isDark],
   );
   const user = useSelector((state: RootState) => state.auth.user);
-  const { data: unreadData } = useUnreadNotificationCount(!user?.accessToken);
+  const { checkFeature, guardFeature } = useSubscription();
+  const paymentProofAllowed = checkFeature(PLAN_FEATURES.payment_proof).allowed;
+  const notificationsAllowed = checkFeature(PLAN_FEATURES.notifications).allowed;
+  const { data: unreadData } = useUnreadNotificationCount(
+    !user?.accessToken || !notificationsAllowed,
+  );
   const unreadCount = unreadData?.unreadCount ?? 0;
   const now = new Date();
   const month = now.getMonth() + 1;
@@ -78,44 +85,62 @@ export default function ResidentHomeDashboard() {
     (rentStatus === "pending" || rentStatus === undefined) &&
     Boolean(room);
 
-  const quickActions: QuickAction[] = useMemo(
-    () => [
-      {
+  const quickActions: QuickAction[] = useMemo(() => {
+    const actions: QuickAction[] = [];
+
+    if (paymentProofAllowed) {
+      actions.push({
         id: "pay-rent",
         label: "Pay Rent",
         iconName: "cash-outline",
         iconColor: colors.successText,
         iconBackgroundColor: colors.successBg,
-      },
-      {
+      });
+    }
+
+    if (checkFeature(PLAN_FEATURES.complaints).allowed) {
+      actions.push({
         id: "complaints",
         label: "Complaints",
         iconName: "chatbox-ellipses-outline",
         iconColor: colors.warningText,
         iconBackgroundColor: colors.warningBg,
-      },
-      {
+      });
+    }
+
+    if (checkFeature(PLAN_FEATURES.support).allowed) {
+      actions.push({
         id: "support",
         label: "Support",
         iconName: "help-circle-outline",
         iconColor: colors.purpleText,
         iconBackgroundColor: colors.purpleBg,
-      },
-    ],
-    [colors.purpleBg, colors.purpleText, colors.successBg, colors.successText, colors.warningBg, colors.warningText],
-  );
+      });
+    }
+
+    return actions;
+  }, [
+    checkFeature,
+    colors.purpleBg,
+    colors.purpleText,
+    colors.successBg,
+    colors.successText,
+    colors.warningBg,
+    colors.warningText,
+    paymentProofAllowed,
+  ]);
 
   const handleQuickAction = (actionId: string) => {
     if (actionId === "pay-rent") {
-      router.push("/(tabs)/rent");
+      guardFeature(PLAN_FEATURES.payment_proof, () => router.push("/(tabs)/rent"));
       return;
     }
     if (actionId === "complaints") {
-      router.push("/complaints");
+      guardFeature(PLAN_FEATURES.complaints, () => router.push("/complaints"));
       return;
     }
     if (actionId === "support") {
-      router.push("/support");
+      guardFeature(PLAN_FEATURES.support, () => router.push("/support"));
     }
   };
 
@@ -149,7 +174,11 @@ export default function ResidentHomeDashboard() {
         </View>
         <Pressable
           style={styles.notificationBtn}
-          onPress={() => router.push("/notifications")}
+          onPress={() =>
+            guardFeature(PLAN_FEATURES.notifications, () =>
+              router.push("/notifications"),
+            )
+          }
           accessibilityLabel="Notifications"
           accessibilityRole="button"
         >
@@ -232,7 +261,8 @@ export default function ResidentHomeDashboard() {
           {(rentStatus === "pending" ||
             rentStatus === "rejected" ||
             rentRecord?.rejectionReason) &&
-          room ? (
+          room &&
+          paymentProofAllowed ? (
             <CustomButton
               title={
                 rentStatus === "rejected" || rentRecord?.rejectionReason
@@ -246,18 +276,20 @@ export default function ResidentHomeDashboard() {
         </>
       )}
 
-      <SectionCard title="Quick Actions" contentStyle={styles.actionsContent}>
-        <View style={styles.actionsRow}>
-          {quickActions.map((action) => (
-            <View key={action.id} style={styles.actionItem}>
-              <QuickActionCard
-                {...action}
-                onPress={() => handleQuickAction(action.id)}
-              />
-            </View>
-          ))}
-        </View>
-      </SectionCard>
+      {quickActions.length > 0 ? (
+        <SectionCard title="Quick Actions" contentStyle={styles.actionsContent}>
+          <View style={styles.actionsRow}>
+            {quickActions.map((action) => (
+              <View key={action.id} style={styles.actionItem}>
+                <QuickActionCard
+                  {...action}
+                  onPress={() => handleQuickAction(action.id)}
+                />
+              </View>
+            ))}
+          </View>
+        </SectionCard>
+      ) : null}
     </ScrollView>
   );
 }

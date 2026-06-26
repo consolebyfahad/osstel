@@ -1,5 +1,10 @@
 import type { UserRole } from "./role";
-import type { SubscriptionPlanId, TrialInfo, SubscriptionPeriodInfo } from "./subscription";
+import type { PlanFeature } from "@/constants/plans";
+import type {
+  SubscriptionPlanId,
+  TrialInfo,
+  SubscriptionPeriodInfo,
+} from "./subscription";
 import type { SubscriptionUsage } from "@/utils/subscription";
 import { unwrapApiResponse } from "@/utils/api";
 
@@ -49,6 +54,8 @@ export interface AuthUser {
   room?: UserRoom | null;
   checkInDate?: string | null;
   tenancyId?: string | null;
+  managerPlan?: SubscriptionPlanId;
+  planFeatures?: Partial<Record<PlanFeature, boolean>>;
 }
 
 export interface MeResponse {
@@ -75,6 +82,8 @@ export interface MeResponse {
     room: UserRoom | null;
     checkInDate?: string | null;
     tenancyId?: string | null;
+    managerPlan?: SubscriptionPlanId;
+    planFeatures?: Partial<Record<PlanFeature, boolean>>;
   };
 }
 
@@ -234,6 +243,8 @@ export function meToAuthProfile(me: MeResponse["user"]): Partial<AuthUser> {
     room: me.room,
     checkInDate: me.checkInDate ?? undefined,
     tenancyId: me.tenancyId ?? undefined,
+    managerPlan: me.managerPlan,
+    planFeatures: me.planFeatures,
   };
 }
 

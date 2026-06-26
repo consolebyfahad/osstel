@@ -63,6 +63,7 @@ export default function Home() {
   const isManager = user?.role === "manager";
   const { guardFeature, checkFeature } = useSubscription();
   const notificationsAllowed = checkFeature(PLAN_FEATURES.notifications).allowed;
+  const reportsAllowed = checkFeature(PLAN_FEATURES.reports).allowed;
   const { data: unreadData } = useUnreadNotificationCount(
     !user?.accessToken || (isManager && !notificationsAllowed),
   );
@@ -108,7 +109,7 @@ export default function Home() {
     refetch: refetchActivities,
   } = useGetDashboardActivitiesQuery(
     { hostelId: activitiesHostelId, limit: 5 },
-    { skip: !isManager || !activitiesHostelId },
+    { skip: !isManager || !activitiesHostelId || !reportsAllowed },
   );
 
   const recentActivities = useMemo(
@@ -295,20 +296,22 @@ export default function Home() {
                 <CollectionBanner
                   {...collectionData}
                   onComplaintsPress={() =>
-                    router.push({
-                      pathname: "/complaints",
-                      params: {
-                        hostelId:
-                          selectedHostelId !== "all" ? selectedHostelId : "",
-                      },
-                    })
+                    guardFeature(PLAN_FEATURES.complaints, () =>
+                      router.push({
+                        pathname: "/complaints",
+                        params: {
+                          hostelId:
+                            selectedHostelId !== "all" ? selectedHostelId : "",
+                        },
+                      }),
+                    )
                   }
                 />
               ) : null}
             </>
           )}
 
-          {isManager ? (
+          {isManager && reportsAllowed ? (
             <RecentActivities
               activities={recentActivities}
               isLoading={isActivitiesLoading}
@@ -316,10 +319,12 @@ export default function Home() {
               onSeeAllPress={
                 activitiesHostelId
                   ? () =>
-                      router.push({
-                        pathname: "/activities",
-                        params: { hostelId: activitiesHostelId },
-                      })
+                      guardFeature(PLAN_FEATURES.reports, () =>
+                        router.push({
+                          pathname: "/activities",
+                          params: { hostelId: activitiesHostelId },
+                        }),
+                      )
                   : undefined
               }
             />

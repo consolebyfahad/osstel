@@ -63,19 +63,9 @@ export function canAddRoom(
 }
 
 export function canAddTenant(
-  userPlan: SubscriptionPlanId | string | null | undefined,
-  currentTenants: number,
+  _userPlan: SubscriptionPlanId | string | null | undefined,
+  _currentTenants: number,
 ): SubscriptionCheck {
-  const planId = normalizePlanId(userPlan);
-  const limit = getPlanDefinition(planId).limits.maxTenants;
-
-  if (currentTenants >= limit) {
-    return {
-      allowed: false,
-      message: buildLimitMessage("tenant", planId, limit),
-    };
-  }
-
   return { allowed: true };
 }
 
