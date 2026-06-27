@@ -23,6 +23,11 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import {
+  LIMITS,
+  isPasswordLengthValid,
+  passwordLengthHint,
+} from "@/constants/limits";
 
 function getErrorMessage(error: unknown, fallback: string) {
   const err = error as {
@@ -96,8 +101,7 @@ export default function ChangePasswordScreen() {
 
   const isValid =
     currentPassword.trim().length > 0 &&
-    newPassword.length >= 6 &&
-    confirmPassword.length >= 6 &&
+    isPasswordLengthValid(newPassword) &&
     newPassword === confirmPassword;
 
   const handleSubmit = async () => {
@@ -106,6 +110,14 @@ export default function ChangePasswordScreen() {
 
     if (newPassword !== confirmPassword) {
       Alert.alert("Passwords do not match", "Please re-enter your new password.");
+      return;
+    }
+
+    if (!isPasswordLengthValid(newPassword)) {
+      Alert.alert(
+        "Invalid password",
+        `New password must be ${passwordLengthHint()}.`,
+      );
       return;
     }
 
@@ -158,8 +170,8 @@ export default function ChangePasswordScreen() {
               contentContainerStyle={styles.scrollContent}
             >
               <Text style={styles.description}>
-                Enter your current password, then choose a new one. Use at least
-                6 characters.
+                Enter your current password, then choose a new one (
+                {passwordLengthHint()}).
               </Text>
 
               <View
@@ -173,6 +185,7 @@ export default function ChangePasswordScreen() {
                   value={currentPassword}
                   onChangeText={setCurrentPassword}
                   secureTextEntry
+                  maxLength={LIMITS.PASSWORD_MAX}
                   returnKeyType="next"
                   onFocus={() => scrollToField("current")}
                 />
@@ -189,7 +202,8 @@ export default function ChangePasswordScreen() {
                   value={newPassword}
                   onChangeText={setNewPassword}
                   secureTextEntry
-                  hint="At least 6 characters"
+                  hint={passwordLengthHint()}
+                  maxLength={LIMITS.PASSWORD_MAX}
                   returnKeyType="next"
                   onFocus={() => scrollToField("new")}
                 />
@@ -206,6 +220,7 @@ export default function ChangePasswordScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   secureTextEntry
+                  maxLength={LIMITS.PASSWORD_MAX}
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit}
                   onFocus={() => scrollToField("confirm")}

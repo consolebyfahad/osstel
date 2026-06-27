@@ -1,5 +1,8 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
+import AddHostelCityDropdown, {
+  type AddHostelCity,
+} from "@/components/AddHostelCityDropdown";
 import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
 import PhoneInput from "@/components/PhoneInput";
@@ -7,6 +10,7 @@ import ScreenHeader from "@/components/ScreenHeader";
 import { useCreateHostelMutation } from "../../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
+import { LIMITS } from "@/constants/limits";
 import { formatPhoneForApi, isCompletePhone } from "@/utils/phone";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -43,7 +47,7 @@ export default function HostelDetailsScreen() {
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState<AddHostelCity | null>(null);
   const [contactPhoneDigits, setContactPhoneDigits] = useState("");
 
   useEffect(() => {
@@ -89,8 +93,10 @@ export default function HostelDetailsScreen() {
 
   const isValid =
     name.trim().length > 0 &&
+    name.trim().length <= LIMITS.HOSTEL_NAME_MAX &&
     address.trim().length > 0 &&
-    city.trim().length > 0 &&
+    address.trim().length <= LIMITS.ADDRESS_MAX &&
+    city !== null &&
     isCompletePhone(contactPhoneDigits);
 
   const handleSave = async () => {
@@ -108,7 +114,7 @@ export default function HostelDetailsScreen() {
       await createHostel({
         name: name.trim(),
         address: address.trim(),
-        city: city.trim(),
+        city,
         contactPhone: formatPhoneForApi(contactPhoneDigits),
       }).unwrap();
 
@@ -167,6 +173,7 @@ export default function HostelDetailsScreen() {
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
+                maxLength={LIMITS.HOSTEL_NAME_MAX}
                 onFocus={() => scrollToField("name")}
               />
             </View>
@@ -182,24 +189,12 @@ export default function HostelDetailsScreen() {
                 value={address}
                 onChangeText={setAddress}
                 autoCapitalize="words"
+                maxLength={LIMITS.ADDRESS_MAX}
                 onFocus={() => scrollToField("address")}
               />
             </View>
 
-            <View
-              onLayout={(event) =>
-                registerFieldPosition("city", event.nativeEvent.layout.y)
-              }
-            >
-              <CustomInput
-                label="City"
-                placeholder="e.g. Lahore"
-                value={city}
-                onChangeText={setCity}
-                autoCapitalize="words"
-                onFocus={() => scrollToField("city")}
-              />
-            </View>
+            <AddHostelCityDropdown value={city} onChange={setCity} />
 
             <View
               onLayout={(event) =>

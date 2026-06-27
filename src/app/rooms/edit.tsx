@@ -1,5 +1,9 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
+import BedCountDropdown, {
+  BED_COUNT_OPTIONS,
+  type BedCount,
+} from "@/components/BedCountDropdown";
 import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
@@ -70,7 +74,7 @@ export default function EditRoomScreen() {
   const room = data?.rooms?.find((item: Room) => item._id === roomId);
 
   const [roomNumber, setRoomNumber] = useState("");
-  const [capacity, setCapacity] = useState("");
+  const [capacity, setCapacity] = useState<BedCount | null>(null);
   const [rent, setRent] = useState("");
   const [status, setStatus] = useState<RoomStatus>("available");
 
@@ -118,7 +122,12 @@ export default function EditRoomScreen() {
   useEffect(() => {
     if (!room) return;
     setRoomNumber(room.roomNumber);
-    setCapacity(String(room.capacity));
+    const roomCapacity = room.capacity;
+    setCapacity(
+      BED_COUNT_OPTIONS.includes(roomCapacity as BedCount)
+        ? (roomCapacity as BedCount)
+        : BED_COUNT_OPTIONS[0],
+    );
     setRent(String(room.rent));
     setStatus(room.status);
   }, [room]);
@@ -126,7 +135,8 @@ export default function EditRoomScreen() {
   const parsedRent = Number(rent);
   const isValid =
     roomNumber.trim().length > 0 &&
-    Number(capacity) > 0 &&
+    capacity !== null &&
+    capacity > 0 &&
     parsedRent > 0;
 
   const isBusy = isSaving || isDeleting;
@@ -140,7 +150,7 @@ export default function EditRoomScreen() {
         hostelId,
         roomId,
         roomNumber: roomNumber.trim(),
-        capacity: Number(capacity),
+        capacity,
         rent: parsedRent,
         status,
       }).unwrap();
@@ -253,23 +263,7 @@ export default function EditRoomScreen() {
               />
             </View>
 
-            <View
-              onLayout={(event) =>
-                registerFieldPosition("capacity", event.nativeEvent.layout.y)
-              }
-            >
-              <CustomInput
-                label="Capacity (Beds)"
-                placeholder="e.g. 2"
-                value={capacity}
-                onChangeText={(text) =>
-                  setCapacity(text.replace(/[^0-9]/g, ""))
-                }
-                keyboardType="number-pad"
-                maxLength={2}
-                onFocus={() => scrollToField("capacity")}
-              />
-            </View>
+            <BedCountDropdown value={capacity} onChange={setCapacity} />
 
             <View
               onLayout={(event) =>

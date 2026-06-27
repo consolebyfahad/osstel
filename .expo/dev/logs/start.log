@@ -6899,3 +6899,8 @@
 {"_e":"metro:bundling:progress","_t":1782474602823,"id":"7q","progress":0,"total":1,"current":0}
 {"_e":"metro:bundling:done","_t":1782474602950,"id":"7q","total":1,"ms":127.030625}
 {"_e":"metro:server_log","_t":1782475205970,"level":"error","data":["[timeout] connection terminated with Device for app='%s' on device='%s' after not responding for %s seconds.","com.fa11ad.osstel","23053RN02A - 15 - API 35","60"]}
+{"_e":"metro:client_log","_t":1782476375498,"level":"warn","data":["SerializableStateInvariantMiddleware took 45ms, which is more than the warning threshold of 32ms. \nIf your state or actions are very large, you may want to disable the middleware as it might cause too much of a slowdown in development mode. See https://redux-toolkit.js.org/api/getDefaultMiddleware for instructions.\nIt is disabled in production builds, so you don't need to worry about that."]}
+{"_e":"metro:server_log","_t":1782476379196,"level":"info","data":["Launching DevTools..."]}
+{"_e":"metro:bundling:started","_t":1782476381652,"id":"7s","platform":"android","environment":null,"entry":"node_modules/expo-router/entry.js"}
+{"_e":"metro:bundling:started","_t":1782476381900,"id":"7t","platform":"android","environment":null,"entry":"src/app/residents/add.tsx"}
+{"_e":"metro:client_log","_t":1782476505367,"level":"warn","data":["[expo-notifications]: `shouldShowAlert` is deprecated. Specify `shouldShowBanner` and / or `shouldShowList` instead."]}

@@ -1,5 +1,6 @@
 import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
+import BedCountDropdown, { type BedCount } from "@/components/BedCountDropdown";
 import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
 import ScreenHeader from "@/components/ScreenHeader";
@@ -41,7 +42,7 @@ export default function AddRoom() {
   );
 
   const [roomNumber, setRoomNumber] = useState("");
-  const [capacity, setCapacity] = useState("");
+  const [capacity, setCapacity] = useState<BedCount | null>(null);
   const [rent, setRent] = useState("");
 
   useEffect(() => {
@@ -87,7 +88,8 @@ export default function AddRoom() {
 
   const isValid =
     roomNumber.trim().length > 0 &&
-    Number(capacity) > 0 &&
+    capacity !== null &&
+    capacity > 0 &&
     Number(rent) > 0;
 
   const handleSave = async () => {
@@ -105,7 +107,7 @@ export default function AddRoom() {
       await createRoom({
         hostelId,
         roomNumber: roomNumber.trim(),
-        capacity: Number(capacity),
+        capacity,
         rent: Number(rent),
       }).unwrap();
       router.back();
@@ -186,23 +188,10 @@ export default function AddRoom() {
                 />
               </View>
 
-              <View
-                onLayout={(event) =>
-                  registerFieldPosition("capacity", event.nativeEvent.layout.y)
-                }
-              >
-                <CustomInput
-                  label="Capacity (Beds)"
-                  placeholder="e.g. 2"
-                  value={capacity}
-                  onChangeText={(text) =>
-                    setCapacity(text.replace(/[^0-9]/g, ""))
-                  }
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  onFocus={() => scrollToField("capacity")}
-                />
-              </View>
+              <BedCountDropdown
+                value={capacity}
+                onChange={setCapacity}
+              />
 
               <View
                 onLayout={(event) =>

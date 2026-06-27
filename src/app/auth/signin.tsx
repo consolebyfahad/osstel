@@ -2,6 +2,7 @@ import CustomButton from "@/components/CustomButton";
 import CustomInput from "@/components/CustomInput";
 import GradientBackground from "@/components/GradientBackground";
 import { meToAuthProfile, toAuthUser } from "@/types/auth";
+import { LIMITS, isPasswordLengthValid, passwordLengthHint } from "@/constants/limits";
 import { type UserRole, USER_ROLES } from "@/types/role";
 import {
   useGoogleAuthMutation,
@@ -18,7 +19,7 @@ import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Images } from "@constants/images";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import {
   Image,
   ImageBackground,
@@ -43,6 +44,12 @@ const ROLE_OPTIONS: UserRole[] = ["resident", "manager"];
 export default function SignIn() {
   const dispatch = useDispatch<AppDispatch>();
   const scrollRef = useRef<ScrollView>(null);
+  const scrollContentRef = useRef<View>(null);
+  const nameFieldRef = useRef<View>(null);
+  const userIdFieldRef = useRef<View>(null);
+  const phoneFieldRef = useRef<View>(null);
+  const passwordFieldRef = useRef<View>(null);
+  const confirmFieldRef = useRef<View>(null);
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
   const [googleAuth, { isLoading: isGoogleLoading }] = useGoogleAuthMutation();
   const [register, { isLoading: isRegisterLoading }] = useRegisterMutation();
@@ -52,7 +59,6 @@ export default function SignIn() {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const styles = useMemo(
     () =>
       createStyles(
@@ -62,9 +68,8 @@ export default function SignIn() {
         insets.bottom,
         isDark,
         keyboardOpen,
-        keyboardHeight,
       ),
-    [colors, fonts, height, insets.bottom, isDark, keyboardOpen, keyboardHeight],
+    [colors, fonts, height, insets.bottom, isDark, keyboardOpen],
   );
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -83,13 +88,11 @@ export default function SignIn() {
     const hideEvent =
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
-    const showSub = Keyboard.addListener(showEvent, (event) => {
+    const showSub = Keyboard.addListener(showEvent, () => {
       setKeyboardOpen(true);
-      setKeyboardHeight(event.endCoordinates.height);
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardOpen(false);
-      setKeyboardHeight(0);
     });
 
     return () => {
@@ -203,13 +206,18 @@ export default function SignIn() {
       return;
     }
 
+    if (!isPasswordLengthValid(password)) {
+      alert(`Password must be ${passwordLengthHint()}`);
+      return;
+    }
+
     if (isSignUp && canSignUp) {
       if (!name.trim()) {
         alert("Please enter your name");
         return;
       }
-      if (password.length < 6) {
-        alert("Password must be at least 6 characters");
+      if (name.trim().length > LIMITS.NAME_MAX) {
+        alert(`Name must be under ${LIMITS.NAME_MAX} characters`);
         return;
       }
       if (password !== confirmPassword) {
@@ -247,15 +255,27 @@ export default function SignIn() {
     }
   };
 
-  const scrollFocusedFieldIntoView = useCallback(() => {
-    const scrollToEnd = () => {
-      scrollRef.current?.scrollToEnd({ animated: true });
+  const scrollFieldIntoView = useCallback((fieldRef: RefObject<View | null>) => {
+    const field = fieldRef.current;
+    const content = scrollContentRef.current;
+    if (!field || !content) return;
+
+    const scrollToField = () => {
+      field.measureLayout(
+        content,
+        (_x, y) => {
+          scrollRef.current?.scrollTo({
+            y: Math.max(0, y - vs(16)),
+            animated: true,
+          });
+        },
+        () => {},
+      );
     };
 
-    requestAnimationFrame(scrollToEnd);
-
+    requestAnimationFrame(scrollToField);
     if (Platform.OS === "android") {
-      setTimeout(scrollToEnd, 120);
+      setTimeout(scrollToField, 100);
     }
   }, []);
 
@@ -288,6 +308,7 @@ export default function SignIn() {
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
         >
           <ScrollView
             ref={scrollRef}
@@ -296,18 +317,26 @@ export default function SignIn() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
             bounces={false}
           >
-            {!keyboardOpen ? (
-              <View style={styles.logoSection}>
-                <Image
-                  source={Images.osstel}
-                  style={styles.brandLogoImage}
-                  resizeMode="contain"
-                  accessibilityLabel="Osstel logo"
-                />
-              </View>
-            ) : null}
+            <View ref={scrollContentRef} style={styles.scrollInner}>
+            <View
+              style={[
+                styles.logoSection,
+                keyboardOpen && styles.logoSectionCompact,
+              ]}
+            >
+              <Image
+                source={Images.osstel}
+                style={[
+                  styles.brandLogoImage,
+                  keyboardOpen && styles.brandLogoImageCompact,
+                ]}
+                resizeMode="contain"
+                accessibilityLabel="Osstel logo"
+              />
+            </View>
 
             <GradientBackground style={styles.cardSheet}>
               <View style={styles.cardHeader}>
@@ -378,69 +407,83 @@ export default function SignIn() {
               </View>
 
               {isSignUp && canSignUp ? (
-                <CustomInput
-                  label="Full Name"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  onFocus={scrollFocusedFieldIntoView}
-                />
+                <View ref={nameFieldRef}>
+                  <CustomInput
+                    label="Full Name"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChangeText={setName}
+                    autoCapitalize="words"
+                    maxLength={LIMITS.NAME_MAX}
+                    onFocus={() => scrollFieldIntoView(nameFieldRef)}
+                  />
+                </View>
               ) : null}
 
               {isResidentRole ? (
-                <CustomInput
-                  label="User ID"
-                  placeholder="482913"
-                  value={userId}
-                  onChangeText={setUserId}
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  onFocus={scrollFocusedFieldIntoView}
-                />
+                <View ref={userIdFieldRef}>
+                  <CustomInput
+                    label="User ID"
+                    placeholder="482913"
+                    value={userId}
+                    onChangeText={setUserId}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    maxLength={LIMITS.USER_ID_MAX}
+                    onFocus={() => scrollFieldIntoView(userIdFieldRef)}
+                  />
+                </View>
               ) : (
-                <CustomInput
-                  label="Mobile Number"
-                  placeholder="300 1234567"
-                  value={phoneNumber}
-                  onChangeText={handlePhoneChange}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  onFocus={scrollFocusedFieldIntoView}
-                  leftAdornment={
-                    <>
-                      <Text style={styles.flag}>🇵🇰</Text>
-                      <Text style={styles.countryCode}>+92</Text>
-                      <View style={styles.divider} />
-                    </>
-                  }
-                />
+                <View ref={phoneFieldRef}>
+                  <CustomInput
+                    label="Mobile Number"
+                    placeholder="300 1234567"
+                    value={phoneNumber}
+                    onChangeText={handlePhoneChange}
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    onFocus={() => scrollFieldIntoView(phoneFieldRef)}
+                    leftAdornment={
+                      <>
+                        <Text style={styles.flag}>🇵🇰</Text>
+                        <Text style={styles.countryCode}>+92</Text>
+                        <View style={styles.divider} />
+                      </>
+                    }
+                  />
+                </View>
               )}
 
-              <CustomInput
-                label="Password"
-                placeholder={
-                  isResidentRole ? "Enter your password" : "Enter password"
-                }
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                onFocus={scrollFocusedFieldIntoView}
-                onSubmitEditing={
-                  isSignUp && canSignUp ? undefined : handleSubmit
-                }
-              />
+              <View ref={passwordFieldRef}>
+                <CustomInput
+                  label="Password"
+                  placeholder={
+                    isResidentRole ? "Enter your password" : "Enter password"
+                  }
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  maxLength={LIMITS.PASSWORD_MAX}
+                  onFocus={() => scrollFieldIntoView(passwordFieldRef)}
+                  onSubmitEditing={
+                    isSignUp && canSignUp ? undefined : handleSubmit
+                  }
+                />
+              </View>
 
               {isSignUp && canSignUp ? (
-                <CustomInput
-                  label="Confirm Password"
-                  placeholder="Re-enter password"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  onFocus={scrollFocusedFieldIntoView}
-                  onSubmitEditing={handleSubmit}
-                />
+                <View ref={confirmFieldRef}>
+                  <CustomInput
+                    label="Confirm Password"
+                    placeholder="Re-enter password"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry
+                    maxLength={LIMITS.PASSWORD_MAX}
+                    onFocus={() => scrollFieldIntoView(confirmFieldRef)}
+                    onSubmitEditing={handleSubmit}
+                  />
+                </View>
               ) : null}
 
               <View style={styles.actionWrapper}>
@@ -489,6 +532,7 @@ export default function SignIn() {
               </View>
               </View>
             </GradientBackground>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -503,15 +547,8 @@ function createStyles(
   bottomInset: number,
   isDark: boolean,
   keyboardOpen: boolean,
-  keyboardHeight: number,
 ) {
   const logoHeight = Math.max(screenHeight * 0.16, vs(72));
-  const keyboardPadding =
-    keyboardHeight > 0
-      ? Platform.OS === "ios"
-        ? vs(16)
-        : Math.max(keyboardHeight - bottomInset + vs(16), vs(16))
-      : 0;
 
   return StyleSheet.create({
     root: {
@@ -543,7 +580,10 @@ function createStyles(
     },
     scrollContent: {
       flexGrow: 1,
-      paddingBottom: Math.max(bottomInset, vs(16)) + keyboardPadding,
+      paddingBottom: Math.max(bottomInset, vs(16)),
+    },
+    scrollInner: {
+      flexGrow: 1,
     },
     logoSection: {
       height: logoHeight,
@@ -552,10 +592,19 @@ function createStyles(
       alignItems: "center",
       justifyContent: "center",
     },
+    logoSectionCompact: {
+      height: vs(52),
+      minHeight: vs(52),
+      maxHeight: vs(52),
+    },
     brandLogoImage: {
       width: vs(220),
       height: vs(88),
       maxWidth: "70%",
+    },
+    brandLogoImageCompact: {
+      width: vs(140),
+      height: vs(56),
     },
     cardSheet: {
       flexGrow: 1,
