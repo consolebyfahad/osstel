@@ -49,8 +49,8 @@ import type { AppDispatch, RootState } from "../../../store/store";
 
 const PAYMENT_INSTRUCTIONS = `Transfer payment to:
 Bank: Meezan Bank
-Account: 1234567890
-Title: Osstel Services
+Account: 00300108568916
+Title: Fahad Ur Rehman
 
 Then submit your request. Admin will verify and activate your plan.`;
 
