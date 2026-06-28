@@ -526,7 +526,7 @@ function createStyles(colors: AppColors) {
       position: "absolute",
       left: 0,
       right: 0,
-      bottom: -20,
+      bottom: -26,
     },
     modalRoot: {
       flex: 1,
