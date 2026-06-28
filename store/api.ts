@@ -15,6 +15,10 @@ import type {
   HostelsResponse,
   UpdateHostelBody,
 } from "@/types/hostel";
+import type {
+  GetDiscoverHostelsParams,
+  HostelDirectoryResponse,
+} from "@/types/hostelDirectory";
 import type { CreateRoomResponse, UpdateRoomBody } from "@/types/room";
 import type {
   DashboardActivitiesResponse,
@@ -156,6 +160,21 @@ export const api = createApi({
               { type: "Hostel", id: "LIST" },
             ]
           : [{ type: "Hostel", id: "LIST" }],
+    }),
+
+    getDiscoverHostels: builder.query<
+      HostelDirectoryResponse,
+      GetDiscoverHostelsParams | void
+    >({
+      query: ({ search, page = 1, limit = 20 } = {}) => ({
+        url: "/hostels/discover",
+        params: {
+          ...(search?.trim() ? { search: search.trim() } : {}),
+          page,
+          limit,
+        },
+      }),
+      providesTags: [{ type: "Hostel", id: "DISCOVER" }],
     }),
 
     getHostel: builder.query<HostelResponse, string>({
@@ -605,6 +624,7 @@ export const {
   useRegisterMutation,
   useLogoutMutation,
   useGetHostelsQuery,
+  useGetDiscoverHostelsQuery,
   useGetHostelQuery,
   useCreateHostelMutation,
   useUpdateHostelMutation,

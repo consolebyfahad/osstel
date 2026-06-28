@@ -6,13 +6,18 @@ import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import {
+  Dimensions,
   Modal,
   Pressable,
+  ScrollView,
   Share,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 type ResidentCredentialsModalProps = {
   visible: boolean;
@@ -28,6 +33,7 @@ export default function ResidentCredentialsModal({
   onClose,
 }: ResidentCredentialsModalProps) {
   const { colors, fonts, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(
     () => createStyles(colors, fonts, isDark),
     [colors, fonts, isDark],
@@ -54,43 +60,68 @@ export default function ResidentCredentialsModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          <View style={styles.iconWrap}>
-            <Ionicons name="key-outline" size={vs(28)} color={colors.primary} />
-          </View>
+        <View
+          style={[
+            styles.sheet,
+            {
+              maxHeight: SCREEN_HEIGHT * 0.92,
+              paddingBottom: Math.max(insets.bottom, vs(16)),
+            },
+          ]}
+        >
+          <View style={styles.handle} />
 
-          <Text style={styles.title}>Resident Added</Text>
-          <Text style={styles.subtitle}>
-            Share these login credentials with {residentName}. They use User ID
-            and password to sign in to the resident app.
-          </Text>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.iconWrap}>
+              <Ionicons
+                name="checkmark-circle"
+                size={vs(32)}
+                color={colors.success}
+              />
+            </View>
 
-          <View style={styles.credentialBox}>
-            <Text style={styles.credentialLabel}>User ID</Text>
-            <Text style={styles.credentialValue} selectable>
-              {credentials.userId}
+            <Text style={styles.title}>Resident Added</Text>
+            <Text style={styles.subtitle}>
+              Share these login credentials with {residentName}. They sign in with
+              User ID and password in the Osstel app.
             </Text>
+
+            <View style={styles.credentialsRow}>
+              <View style={[styles.credentialBox, styles.credentialBoxHalf]}>
+                <Text style={styles.credentialLabel}>User ID</Text>
+                <Text style={styles.credentialValue} selectable>
+                  {credentials.userId}
+                </Text>
+              </View>
+
+              <View style={[styles.credentialBox, styles.credentialBoxHalf]}>
+                <Text style={styles.credentialLabel}>Password</Text>
+                <Text style={styles.credentialValue} selectable>
+                  {credentials.password}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.messageBox}>
+              <Text style={styles.messageLabel}>Share message</Text>
+              <Text style={styles.messageText} selectable>
+                {credentials.shareMessage}
+              </Text>
+            </View>
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <CustomButton title="Share Credentials" onPress={handleShare} />
+            <Pressable style={styles.doneBtn} onPress={onClose}>
+              <Text style={styles.doneBtnText}>Done</Text>
+            </Pressable>
           </View>
-
-          <View style={styles.credentialBox}>
-            <Text style={styles.credentialLabel}>Password</Text>
-            <Text style={styles.credentialValue} selectable>
-              {credentials.password}
-            </Text>
-          </View>
-
-          <View style={styles.messageBox}>
-            <Text style={styles.messageLabel}>Share message</Text>
-            <Text style={styles.messageText} selectable>
-              {credentials.shareMessage}
-            </Text>
-          </View>
-
-          <CustomButton title="Share Credentials" onPress={handleShare} />
-
-          <Pressable style={styles.doneBtn} onPress={onClose}>
-            <Text style={styles.doneBtnText}>Done</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>
@@ -104,22 +135,37 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       justifyContent: "flex-end",
       backgroundColor: colors.overlay,
     },
-    card: {
+    sheet: {
       backgroundColor: colors.white,
       borderTopLeftRadius: vs(24),
       borderTopRightRadius: vs(24),
-      padding: vs(24),
-      paddingBottom: vs(36),
+    },
+    handle: {
+      alignSelf: "center",
+      width: vs(40),
+      height: vs(4),
+      borderRadius: vs(2),
+      backgroundColor: colors.white200,
+      marginTop: vs(10),
+      marginBottom: vs(4),
+    },
+    scroll: {
+      flexGrow: 0,
+    },
+    scrollContent: {
+      paddingHorizontal: vs(24),
+      paddingTop: vs(8),
+      paddingBottom: vs(8),
     },
     iconWrap: {
       width: vs(56),
       height: vs(56),
       borderRadius: vs(28),
-      backgroundColor: isDark ? colors.primary100 : colors.primary100,
+      backgroundColor: colors.successBg,
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "center",
-      marginBottom: vs(16),
+      marginBottom: vs(14),
     },
     title: {
       fontSize: FONT_SIZES.xl,
@@ -134,15 +180,23 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.gray200,
       textAlign: "center",
       lineHeight: vs(20),
-      marginBottom: vs(20),
+      marginBottom: vs(18),
+    },
+    credentialsRow: {
+      flexDirection: "row",
+      gap: vs(10),
+      marginBottom: vs(12),
     },
     credentialBox: {
       backgroundColor: colors.white100,
       borderRadius: vs(12),
       borderWidth: 1,
-      borderColor: colors.white100,
+      borderColor: colors.white200,
       padding: vs(14),
-      marginBottom: vs(10),
+    },
+    credentialBoxHalf: {
+      flex: 1,
+      minWidth: 0,
     },
     credentialLabel: {
       fontSize: FONT_SIZES.xs,
@@ -153,7 +207,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginBottom: vs(6),
     },
     credentialValue: {
-      fontSize: FONT_SIZES.lg,
+      fontSize: FONT_SIZES.md,
       fontFamily: fonts.bold,
       color: colors.text,
     },
@@ -161,8 +215,6 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       backgroundColor: isDark ? colors.primary100 : colors.primary100,
       borderRadius: vs(12),
       padding: vs(14),
-      marginBottom: vs(20),
-      marginTop: vs(6),
     },
     messageLabel: {
       fontSize: FONT_SIZES.xs,
@@ -178,10 +230,16 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.text,
       lineHeight: vs(20),
     },
+    footer: {
+      paddingHorizontal: vs(24),
+      paddingTop: vs(12),
+      borderTopWidth: 1,
+      borderTopColor: colors.white100,
+    },
     doneBtn: {
       alignItems: "center",
       paddingVertical: vs(14),
-      marginTop: vs(10),
+      marginTop: vs(4),
     },
     doneBtnText: {
       fontSize: FONT_SIZES.md,

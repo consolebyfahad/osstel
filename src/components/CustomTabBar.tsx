@@ -63,6 +63,11 @@ const MANAGER_RIGHT_TABS = [
 
 const RESIDENT_TABS = [
   { name: "home", icon: "home-fill" as const, activeIcon: "home-fill" as const },
+  {
+    name: "discover",
+    icon: "organization" as const,
+    activeIcon: "organization" as const,
+  },
   { name: "rent", icon: "credit-card" as const, activeIcon: "credit-card" as const },
   { name: "profile", icon: "person" as const, activeIcon: "person" as const },
 ];

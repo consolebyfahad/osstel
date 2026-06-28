@@ -16,6 +16,10 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="home" options={{ title: "Home" }} />
       <Tabs.Screen
+        name="discover"
+        options={{ title: "Hostels", href: isManager ? null : "/discover" }}
+      />
+      <Tabs.Screen
         name="hostels"
         options={{ title: "Hostels", href: isManager ? "/hostels" : null }}
       />

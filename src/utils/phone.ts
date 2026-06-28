@@ -14,3 +14,20 @@ export function phoneToDigits(phone: string) {
 export function isCompletePhone(digits: string) {
   return digits.length >= 10;
 }
+
+export function formatPhoneForDisplay(phone: string) {
+  const digits = phoneToDigits(phone);
+  if (!digits) return phone || "—";
+  if (digits.length === 10) {
+    return `0${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  }
+  return phone.startsWith("+") ? phone : `0${digits}`;
+}
+
+export function phoneToTelUri(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("92")) return `tel:+${digits}`;
+  if (digits.startsWith("0")) return `tel:+92${digits.slice(1)}`;
+  return `tel:+92${digits}`;
+}
