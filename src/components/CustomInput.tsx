@@ -29,6 +29,7 @@ type CustomInputProps = {
   onFocus?: () => void;
   maxLength?: number;
   leftAdornment?: ReactNode;
+  multiline?: boolean;
 };
 
 export default function CustomInput({
@@ -46,6 +47,7 @@ export default function CustomInput({
   onFocus,
   maxLength,
   leftAdornment,
+  multiline = false,
 }: CustomInputProps) {
   const { colors, fonts, isDark } = useTheme();
   const styles = useMemo(
@@ -76,6 +78,7 @@ export default function CustomInput({
           onSubmitEditing={onSubmitEditing}
           onFocus={onFocus}
           maxLength={maxLength}
+          multiline={multiline}
         />
         {secureTextEntry ? (
           <TouchableOpacity

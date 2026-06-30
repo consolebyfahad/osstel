@@ -10,6 +10,8 @@ export interface Hostel {
   address: string;
   city: string;
   contactPhone: string;
+  hostelCode?: string;
+  image?: string | null;
   manager: string | HostelManager;
 }
 
@@ -18,6 +20,7 @@ export interface CreateHostelBody {
   address: string;
   city: string;
   contactPhone: string;
+  image?: string | null;
 }
 
 export interface HostelsResponse {

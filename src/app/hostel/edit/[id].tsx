@@ -4,12 +4,19 @@ import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
 import PhoneInput from "@/components/PhoneInput";
 import ScreenHeader from "@/components/ScreenHeader";
+import ImageUploadField, {
+  type UploadedImageValue,
+} from "@/components/ImageUploadField";
 import {
   useDeleteHostelMutation,
   useGetHostelQuery,
   useUpdateHostelMutation,
 } from "../../../../store/api";
 import { formatPhoneForApi, isCompletePhone, phoneToDigits } from "@/utils/phone";
+import {
+  getImageTooLargeMessage,
+  prepareImageForUpload,
+} from "@/utils/imageUpload";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -33,9 +40,11 @@ import {
 
 function getErrorMessage(error: unknown, fallback: string) {
   const err = error as {
+    status?: number;
     data?: { message?: string; errors?: { msg: string }[] } | string;
   };
 
+  if (err.status === 413) return getImageTooLargeMessage();
   if (typeof err.data === "string") return err.data;
   if (err.data?.errors?.length) {
     return err.data.errors.map((e) => e.msg).join("\n");
@@ -63,6 +72,10 @@ export default function EditHostelScreen() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [contactPhoneDigits, setContactPhoneDigits] = useState("");
+  const [hostelImage, setHostelImage] = useState<UploadedImageValue>({
+    localUri: null,
+    uploadValue: null,
+  });
 
   useEffect(() => {
     const showEvent =
@@ -111,6 +124,10 @@ export default function EditHostelScreen() {
     setAddress(data.hostel.address);
     setCity(data.hostel.city);
     setContactPhoneDigits(phoneToDigits(data.hostel.contactPhone ?? ""));
+    setHostelImage({
+      localUri: data.hostel.image ?? null,
+      uploadValue: data.hostel.image ?? null,
+    });
   }, [data?.hostel]);
 
   const isValid =
@@ -126,12 +143,23 @@ export default function EditHostelScreen() {
     Keyboard.dismiss();
 
     try {
+      let imageValue: string | null | undefined;
+      if (hostelImage.localUri && !hostelImage.localUri.startsWith("http")) {
+        const prepared = await prepareImageForUpload(hostelImage.localUri, "avatar");
+        imageValue = prepared?.uploadValue ?? null;
+      } else if (hostelImage.uploadValue) {
+        imageValue = hostelImage.uploadValue;
+      } else if (!hostelImage.localUri && !hostelImage.uploadValue) {
+        imageValue = null;
+      }
+
       await updateHostel({
         hostelId: id,
         name: name.trim(),
         address: address.trim(),
         city: city.trim(),
         contactPhone: formatPhoneForApi(contactPhoneDigits),
+        ...(imageValue !== undefined ? { image: imageValue } : {}),
       }).unwrap();
       router.back();
     } catch (error) {
@@ -200,6 +228,16 @@ export default function EditHostelScreen() {
             <Text style={styles.subtitle}>
               Update hostel details shown to residents and on receipts.
             </Text>
+
+            <ImageUploadField
+              label="Hostel Photo"
+              value={hostelImage}
+              onChange={setHostelImage}
+              preset="avatar"
+              aspect={[16, 9]}
+              variant="card"
+              style={styles.photoField}
+            />
 
             <View
               onLayout={(event) =>
@@ -334,6 +372,9 @@ function createStyles(
       color: colors.gray200,
       lineHeight: vs(22),
       marginBottom: vs(24),
+    },
+    photoField: {
+      marginBottom: vs(8),
     },
     actions: {
       marginTop: vs(8),

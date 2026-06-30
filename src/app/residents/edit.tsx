@@ -31,8 +31,12 @@ import {
   useDeleteResidentMutation,
   useGetHostelRoomsQuery,
   useGetResidentsQuery,
+  useSendResidentRentAlertMutation,
   useUpdateResidentMutation,
 } from "../../../store/api";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PLAN_FEATURES } from "@/constants/plans";
+import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -115,6 +119,9 @@ export default function EditResident() {
   const [updateResident, { isLoading: isSaving }] = useUpdateResidentMutation();
   const [deleteResident, { isLoading: isRemoving }] =
     useDeleteResidentMutation();
+  const [sendRentAlert, { isLoading: isSendingAlert }] =
+    useSendResidentRentAlertMutation();
+  const { checkFeature } = useSubscription();
 
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
@@ -374,6 +381,38 @@ export default function EditResident() {
     );
   };
 
+  const handleSendRentAlert = () => {
+    if (!tenancyId || !resident?.userId || isSendingAlert) return;
+
+    const reminderCheck = checkFeature(PLAN_FEATURES.rent_reminders);
+    if (!reminderCheck.allowed) {
+      showSubscriptionBlocked(reminderCheck.message);
+      return;
+    }
+
+    Alert.alert(
+      "Send rent reminder",
+      `Send a rent payment reminder to ${resident.name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send",
+          onPress: async () => {
+            try {
+              await sendRentAlert({ tenancyId }).unwrap();
+              Alert.alert("Reminder sent", "The resident was notified.");
+            } catch (error) {
+              const message =
+                (error as { data?: { message?: string } })?.data?.message ??
+                "Could not send rent reminder.";
+              Alert.alert("Reminder failed", message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (!tenancyId || !hostelId) {
     return (
       <GradientBackground style={styles.container}>
@@ -576,6 +615,17 @@ export default function EditResident() {
                   />
                 </View>
 
+                {resident?.userId ? (
+                  <CustomButton
+                    title="Send Rent Reminder"
+                    variant="outline"
+                    onPress={handleSendRentAlert}
+                    loading={isSendingAlert}
+                    disabled={isSaving || isRemoving || isSendingAlert}
+                    style={styles.rentAlertBtn}
+                  />
+                ) : null}
+
                 <CustomButton
                   title="Remove Resident"
                   onPress={handleRemove}
@@ -720,6 +770,9 @@ function createStyles(
     },
     deleteBtn: {
       marginTop: vs(16),
+    },
+    rentAlertBtn: {
+      marginBottom: vs(8),
     },
     loadingWrap: {
       alignItems: "center",

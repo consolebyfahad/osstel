@@ -54,7 +54,7 @@ export default function Splash() {
     }
 
     if (hasSeenWelcome) {
-      router.replace("/auth/signin");
+      router.replace("/(tabs)/discover");
       return;
     }
 

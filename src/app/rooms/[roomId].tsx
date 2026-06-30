@@ -346,6 +346,46 @@ export default function RoomDetailScreen() {
           </View>
         </View>
 
+        <View style={styles.utilitiesCard}>
+          <Text style={styles.utilitiesTitle}>Utilities & billing</Text>
+          <Pressable
+            style={styles.utilityRow}
+            onPress={() =>
+              router.push({
+                pathname: "/rooms/meters",
+                params: { hostelId, roomId },
+              })
+            }
+          >
+            <Ionicons name="speedometer-outline" size={vs(20)} color={colors.primary} />
+            <View style={styles.utilityTextWrap}>
+              <Text style={styles.utilityLabel}>Room meters</Text>
+              <Text style={styles.utilityHint}>
+                Electricity, gas, and custom meters
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={vs(18)} color={colors.gray200} />
+          </Pressable>
+          <Pressable
+            style={styles.utilityRow}
+            onPress={() =>
+              router.push({
+                pathname: "/rooms/meter-billing",
+                params: { hostelId, roomId },
+              })
+            }
+          >
+            <Ionicons name="receipt-outline" size={vs(20)} color={colors.primary} />
+            <View style={styles.utilityTextWrap}>
+              <Text style={styles.utilityLabel}>Monthly readings & bills</Text>
+              <Text style={styles.utilityHint}>
+                Record usage and finalize rent with utilities
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={vs(18)} color={colors.gray200} />
+          </Pressable>
+        </View>
+
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Residents</Text>
           <Text style={styles.sectionCount}>
@@ -505,6 +545,41 @@ function createStyles(
     },
     segmentEmpty: {
       backgroundColor: colors.primary100,
+    },
+    utilitiesCard: {
+      backgroundColor: isDark ? colors.white100 : colors.white,
+      borderRadius: vs(16),
+      padding: vs(14),
+      marginBottom: vs(20),
+      borderWidth: 1,
+      borderColor: isDark ? colors.white300 : colors.white100,
+      gap: vs(8),
+    },
+    utilitiesTitle: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.gray300,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginBottom: vs(4),
+    },
+    utilityRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: vs(12),
+      paddingVertical: vs(8),
+    },
+    utilityTextWrap: { flex: 1 },
+    utilityLabel: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.text,
+    },
+    utilityHint: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      marginTop: vs(2),
     },
     sectionHeader: {
       flexDirection: "row",

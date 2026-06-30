@@ -5,6 +5,9 @@ export interface Resident {
   phone: string;
   userId?: string;
   cnic?: string;
+  email?: string | null;
+  address?: string | null;
+  dateOfBirth?: string | null;
   profileImage?: string | null;
   cnicFront?: string | null;
   cnicBack?: string | null;
@@ -22,11 +25,38 @@ export interface Resident {
   status: string;
 }
 
+export interface ResidentLookup {
+  userId: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  address?: string | null;
+  dateOfBirth?: string | null;
+  cnic?: string | null;
+  profileImage?: string | null;
+  cnicFront?: string | null;
+  cnicBack?: string | null;
+  emergencyNumber?: string | null;
+  fatherName?: string | null;
+  fatherPhone?: string | null;
+  hostelConnectionStatus?: "not_connected" | "pending" | "active";
+  canLink: boolean;
+  connectedHostelName?: string | null;
+}
+
+export interface ResidentLookupResponse {
+  resident: ResidentLookup;
+}
+
 export interface CreateResidentBody {
   hostelId: string;
   name: string;
   phone: string;
   cnic?: string;
+  email?: string;
+  address?: string;
+  dateOfBirth?: string;
+  residentUserId?: string;
   roomNumber: string;
   monthlyRent?: number;
   securityDeposit?: number;
@@ -42,6 +72,9 @@ export interface UpdateResidentBody {
   name: string;
   phone: string;
   cnic?: string;
+  email?: string;
+  address?: string;
+  dateOfBirth?: string;
   roomNumber: string;
   monthlyRent?: number;
   securityDeposit?: number;
@@ -71,6 +104,7 @@ export interface ResidentLoginCredentials {
 
 export interface CreateResidentResponse {
   message: string;
+  linked?: boolean;
   resident: Resident;
   loginCredentials?: ResidentLoginCredentials;
 }

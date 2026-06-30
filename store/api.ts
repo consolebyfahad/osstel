@@ -19,6 +19,15 @@ import type {
   GetDiscoverHostelsParams,
   HostelDirectoryResponse,
 } from "@/types/hostelDirectory";
+import type {
+  JoinHostelBody,
+  JoinHostelResponse,
+  JoinRequestsResponse,
+  ApproveLeaveRequestResponse,
+  LeaveRequestBody,
+  LeaveRequestResponse,
+  LeaveRequestsResponse,
+} from "@/types/connection";
 import type { CreateRoomResponse, UpdateRoomBody } from "@/types/room";
 import type {
   DashboardActivitiesResponse,
@@ -42,6 +51,7 @@ import type {
   CreateResidentBody,
   CreateResidentResponse,
   GetResidentsParams,
+  ResidentLookupResponse,
   ResidentsResponse,
   UpdateResidentBody,
 } from "@/types/resident";
@@ -60,25 +70,31 @@ import type {
   UpdateRentStatusResponse,
 } from "@/types/rent";
 import type {
-  SubmitSupportBody,
-  SubmitSupportResponse,
-  SupportRequestsResponse,
-} from "@/types/support";
+  CreateRoomMeterBody,
+  FinalizeRentBillBody,
+  FinalizeRoomBillsBody,
+  FinalizeRoomBillsResponse,
+  RecordMeterReadingsBody,
+  RentBillPreviewResponse,
+  RoomMeterReadingsResponse,
+  RoomMetersResponse,
+  UpdateRoomMeterBody,
+} from "@/types/meter";
 import type {
   NotificationsResponse,
   RegisterPushTokenBody,
   RemovePushTokenBody,
   UnreadCountResponse,
 } from "@/types/notification";
-
+import type { SupportRequestsResponse, SubmitSupportResponse, SubmitSupportBody } from "@/types/support";
 export const api = createApi({
   reducerPath: "api",
-  tagTypes: ["Hostel", "Dashboard", "Rent", "Room", "Resident", "User", "Complaint", "Plan", "Support", "Notification", "Expense"],
+  tagTypes: ["Hostel", "Dashboard", "Rent", "Room", "Resident", "User", "Complaint", "Plan", "Support", "Notification", "Expense", "Connection"],
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getMe: builder.query<MeResponse, void>({
       query: () => "/users/me",
-      providesTags: ["User"],
+      providesTags: ["User", "Connection"],
     }),
 
     updateMe: builder.mutation<MeResponse, UpdateProfileBody>({
@@ -177,6 +193,70 @@ export const api = createApi({
       providesTags: [{ type: "Hostel", id: "DISCOVER" }],
     }),
 
+    joinHostel: builder.mutation<JoinHostelResponse, JoinHostelBody>({
+      query: (body) => ({
+        url: "/resident/join-hostel",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User", "Connection"],
+    }),
+
+    createLeaveRequest: builder.mutation<LeaveRequestResponse, LeaveRequestBody>({
+      query: (body) => ({
+        url: "/resident/leave-request",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["User", "Connection"],
+    }),
+
+    getManagerJoinRequests: builder.query<JoinRequestsResponse, void>({
+      query: () => "/resident/manager/join-requests",
+      providesTags: ["Connection"],
+    }),
+
+    approveJoinRequest: builder.mutation<{ message?: string }, string>({
+      query: (id) => ({
+        url: `/resident/manager/join-request/${id}/approve`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Connection", "Resident", "User", "Dashboard"],
+    }),
+
+    rejectJoinRequest: builder.mutation<{ message?: string }, string>({
+      query: (id) => ({
+        url: `/resident/manager/join-request/${id}/reject`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Connection"],
+    }),
+
+    getManagerLeaveRequests: builder.query<LeaveRequestsResponse, void>({
+      query: () => "/resident/manager/leave-requests",
+      providesTags: ["Connection"],
+    }),
+
+    approveLeaveRequest: builder.mutation<
+      ApproveLeaveRequestResponse,
+      { id: string; refundAmount?: number }
+    >({
+      query: ({ id, refundAmount }) => ({
+        url: `/resident/manager/leave-request/${id}/approve`,
+        method: "PUT",
+        body: refundAmount !== undefined ? { refundAmount } : {},
+      }),
+      invalidatesTags: ["Connection", "Resident", "User", "Dashboard", "Rent", "Expense"],
+    }),
+
+    rejectLeaveRequest: builder.mutation<{ message?: string }, string>({
+      query: (id) => ({
+        url: `/resident/manager/leave-request/${id}/reject`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Connection"],
+    }),
+
     getHostel: builder.query<HostelResponse, string>({
       query: (hostelId) => `/hostels/${hostelId}`,
       providesTags: (_result, _error, hostelId) => [
@@ -185,10 +265,10 @@ export const api = createApi({
     }),
 
     createHostel: builder.mutation({
-      query: ({ name, address, city, contactPhone }) => ({
+      query: ({ name, address, city, contactPhone, image }) => ({
         url: "/hostels",
         method: "POST",
-        body: { name, address, city, contactPhone },
+        body: { name, address, city, contactPhone, ...(image ? { image } : {}) },
       }),
       invalidatesTags: [{ type: "Hostel", id: "LIST" }, "Dashboard", "User"],
     }),
@@ -397,6 +477,119 @@ export const api = createApi({
       }),
     }),
 
+    getRentBillPreview: builder.query<RentBillPreviewResponse, string>({
+      query: (paymentId) => `/rent/${paymentId}/bill-preview`,
+    }),
+
+    finalizeRentBill: builder.mutation<
+      UpdateRentStatusResponse,
+      { paymentId: string } & FinalizeRentBillBody
+    >({
+      query: ({ paymentId, ...body }) => ({
+        url: `/rent/${paymentId}/finalize-bill`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Rent", "Dashboard"],
+    }),
+
+    getRoomMeters: builder.query<
+      RoomMetersResponse,
+      { hostelId: string; roomId: string }
+    >({
+      query: ({ hostelId, roomId }) =>
+        `/hostels/${hostelId}/rooms/${roomId}/meters`,
+      providesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: `meters-${roomId}` },
+      ],
+    }),
+
+    createRoomMeter: builder.mutation<
+      { meter: RoomMetersResponse["meters"][number] },
+      { hostelId: string; roomId: string } & CreateRoomMeterBody
+    >({
+      query: ({ hostelId, roomId, ...body }) => ({
+        url: `/hostels/${hostelId}/rooms/${roomId}/meters`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: `meters-${roomId}` },
+      ],
+    }),
+
+    updateRoomMeter: builder.mutation<
+      { meter: RoomMetersResponse["meters"][number] },
+      {
+        hostelId: string;
+        roomId: string;
+        meterId: string;
+      } & UpdateRoomMeterBody
+    >({
+      query: ({ hostelId, roomId, meterId, ...body }) => ({
+        url: `/hostels/${hostelId}/rooms/${roomId}/meters/${meterId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: `meters-${roomId}` },
+      ],
+    }),
+
+    deleteRoomMeter: builder.mutation<
+      { message?: string },
+      { hostelId: string; roomId: string; meterId: string }
+    >({
+      query: ({ hostelId, roomId, meterId }) => ({
+        url: `/hostels/${hostelId}/rooms/${roomId}/meters/${meterId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: `meters-${roomId}` },
+      ],
+    }),
+
+    getRoomMeterReadings: builder.query<
+      RoomMeterReadingsResponse,
+      { hostelId: string; roomId: string; month: number; year: number }
+    >({
+      query: ({ hostelId, roomId, month, year }) => ({
+        url: `/hostels/${hostelId}/rooms/${roomId}/meter-readings`,
+        params: { month, year },
+      }),
+      providesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: `readings-${roomId}` },
+      ],
+    }),
+
+    recordRoomMeterReadings: builder.mutation<
+      RoomMeterReadingsResponse,
+      { hostelId: string; roomId: string } & RecordMeterReadingsBody
+    >({
+      query: ({ hostelId, roomId, ...body }) => ({
+        url: `/hostels/${hostelId}/rooms/${roomId}/meter-readings`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { roomId }) => [
+        { type: "Room", id: `readings-${roomId}` },
+        { type: "Room", id: `meters-${roomId}` },
+        "Rent",
+      ],
+    }),
+
+    finalizeRoomBills: builder.mutation<
+      FinalizeRoomBillsResponse,
+      { hostelId: string; roomId: string } & FinalizeRoomBillsBody
+    >({
+      query: ({ hostelId, roomId, ...body }) => ({
+        url: `/hostels/${hostelId}/rooms/${roomId}/finalize-bills`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Rent", "Dashboard"],
+    }),
+
     getComplaints: builder.query<ComplaintsResponse, GetComplaintsParams>({
       query: ({ hostelId, status }) => ({
         url: "/complaints",
@@ -457,6 +650,10 @@ export const api = createApi({
       providesTags: (_result, _error, { hostelId }) => [
         { type: "Resident", id: hostelId },
       ],
+    }),
+
+    lookupResidentByUserId: builder.query<ResidentLookupResponse, string>({
+      query: (userId) => `/residents/lookup/${encodeURIComponent(userId)}`,
     }),
 
     createResident: builder.mutation<
@@ -625,6 +822,14 @@ export const {
   useLogoutMutation,
   useGetHostelsQuery,
   useGetDiscoverHostelsQuery,
+  useJoinHostelMutation,
+  useCreateLeaveRequestMutation,
+  useGetManagerJoinRequestsQuery,
+  useApproveJoinRequestMutation,
+  useRejectJoinRequestMutation,
+  useGetManagerLeaveRequestsQuery,
+  useApproveLeaveRequestMutation,
+  useRejectLeaveRequestMutation,
   useGetHostelQuery,
   useCreateHostelMutation,
   useUpdateHostelMutation,
@@ -644,12 +849,22 @@ export const {
   useUpdateRentStatusMutation,
   useSendRentAlertMutation,
   useSendResidentRentAlertMutation,
+  useGetRentBillPreviewQuery,
+  useFinalizeRentBillMutation,
+  useGetRoomMetersQuery,
+  useCreateRoomMeterMutation,
+  useUpdateRoomMeterMutation,
+  useDeleteRoomMeterMutation,
+  useGetRoomMeterReadingsQuery,
+  useRecordRoomMeterReadingsMutation,
+  useFinalizeRoomBillsMutation,
   useGetComplaintsQuery,
   useGetMyComplaintsQuery,
   useCreateComplaintMutation,
   useUpdateComplaintStatusMutation,
   useGetResidentsQuery,
   useLazyGetResidentsQuery,
+  useLazyLookupResidentByUserIdQuery,
   useCreateResidentMutation,
   useUpdateResidentMutation,
   useDeleteResidentMutation,

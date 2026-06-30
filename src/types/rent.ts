@@ -2,6 +2,15 @@ export type RentStatus = "review" | "paid" | "pending" | "rejected";
 
 export type RentFilter = "all" | RentStatus;
 
+export interface RentCharge {
+  type: "meter" | "extra";
+  label: string;
+  units?: number | null;
+  rate?: number | null;
+  amount: number;
+  meterReadingId?: string | null;
+}
+
 export interface RentResident {
   id: string;
   name: string;
@@ -16,6 +25,9 @@ export interface RentRoom {
 export interface RentRecord {
   id: string;
   amount: number;
+  baseAmount?: number;
+  charges?: RentCharge[];
+  billFinalizedAt?: string | null;
   month?: number;
   year?: number;
   status: RentStatus;

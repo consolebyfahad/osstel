@@ -8,6 +8,7 @@ import { isRentDueWindow } from "@/utils/rent";
 import { PLAN_FEATURES } from "@/constants/plans";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUnreadNotificationCount } from "@/hooks/usePushNotifications";
+import { useHostelConnection } from "@/hooks/useHostelConnection";
 import { useGetMeQuery, useGetMyRentQuery } from "../../../store/api";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
@@ -60,19 +61,30 @@ export default function ResidentHomeDashboard() {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
 
-  const { data: meData, refetch: refetchMe } = useGetMeQuery();
+  const { isConnected, isPending, pendingJoinRequest } = useHostelConnection();
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
+  const { data: meData, refetch: refetchMe } = useGetMeQuery(undefined, {
+    skip: !isAuthenticated,
+  });
   const {
     data: rentData,
     isLoading: rentLoading,
     isFetching: rentFetching,
     refetch: refetchRent,
-  } = useGetMyRentQuery({ month, year });
+  } = useGetMyRentQuery(
+    { month, year },
+    { skip: !isConnected },
+  );
 
   useFocusEffect(
     useCallback(() => {
       refetchMe();
-      refetchRent();
-    }, [refetchMe, refetchRent]),
+      if (isConnected) {
+        refetchRent();
+      }
+    }, [isConnected, refetchMe, refetchRent]),
   );
 
   const profile = meData?.user ?? user;
@@ -146,8 +158,62 @@ export default function ResidentHomeDashboard() {
 
   const handleRefresh = () => {
     refetchMe();
-    refetchRent();
+    if (isConnected) {
+      refetchRent();
+    }
   };
+
+  if (!isConnected) {
+    return (
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={rentFetching && !rentLoading}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        <View style={styles.header}>
+          <ProfileAvatar
+            name={profile?.name ?? "Resident"}
+            phone={profile?.phone ?? ""}
+            imageUri={profile?.profileImage}
+            size={vs(56)}
+          />
+          <View style={styles.headerText}>
+            <Text style={styles.greeting}>Welcome,</Text>
+            <Text style={styles.userName}>{profile?.name?.trim() || "Resident"}</Text>
+          </View>
+        </View>
+
+        <SectionCard title="Get Started" contentStyle={styles.cardContent}>
+          {isPending && pendingJoinRequest ? (
+            <>
+              <Text style={styles.hostelMeta}>
+                Your request to join {pendingJoinRequest.hostel.name} is pending
+                manager approval.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.hostelMeta}>
+                You are not connected to a hostel yet. Ask your manager for the
+                hostel code, then submit a join request.
+              </Text>
+              <CustomButton
+                title="Join Existing Hostel"
+                onPress={() => router.push("/join-hostel")}
+                style={styles.joinBtn}
+              />
+            </>
+          )}
+        </SectionCard>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView
@@ -445,6 +511,9 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     actionItem: {
       flex: 1,
       paddingHorizontal: 4,
+    },
+    joinBtn: {
+      marginTop: vs(16),
     },
   });
 }

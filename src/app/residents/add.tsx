@@ -7,17 +7,18 @@ import ScreenHeader from "@/components/ScreenHeader";
 import ImageUploadField, {
   type UploadedImageValue,
 } from "@/components/ImageUploadField";
-import ResidentCredentialsModal from "@/components/ResidentCredentialsModal";
 import RoomDropdown from "@/components/RoomDropdown";
-import type { Resident, ResidentLoginCredentials } from "@/types/resident";
+import type { Resident, ResidentLookup } from "@/types/resident";
 import type { Room, RoomsResponse } from "@/types/room";
 import type { Hostel } from "@/types/hostel";
+import { toIsoDateString } from "@/types/auth";
 import { buildVacancyMap, filterVacantRooms, getRoomTotalWithNewRent } from "@/utils/room";
 import {
   getImageTooLargeMessage,
   prepareImageForUpload,
   type ImageUploadPreset,
 } from "@/utils/imageUpload";
+import { phoneToDigits } from "@/utils/phone";
 import {
   CNIC_FORMATTED_LENGTH,
   formatCnic,
@@ -29,6 +30,7 @@ import {
   useGetHostelsQuery,
   useLazyGetHostelRoomsQuery,
   useLazyGetResidentsQuery,
+  useLazyLookupResidentByUserIdQuery,
 } from "../../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
@@ -36,12 +38,16 @@ import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -82,12 +88,51 @@ function isValidOptionalPhone(digits: string) {
   return digits.length === 0 || digits.length >= 10;
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function parseDateOfBirth(value?: string) {
+  if (!value) return new Date(1995, 0, 1);
+
+  const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    const year = Number(isoMatch[1]);
+    const month = Number(isoMatch[2]) - 1;
+    const day = Number(isoMatch[3]);
+    const parsed = new Date(year, month, day);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? new Date(1995, 0, 1) : parsed;
+}
+
+function toImageValue(value?: string | null): UploadedImageValue {
+  if (!value) return EMPTY_IMAGE;
+  return { localUri: value, uploadValue: value };
+}
+
+function getLookupErrorMessage(error: unknown) {
+  const err = error as {
+    status?: number;
+    data?: { message?: string } | string;
+  };
+
+  if (typeof err.data === "string") return err.data;
+  if (err.data?.message) return err.data.message;
+  if (err.status === 404) return "No resident account found with this User ID.";
+  return "Could not look up resident. Please try again.";
+}
+
 export default function AddResident() {
   const { roomId, hostelId: presetHostelId } = useLocalSearchParams<{
     roomId?: string;
     hostelId?: string;
   }>();
   const [createResident, { isLoading: isSaving }] = useCreateResidentMutation();
+  const [lookupResident, { isFetching: isLookingUp }] =
+    useLazyLookupResidentByUserIdQuery();
   const { checkAddTenant } = useSubscription();
   const { colors, fonts } = useTheme();
   const insets = useSafeAreaInsets();
@@ -101,7 +146,21 @@ export default function AddResident() {
 
   const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [residents, setResidents] = useState<Resident[]>([]);
+  const [lookupUserId, setLookupUserId] = useState("");
+  const [linkedResidentUserId, setLinkedResidentUserId] = useState<string | null>(
+    null,
+  );
+  const [lookupFoundName, setLookupFoundName] = useState<string | null>(null);
+  const [lookupCanLink, setLookupCanLink] = useState<boolean | null>(null);
+  const [lookupConnectedHostelName, setLookupConnectedHostelName] = useState<
+    string | null
+  >(null);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [dateDraft, setDateDraft] = useState(new Date(1995, 0, 1));
   const [phoneDigits, setPhoneDigits] = useState("");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [cnic, setCnic] = useState("");
@@ -109,15 +168,6 @@ export default function AddResident() {
     useState<UploadedImageValue>(EMPTY_IMAGE);
   const [cnicFront, setCnicFront] = useState<UploadedImageValue>(EMPTY_IMAGE);
   const [cnicBack, setCnicBack] = useState<UploadedImageValue>(EMPTY_IMAGE);
-  const [credentialsModal, setCredentialsModal] = useState<{
-    visible: boolean;
-    residentName: string;
-    credentials: ResidentLoginCredentials | null;
-  }>({
-    visible: false,
-    residentName: "",
-    credentials: null,
-  });
   const [emergencyDigits, setEmergencyDigits] = useState("");
   const [fatherName, setFatherName] = useState("");
   const [fatherDigits, setFatherDigits] = useState("");
@@ -292,13 +342,79 @@ export default function AddResident() {
     hasValidSecurityDeposit &&
     isEmptyOrCompleteCnic(cnic) &&
     isValidOptionalPhone(emergencyDigits) &&
-    isValidOptionalPhone(fatherDigits);
+    isValidOptionalPhone(fatherDigits) &&
+    (!email.trim() || isValidEmail(email.trim()));
+
+  const applyLookupProfile = useCallback((resident: ResidentLookup) => {
+    setName(resident.name ?? "");
+    setPhoneDigits(phoneToDigits(resident.phone ?? ""));
+    setEmail(resident.email ?? "");
+    setAddress(resident.address ?? "");
+    setCnic(formatCnic(resident.cnic ?? ""));
+    setFatherName(resident.fatherName ?? "");
+    setEmergencyDigits(phoneToDigits(resident.emergencyNumber ?? ""));
+    setFatherDigits(phoneToDigits(resident.fatherPhone ?? ""));
+    setProfileImage(toImageValue(resident.profileImage));
+    setCnicFront(toImageValue(resident.cnicFront));
+    setCnicBack(toImageValue(resident.cnicBack));
+    setDateOfBirth(
+      resident.dateOfBirth ? parseDateOfBirth(resident.dateOfBirth) : null,
+    );
+    setLinkedResidentUserId(resident.userId);
+    setLookupFoundName(resident.name);
+    setLookupCanLink(resident.canLink);
+    setLookupConnectedHostelName(resident.connectedHostelName ?? null);
+  }, []);
+
+  const handleLookup = async () => {
+    const id = lookupUserId.trim();
+    if (!id) {
+      Alert.alert(
+        "User ID required",
+        "Enter the resident's User ID from their Osstel account.",
+      );
+      return;
+    }
+
+    Keyboard.dismiss();
+
+    try {
+      const result = await lookupResident(id).unwrap();
+      applyLookupProfile(result.resident);
+    } catch (error) {
+      Alert.alert("Lookup failed", getLookupErrorMessage(error));
+    }
+  };
+
+  const handleOpenDatePicker = () => {
+    setDateDraft(dateOfBirth ?? new Date(1995, 0, 1));
+    setShowDatePicker(true);
+  };
+
+  const handleDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+      if (selected) setDateOfBirth(selected);
+      return;
+    }
+
+    if (selected) setDateDraft(selected);
+  };
+
+  const handleDateConfirm = () => {
+    setDateOfBirth(dateDraft);
+    setShowDatePicker(false);
+  };
+
+  const handleDateCancel = () => {
+    setShowDatePicker(false);
+  };
 
   const handleCnicChange = (value: string) => {
     setCnic(formatCnic(value));
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!isValid || !selectedRoom || isSaving) return;
 
     const limitCheck = checkAddTenant();
@@ -307,20 +423,10 @@ export default function AddResident() {
       return;
     }
 
-    Keyboard.dismiss();
-
-    const hostelId = selectedRoom.hostel || presetHostelId;
-    if (!hostelId) {
-      Alert.alert("Error", "Could not determine hostel for this room.");
-      return;
-    }
-
     if (!isEmptyOrCompleteCnic(cnic)) {
       Alert.alert("Invalid CNIC", "CNIC must be 13 digits (XXXXX-XXXXXXX-X).");
       return;
     }
-
-    const cnicDigits = getCnicDigits(cnic);
 
     if (!isValidOptionalPhone(emergencyDigits)) {
       Alert.alert(
@@ -337,6 +443,44 @@ export default function AddResident() {
       );
       return;
     }
+
+    if (linkedResidentUserId && lookupCanLink === false) {
+      Alert.alert(
+        "Cannot link account",
+        lookupConnectedHostelName
+          ? `${lookupFoundName ?? "This resident"} is already connected to ${lookupConnectedHostelName}.`
+          : `${lookupFoundName ?? "This resident"} is already connected to another hostel.`,
+      );
+      return;
+    }
+
+    if (linkedResidentUserId && lookupCanLink) {
+      Alert.alert(
+        "Link resident account?",
+        `${lookupFoundName ?? "This resident"} already has an Osstel account. Saving will connect their app to this hostel immediately — they will not need to enter the hostel code.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Link & Save", onPress: () => void submitResident() },
+        ],
+      );
+      return;
+    }
+
+    void submitResident();
+  };
+
+  const submitResident = async () => {
+    if (!isValid || !selectedRoom || isSaving) return;
+
+    Keyboard.dismiss();
+
+    const hostelId = selectedRoom.hostel || presetHostelId;
+    if (!hostelId) {
+      Alert.alert("Error", "Could not determine hostel for this room.");
+      return;
+    }
+
+    const cnicDigits = getCnicDigits(cnic);
 
     try {
       const [profileImageValue, cnicFrontValue, cnicBackValue] =
@@ -364,21 +508,22 @@ export default function AddResident() {
         ...(fatherDigits
           ? { fatherPhone: formatPhoneForApi(fatherDigits) }
           : {}),
+        ...(email.trim() ? { email: email.trim() } : {}),
+        ...(address.trim() ? { address: address.trim() } : {}),
+        ...(dateOfBirth ? { dateOfBirth: toIsoDateString(dateOfBirth) } : {}),
+        ...(linkedResidentUserId
+          ? { residentUserId: linkedResidentUserId }
+          : {}),
       }).unwrap();
 
-      if (result.loginCredentials) {
-        setCredentialsModal({
-          visible: true,
-          residentName: result.resident.name,
-          credentials: result.loginCredentials,
-        });
-      } else {
-        Alert.alert(
-          "Resident added",
-          result.message || "Resident saved successfully.",
-          [{ text: "OK", onPress: () => router.back() }],
-        );
-      }
+      Alert.alert(
+        linkedResidentUserId ? "Resident linked" : "Resident added",
+        result.message ||
+          (linkedResidentUserId
+            ? "Resident added and linked to their Osstel account."
+            : "Resident saved. They can sign up in the app and join using your hostel code."),
+        [{ text: "OK", onPress: () => router.back() }],
+      );
     } catch (error) {
       const err = error as {
         status?: number;
@@ -420,7 +565,9 @@ export default function AddResident() {
               contentContainerStyle={styles.scrollContent}
             >
             <Text style={styles.subtitle}>
-              Register a new resident and assign them to a room.
+              Register a new resident and assign them to a room. Use their User ID
+              if they already have the app — otherwise they can join later with
+              your hostel code.
             </Text>
 
             {isPageLoading ? (
@@ -460,6 +607,80 @@ export default function AddResident() {
               </View>
             ) : (
               <>
+                <View style={styles.lookupCard}>
+                  <Text style={styles.lookupTitle}>Get user by ID</Text>
+                  <Text style={styles.lookupHint}>
+                    Paste the resident&apos;s Osstel User ID to load their
+                    profile details automatically.
+                  </Text>
+                  <View style={styles.lookupRow}>
+                    <View style={styles.lookupInputWrap}>
+                      <CustomInput
+                        label="Resident User ID"
+                        placeholder="e.g. 482913"
+                        value={lookupUserId}
+                        onChangeText={(text) => {
+                          setLookupUserId(text.replace(/[^a-zA-Z0-9]/g, ""));
+                          setLinkedResidentUserId(null);
+                          setLookupFoundName(null);
+                          setLookupCanLink(null);
+                          setLookupConnectedHostelName(null);
+                        }}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                    </View>
+                    <Pressable
+                      style={[
+                        styles.lookupButton,
+                        (!lookupUserId.trim() || isLookingUp) &&
+                          styles.lookupButtonDisabled,
+                      ]}
+                      onPress={handleLookup}
+                      disabled={!lookupUserId.trim() || isLookingUp}
+                    >
+                      {isLookingUp ? (
+                        <CustomLoading size="sm" />
+                      ) : (
+                        <Text style={styles.lookupButtonText}>Lookup</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                  {lookupFoundName ? (
+                    lookupCanLink ? (
+                      <View style={styles.lookupLinkCard}>
+                        <Ionicons
+                          name="link-outline"
+                          size={vs(18)}
+                          color={colors.primary}
+                        />
+                        <View style={styles.lookupLinkTextWrap}>
+                          <Text style={styles.lookupLinkTitle}>
+                            Osstel account found
+                          </Text>
+                          <Text style={styles.lookupLinkText}>
+                            Profile loaded for {lookupFoundName}. Saving will
+                            link their app account to this hostel right away.
+                          </Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.lookupWarning}>
+                        <Ionicons
+                          name="warning-outline"
+                          size={vs(18)}
+                          color={colors.warning}
+                        />
+                        <Text style={styles.lookupWarningText}>
+                          {lookupConnectedHostelName
+                            ? `${lookupFoundName} is already connected to ${lookupConnectedHostelName}. You cannot link them here.`
+                            : `${lookupFoundName} is already connected to another hostel.`}
+                        </Text>
+                      </View>
+                    )
+                  ) : null}
+                </View>
+
                 <ImageUploadField
                   label="Resident Photo"
                   value={profileImage}
@@ -497,6 +718,68 @@ export default function AddResident() {
                     placeholder="3001234567"
                     onFocus={() => scrollToField("phone")}
                   />
+                </View>
+
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition("email", event.nativeEvent.layout.y)
+                  }
+                >
+                  <CustomInput
+                    label="Email Address"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onFocus={() => scrollToField("email")}
+                  />
+                </View>
+
+                <View
+                  onLayout={(event) =>
+                    registerFieldPosition("address", event.nativeEvent.layout.y)
+                  }
+                >
+                  <CustomInput
+                    label="Address"
+                    placeholder="Street, area, city"
+                    value={address}
+                    onChangeText={setAddress}
+                    multiline
+                    onFocus={() => scrollToField("address")}
+                  />
+                </View>
+
+                <View style={styles.dateField}>
+                  <Text style={styles.dropdownLabel}>Date of Birth</Text>
+                  <Pressable style={styles.dateInput} onPress={handleOpenDatePicker}>
+                    <Text
+                      style={[
+                        styles.dateText,
+                        !dateOfBirth && styles.datePlaceholder,
+                      ]}
+                    >
+                      {dateOfBirth
+                        ? dateOfBirth.toLocaleDateString(undefined, {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "Select date of birth"}
+                    </Text>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={vs(20)}
+                      color={colors.primary}
+                    />
+                  </Pressable>
+                  {dateOfBirth ? (
+                    <Pressable onPress={() => setDateOfBirth(null)}>
+                      <Text style={styles.clearDateText}>Clear date</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
 
                 <View style={styles.dropdownField}>
@@ -685,9 +968,17 @@ export default function AddResident() {
 
                 <View style={styles.buttonWrap}>
                   <CustomButton
-                    title="Save Resident"
+                    title={
+                      linkedResidentUserId && lookupCanLink
+                        ? "Link & Save Resident"
+                        : "Save Resident"
+                    }
                     onPress={handleSave}
-                    disabled={!isValid || isSaving}
+                    disabled={
+                      !isValid ||
+                      isSaving ||
+                      (Boolean(linkedResidentUserId) && lookupCanLink === false)
+                    }
                     loading={isSaving}
                   />
                 </View>
@@ -697,19 +988,43 @@ export default function AddResident() {
         </View>
         </KeyboardAvoidingView>
 
-        <ResidentCredentialsModal
-          visible={credentialsModal.visible}
-          residentName={credentialsModal.residentName}
-          credentials={credentialsModal.credentials}
-          onClose={() => {
-            setCredentialsModal({
-              visible: false,
-              residentName: "",
-              credentials: null,
-            });
-            router.back();
-          }}
-        />
+        {Platform.OS === "ios" ? (
+          <Modal
+            visible={showDatePicker}
+            transparent
+            animationType="slide"
+            onRequestClose={handleDateCancel}
+          >
+            <Pressable style={styles.dateModalOverlay} onPress={handleDateCancel}>
+              <Pressable style={styles.dateModalSheet} onPress={() => {}}>
+                <View style={styles.dateModalHeader}>
+                  <Pressable onPress={handleDateCancel}>
+                    <Text style={styles.dateModalAction}>Cancel</Text>
+                  </Pressable>
+                  <Text style={styles.dateModalTitle}>Date of Birth</Text>
+                  <Pressable onPress={handleDateConfirm}>
+                    <Text style={styles.dateModalAction}>Done</Text>
+                  </Pressable>
+                </View>
+                <DateTimePicker
+                  value={dateDraft}
+                  mode="date"
+                  display="spinner"
+                  maximumDate={new Date()}
+                  onChange={handleDateChange}
+                />
+              </Pressable>
+            </Pressable>
+          </Modal>
+        ) : showDatePicker ? (
+          <DateTimePicker
+            value={dateDraft}
+            mode="date"
+            display="default"
+            maximumDate={new Date()}
+            onChange={handleDateChange}
+          />
+        ) : null}
       </SafeAreaView>
     </GradientBackground>
   );
@@ -755,6 +1070,166 @@ function createStyles(
       fontFamily: fonts.regular,
       color: colors.gray200,
       marginBottom: vs(16),
+    },
+    lookupCard: {
+      backgroundColor: colors.primary100,
+      borderRadius: vs(12),
+      padding: vs(14),
+      marginBottom: vs(16),
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    lookupTitle: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.text,
+      marginBottom: vs(4),
+    },
+    lookupHint: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      marginBottom: vs(12),
+      lineHeight: vs(18),
+    },
+    lookupRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: vs(10),
+    },
+    lookupInputWrap: {
+      flex: 1,
+    },
+    lookupButton: {
+      minWidth: vs(88),
+      height: vs(48),
+      borderRadius: vs(12),
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: vs(4),
+    },
+    lookupButtonDisabled: {
+      opacity: 0.5,
+    },
+    lookupButtonText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.white,
+    },
+    lookupSuccess: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: vs(6),
+      marginTop: vs(10),
+    },
+    lookupSuccessText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.medium,
+      color: colors.success,
+      flex: 1,
+    },
+    lookupLinkCard: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: vs(8),
+      marginTop: vs(12),
+      padding: vs(10),
+      borderRadius: vs(10),
+      backgroundColor: colors.primary100,
+      borderWidth: 1,
+      borderColor: colors.gradientBorder,
+    },
+    lookupLinkTextWrap: {
+      flex: 1,
+    },
+    lookupLinkTitle: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.primary,
+      marginBottom: vs(2),
+    },
+    lookupLinkText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.gray300,
+      lineHeight: vs(18),
+    },
+    lookupWarning: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: vs(8),
+      marginTop: vs(12),
+      padding: vs(10),
+      borderRadius: vs(10),
+      backgroundColor: colors.warningBg,
+      borderWidth: 1,
+      borderColor: colors.warning,
+    },
+    lookupWarningText: {
+      flex: 1,
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.regular,
+      color: colors.warningText,
+      lineHeight: vs(18),
+    },
+    dateField: {
+      marginBottom: vs(12),
+    },
+    dateInput: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.white,
+      borderRadius: vs(12),
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: vs(14),
+      paddingVertical: vs(14),
+    },
+    dateText: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.regular,
+      color: colors.text,
+    },
+    datePlaceholder: {
+      color: colors.gray100,
+    },
+    clearDateText: {
+      marginTop: vs(6),
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.medium,
+      color: colors.primary,
+    },
+    dateModalOverlay: {
+      flex: 1,
+      justifyContent: "flex-end",
+      backgroundColor: "rgba(0,0,0,0.4)",
+    },
+    dateModalSheet: {
+      backgroundColor: colors.white,
+      borderTopLeftRadius: vs(16),
+      borderTopRightRadius: vs(16),
+      paddingBottom: vs(24),
+    },
+    dateModalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: vs(16),
+      paddingVertical: vs(12),
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    dateModalTitle: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.text,
+    },
+    dateModalAction: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.medium,
+      color: colors.primary,
     },
     photoField: {
       marginBottom: vs(4),

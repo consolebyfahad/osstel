@@ -166,7 +166,7 @@ export default function SupportScreen() {
     }, [isAuthenticated, refetch]),
   );
 
-  const requests = supportData?.requests ?? [];
+  const requests: SupportRequest[] = supportData?.requests ?? [];
   const trimmedSubject = subject.trim();
   const trimmedMessage = message.trim();
   const canSubmit =

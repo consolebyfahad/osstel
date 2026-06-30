@@ -1,9 +1,11 @@
-import EmptyState from "@/components/EmptyState";
 import AnimatedFilterBar from "@/components/AnimatedFilterBar";
 import CustomButton from "@/components/CustomButton";
 import GradientBackground from "@/components/GradientBackground";
 import HostelDropdown from "@/components/HostelDropdown";
+import RentBillBreakdown from "@/components/RentBillBreakdown";
 import ResidentRentView from "@/components/resident/ResidentRentView";
+import EmptyState from "@/components/EmptyState";
+import { useHostelConnection } from "@/hooks/useHostelConnection";
 import ScreenHeader from "@/components/ScreenHeader";
 import type { Hostel } from "@/types/hostel";
 import type { RentFilter, RentRecord, RentStatus } from "@/types/rent";
@@ -15,7 +17,7 @@ import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CustomLoading from "@/components/CustomLoading";
@@ -172,6 +174,33 @@ function RentRecordCard({
         <Text style={styles.rejectionText}>{record.rejectionReason}</Text>
       ) : null}
 
+      {(record.charges?.length ?? 0) > 0 || record.baseAmount != null ? (
+        <View style={styles.breakdownWrap}>
+          <RentBillBreakdown
+            baseAmount={record.baseAmount ?? record.amount}
+            charges={record.charges}
+            totalAmount={record.amount}
+            compact
+          />
+        </View>
+      ) : null}
+
+      {record.status !== "paid" && record.status !== "review" ? (
+        <CustomButton
+          title={record.billFinalizedAt ? "Edit Bill" : "Finalize Bill"}
+          variant="outline"
+          size="sm"
+          fullWidth={false}
+          style={styles.editBillBtn}
+          onPress={() =>
+            router.push({
+              pathname: "/rent/bill/[rentId]",
+              params: { rentId: record.id },
+            })
+          }
+        />
+      ) : null}
+
       {record.status === "review" ? (
         <View style={styles.reviewActions}>
           <CustomButton
@@ -241,6 +270,27 @@ function RentRecordCard({
 export default function Rent() {
   const user = useSelector((state: RootState) => state.auth.user);
   const isManager = user?.role === "manager";
+  const { isConnected } = useHostelConnection();
+
+  if (!isManager && !isConnected) {
+    return (
+      <GradientBackground style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+          <ScreenHeader title="Rent" />
+          <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
+            <EmptyState
+              title="Connect to a hostel"
+              description="Join your hostel first to view rent and submit payments."
+              actionLabel="Join Hostel"
+              onAction={() => router.push("/join-hostel")}
+              size="sm"
+            />
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
   return isManager ? <ManagerRentView /> : <ResidentRentView />;
 }
 
@@ -252,8 +302,17 @@ function ManagerRentView() {
   );
 
   const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  const shiftPeriod = (delta: number) => {
+    const date = new Date(year, month - 1 + delta, 1);
+    setMonth(date.getMonth() + 1);
+    setYear(date.getFullYear());
+  };
+
+  const isCurrentPeriod =
+    month === now.getMonth() + 1 && year === now.getFullYear();
 
   const [activeFilter, setActiveFilter] = useState<RentFilter>("all");
   const [selectedHostelId, setSelectedHostelId] = useState("");
@@ -324,10 +383,12 @@ function ManagerRentView() {
   const isEmpty = !isLoading && records.length === 0;
 
   const handleReview = (rentId: string, approve: boolean) => {
-    const proofCheck = checkFeature(PLAN_FEATURES.payment_proof);
-    if (!proofCheck.allowed) {
-      showSubscriptionBlocked(proofCheck.message);
-      return;
+    if (!approve) {
+      const proofCheck = checkFeature(PLAN_FEATURES.payment_proof);
+      if (!proofCheck.allowed) {
+        showSubscriptionBlocked(proofCheck.message);
+        return;
+      }
     }
 
     if (!selectedHostelId || updatingRentId) return;
@@ -455,7 +516,30 @@ function ManagerRentView() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="Rent Management" subtitle={monthLabel}  />
+        <ScreenHeader title="Rent Management" subtitle={monthLabel} />
+
+        <View style={styles.periodRow}>
+          <Pressable
+            style={styles.periodBtn}
+            onPress={() => shiftPeriod(-1)}
+            accessibilityLabel="Previous month"
+          >
+            <Ionicons name="chevron-back" size={vs(20)} color={colors.primary} />
+          </Pressable>
+          <Text style={styles.periodLabel}>{monthLabel}</Text>
+          <Pressable
+            style={[styles.periodBtn, isCurrentPeriod && styles.periodBtnDisabled]}
+            onPress={() => !isCurrentPeriod && shiftPeriod(1)}
+            disabled={isCurrentPeriod}
+            accessibilityLabel="Next month"
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={vs(20)}
+              color={isCurrentPeriod ? colors.gray200 : colors.primary}
+            />
+          </Pressable>
+        </View>
 
         <View style={styles.staticHeader}>
           <HostelDropdown
@@ -563,6 +647,29 @@ function createStyles(
     staticHeader: {
       paddingHorizontal: vs(20),
       paddingBottom: vs(4),
+    },
+    periodRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: vs(20),
+      marginBottom: vs(12),
+    },
+    periodBtn: {
+      width: vs(40),
+      height: vs(40),
+      borderRadius: vs(12),
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary100,
+    },
+    periodBtnDisabled: {
+      opacity: 0.5,
+    },
+    periodLabel: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.semiBold,
+      color: colors.text,
     },
     scroll: {
       flex: 1,
@@ -735,6 +842,13 @@ function createStyles(
       fontFamily: fonts.regular,
       color: colors.error,
       marginTop: vs(6),
+    },
+    breakdownWrap: {
+      marginTop: vs(10),
+    },
+    editBillBtn: {
+      alignSelf: "flex-start",
+      marginTop: vs(10),
     },
     statusBadge: {
       paddingHorizontal: vs(10),

@@ -5,6 +5,7 @@ import ImageUploadField, {
   type UploadedImageValue,
 } from "@/components/ImageUploadField";
 import ResidentRentBanner from "@/components/resident/ResidentRentBanner";
+import RentBillBreakdown from "@/components/RentBillBreakdown";
 import ScreenHeader from "@/components/ScreenHeader";
 import { getCardShadow } from "@/components/SectionCard";
 import { PLAN_FEATURES } from "@/constants/plans";
@@ -427,6 +428,20 @@ export default function ResidentRentView() {
               status={isRejected ? "rejected" : currentStatus}
             />
 
+            {currentRecord &&
+            ((currentRecord.charges?.length ?? 0) > 0 ||
+              currentRecord.baseAmount != null) ? (
+              <View style={styles.breakdownWrap}>
+                <RentBillBreakdown
+                  baseAmount={
+                    currentRecord.baseAmount ?? currentRecord.amount
+                  }
+                  charges={currentRecord.charges}
+                  totalAmount={currentRecord.amount}
+                />
+              </View>
+            ) : null}
+
             {!hasRentRecord ? (
               <Text style={styles.infoText}>
                 Your rent record for this month is not set up yet. Please
@@ -646,6 +661,9 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     },
     rentActionBtn: {
       marginBottom: vs(24),
+    },
+    breakdownWrap: {
+      marginBottom: vs(16),
     },
     infoText: {
       fontSize: FONT_SIZES.sm,

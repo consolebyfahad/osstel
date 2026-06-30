@@ -5,6 +5,29 @@ import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import type { RegisterPushTokenBody } from "@/types/notification";
 
+const NOTIFICATION_ROUTE_BY_TYPE: Record<string, string> = {
+  rent_bill_finalized: "/(tabs)/rent",
+  rent_approved: "/(tabs)/rent",
+  rent_rejected: "/(tabs)/rent",
+  rent_submitted: "/(tabs)/rent",
+  rent_reminder: "/(tabs)/rent",
+  rent_alert: "/(tabs)/rent",
+  resident_linked_by_manager: "/(tabs)/home",
+  join_request_approved: "/(tabs)/home",
+  join_request_rejected: "/join-hostel",
+  leave_request_approved: "/(tabs)/home",
+  leave_request_rejected: "/(tabs)/home",
+  plan_request_approved: "/subscription",
+  plan_request_rejected: "/subscription",
+  subscription_expiring: "/subscription",
+  subscription_expired: "/subscription",
+  trial_started: "/subscription",
+  trial_ending: "/subscription",
+  trial_expired: "/subscription",
+  account_blocked: "/support",
+  support_reply: "/support",
+};
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -88,5 +111,19 @@ export function getNotificationDeepLink(
   if (typeof url === "string" && url.startsWith("/")) {
     return url;
   }
+
+  const type = data?.type;
+  if (type && NOTIFICATION_ROUTE_BY_TYPE[type]) {
+    return NOTIFICATION_ROUTE_BY_TYPE[type];
+  }
+
+  if (data?.paymentId) {
+    return "/(tabs)/rent";
+  }
+
+  if (data?.tenancyId) {
+    return "/residents";
+  }
+
   return null;
 }

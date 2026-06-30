@@ -7,11 +7,18 @@ import CustomLoading from "@/components/CustomLoading";
 import GradientBackground from "@/components/GradientBackground";
 import PhoneInput from "@/components/PhoneInput";
 import ScreenHeader from "@/components/ScreenHeader";
+import ImageUploadField, {
+  type UploadedImageValue,
+} from "@/components/ImageUploadField";
 import { useCreateHostelMutation } from "../../../store/api";
 import { useSubscription } from "@/hooks/useSubscription";
 import { showSubscriptionBlocked } from "@/utils/subscriptionAlert";
 import { LIMITS } from "@/constants/limits";
 import { formatPhoneForApi, isCompletePhone } from "@/utils/phone";
+import {
+  getImageTooLargeMessage,
+  prepareImageForUpload,
+} from "@/utils/imageUpload";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
@@ -49,6 +56,10 @@ export default function HostelDetailsScreen() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState<AddHostelCity | null>(null);
   const [contactPhoneDigits, setContactPhoneDigits] = useState("");
+  const [hostelImage, setHostelImage] = useState<UploadedImageValue>({
+    localUri: null,
+    uploadValue: null,
+  });
 
   useEffect(() => {
     const showEvent =
@@ -111,22 +122,34 @@ export default function HostelDetailsScreen() {
     Keyboard.dismiss();
 
     try {
+      let imageValue: string | undefined;
+      if (hostelImage.localUri) {
+        const prepared = await prepareImageForUpload(hostelImage.localUri, "avatar");
+        imageValue = prepared?.uploadValue;
+      } else if (hostelImage.uploadValue) {
+        imageValue = hostelImage.uploadValue;
+      }
+
       await createHostel({
         name: name.trim(),
         address: address.trim(),
         city,
         contactPhone: formatPhoneForApi(contactPhoneDigits),
+        ...(imageValue ? { image: imageValue } : {}),
       }).unwrap();
 
       router.back();
     } catch (error) {
       const err = error as {
+        status?: number;
         data?: { message?: string; errors?: { msg: string }[] } | string;
       };
 
       let message = "Could not create hostel. Please try again.";
 
-      if (typeof err.data === "string") {
+      if (err.status === 413) {
+        message = getImageTooLargeMessage();
+      } else if (typeof err.data === "string") {
         message = err.data;
       } else if (err.data?.errors?.length) {
         message = err.data.errors.map((e) => e.msg).join("\n");
@@ -161,6 +184,16 @@ export default function HostelDetailsScreen() {
               Create a new hostel. This information appears on receipts and
               resident communications.
             </Text>
+
+            <ImageUploadField
+              label="Hostel Photo"
+              value={hostelImage}
+              onChange={setHostelImage}
+              preset="avatar"
+              aspect={[16, 9]}
+              variant="card"
+              style={styles.photoField}
+            />
 
             <View
               onLayout={(event) =>
@@ -270,6 +303,9 @@ function createStyles(
       color: colors.gray200,
       lineHeight: vs(22),
       marginBottom: vs(24),
+    },
+    photoField: {
+      marginBottom: vs(8),
     },
     buttonWrap: {
       marginTop: vs(8),

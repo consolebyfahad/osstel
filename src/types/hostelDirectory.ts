@@ -1,6 +1,6 @@
 export interface HostelDirectoryOwner {
   name: string;
-  phone: string;
+  phone?: string;
 }
 
 export interface HostelDirectoryItem {
@@ -8,13 +8,14 @@ export interface HostelDirectoryItem {
   name: string;
   city: string;
   address: string;
-  contactPhone: string;
+  contactPhone?: string;
+  image?: string | null;
   roomsCount: number;
   tenantsCount: number;
   vacantBeds: number;
   vacantRooms: number;
   hasVacancy: boolean;
-  owner: HostelDirectoryOwner | null;
+  owner: (HostelDirectoryOwner & { phone?: string }) | null;
   createdAt: string;
 }
 

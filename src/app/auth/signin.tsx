@@ -46,7 +46,6 @@ export default function SignIn() {
   const scrollRef = useRef<ScrollView>(null);
   const scrollContentRef = useRef<View>(null);
   const nameFieldRef = useRef<View>(null);
-  const userIdFieldRef = useRef<View>(null);
   const phoneFieldRef = useRef<View>(null);
   const passwordFieldRef = useRef<View>(null);
   const confirmFieldRef = useRef<View>(null);
@@ -75,7 +74,6 @@ export default function SignIn() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>("resident");
   const [name, setName] = useState("");
-  const [userId, setUserId] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -110,7 +108,6 @@ export default function SignIn() {
 
   const resetForm = () => {
     setName("");
-    setUserId("");
     setPhoneNumber("");
     setPassword("");
     setConfirmPassword("");
@@ -125,7 +122,7 @@ export default function SignIn() {
 
   const isManagerRole = selectedRole === "manager";
   const isResidentRole = selectedRole === "resident";
-  const canSignUp = isManagerRole;
+  const canSignUp = true;
 
   const completeAuth = async (result: unknown) => {
     dispatch(setUser(toAuthUser(result)));
@@ -191,12 +188,7 @@ export default function SignIn() {
   };
 
   const handleSubmit = async () => {
-    if (isResidentRole) {
-      if (!userId.trim()) {
-        alert("Please enter your User ID");
-        return;
-      }
-    } else if (phoneNumber.length < 9) {
+    if (phoneNumber.length < 9) {
       alert("Please enter a valid mobile number");
       return;
     }
@@ -211,7 +203,7 @@ export default function SignIn() {
       return;
     }
 
-    if (isSignUp && canSignUp) {
+    if (isSignUp) {
       if (!name.trim()) {
         alert("Please enter your name");
         return;
@@ -230,7 +222,7 @@ export default function SignIn() {
     Keyboard.dismiss();
 
     try {
-      if (isSignUp && canSignUp) {
+      if (isSignUp) {
         const result = await register({
           name: name.trim(),
           phone,
@@ -238,13 +230,15 @@ export default function SignIn() {
           confirmPassword,
           role: selectedRole,
         }).unwrap();
+        const authUser = toAuthUser(result);
+        if (selectedRole === "resident" && authUser.userId) {
+          alert(
+            `Account created! Your User ID is ${authUser.userId}. Share it with your hostel manager so they can add you faster.`,
+          );
+        }
         await completeAuth(result);
       } else {
-        const result = await login(
-          isResidentRole
-            ? { userId: userId.trim(), password }
-            : { phone, password, role: selectedRole },
-        ).unwrap();
+        const result = await login({ phone, password }).unwrap();
         await completeAuth(result);
       }
     } catch (error) {
@@ -282,9 +276,8 @@ export default function SignIn() {
   const isSubmitDisabled =
     isSubmitting ||
     !password.trim() ||
-    (isResidentRole ? !userId.trim() : phoneNumber.length < 9) ||
+    phoneNumber.length < 9 ||
     (isSignUp &&
-      canSignUp &&
       (!name.trim() ||
         !confirmPassword.trim() ||
         password !== confirmPassword));
@@ -348,13 +341,15 @@ export default function SignIn() {
                     {isSignUp && canSignUp ? "Create account" : "Sign in"}
                   </Text>
                 </View>
-                <Text style={styles.subtitle}>
-                  {isSignUp && canSignUp
-                    ? "Register to manage your hostel with Osstel."
-                    : selectedRole === "resident"
-                      ? "Sign in with your user ID and password."
-                      : "Sign in with your phone number and password."}
-                </Text>
+                  <Text style={styles.subtitle}>
+                    {isSignUp
+                      ? isResidentRole
+                        ? "Create your resident account with Osstel."
+                        : "Register to manage your hostel with Osstel."
+                      : isResidentRole
+                        ? "Sign in with your phone number and password."
+                        : "Sign in with your phone number and password."}
+                  </Text>
               </View>
 
               <View style={styles.formBody}>
@@ -374,14 +369,6 @@ export default function SignIn() {
                       activeOpacity={0.85}
                       onPress={() => {
                         setSelectedRole(role);
-                        if (role === "resident") {
-                          setIsSignUp(false);
-                          setName("");
-                          setConfirmPassword("");
-                          setPhoneNumber("");
-                        } else {
-                          setUserId("");
-                        }
                       }}
                     >
                       <Ionicons
@@ -406,7 +393,7 @@ export default function SignIn() {
                 })}
               </View>
 
-              {isSignUp && canSignUp ? (
+              {isSignUp ? (
                 <View ref={nameFieldRef}>
                   <CustomInput
                     label="Full Name"
@@ -420,39 +407,24 @@ export default function SignIn() {
                 </View>
               ) : null}
 
-              {isResidentRole ? (
-                <View ref={userIdFieldRef}>
-                  <CustomInput
-                    label="User ID"
-                    placeholder="482913"
-                    value={userId}
-                    onChangeText={setUserId}
-                    autoCapitalize="characters"
-                    autoCorrect={false}
-                    maxLength={LIMITS.USER_ID_MAX}
-                    onFocus={() => scrollFieldIntoView(userIdFieldRef)}
-                  />
-                </View>
-              ) : (
-                <View ref={phoneFieldRef}>
-                  <CustomInput
-                    label="Mobile Number"
-                    placeholder="300 1234567"
-                    value={phoneNumber}
-                    onChangeText={handlePhoneChange}
-                    keyboardType="phone-pad"
-                    maxLength={10}
-                    onFocus={() => scrollFieldIntoView(phoneFieldRef)}
-                    leftAdornment={
-                      <>
-                        <Text style={styles.flag}>🇵🇰</Text>
-                        <Text style={styles.countryCode}>+92</Text>
-                        <View style={styles.divider} />
-                      </>
-                    }
-                  />
-                </View>
-              )}
+              <View ref={phoneFieldRef}>
+                <CustomInput
+                  label="Mobile Number"
+                  placeholder="300 1234567"
+                  value={phoneNumber}
+                  onChangeText={handlePhoneChange}
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  onFocus={() => scrollFieldIntoView(phoneFieldRef)}
+                  leftAdornment={
+                    <>
+                      <Text style={styles.flag}>🇵🇰</Text>
+                      <Text style={styles.countryCode}>+92</Text>
+                      <View style={styles.divider} />
+                    </>
+                  }
+                />
+              </View>
 
               <View ref={passwordFieldRef}>
                 <CustomInput

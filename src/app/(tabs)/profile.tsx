@@ -39,8 +39,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { logout, updateUser } from "../../../store/reducers/authSlice";
 import type { AppDispatch, RootState } from "../../../store/store";
+import { useHostelConnection } from "@/hooks/useHostelConnection";
 import { persistor } from "../../../store/store";
-
 type ProfileStyles = ReturnType<typeof createStyles>;
 
 type MenuRowProps = {
@@ -151,6 +151,7 @@ export default function Profile() {
   const role: UserRole = user?.role ?? "resident";
   const roleLabel = USER_ROLES[role].label;
   const isManager = role === "manager";
+  const { isConnected, isPending } = useHostelConnection();
   const activePlanId: SubscriptionPlanId = user?.subscriptionPlan ?? "free";
 
   const { data: hostelsData } = useGetHostelsQuery(undefined, {
@@ -197,6 +198,35 @@ export default function Profile() {
       },
     });
   };
+
+  if (!isAuthenticated) {
+    return (
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={["top"]}>
+          <ScreenHeader title="Profile" />
+          <View style={styles.guestWrap}>
+            <View style={styles.guestIconWrap}>
+              <Ionicons name="person-outline" size={vs(40)} color={colors.primary} />
+            </View>
+            <Text style={styles.guestTitle}>Browse as guest</Text>
+            <Text style={styles.guestDescription}>
+              Sign in to manage your hostel, pay rent, or update your profile.
+            </Text>
+            <CustomButton
+              title="Sign In"
+              onPress={() => router.push("/auth/signin")}
+            />
+            <CustomButton
+              title="Discover Hostels"
+              variant="outline"
+              onPress={() => router.replace("/(tabs)/discover")}
+              style={styles.guestSecondaryBtn}
+            />
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
 
   return (
     <GradientBackground style={styles.container}>
@@ -328,16 +358,18 @@ export default function Profile() {
             ) : null}
             <View style={styles.divider} />
             {!isManager ? (
-              <>
-                <MenuRow
-                  icon="id-card-outline"
-                  label="User ID"
-                  value={userId}
-                  styles={styles}
-                  colors={colors}
-                />
-                <View style={styles.divider} />
-              </>
+              user?.userId ? (
+                <>
+                  <MenuRow
+                    icon="id-card-outline"
+                    label="User ID"
+                    value={userId}
+                    styles={styles}
+                    colors={colors}
+                  />
+                  <View style={styles.divider} />
+                </>
+              ) : null
             ) : null}
             <MenuRow
               icon={isGoogleUser ? "mail-outline" : "call-outline"}
@@ -395,6 +427,15 @@ export default function Profile() {
                 />
                 <View style={styles.divider} />
                 <MenuRow
+                  icon="link-outline"
+                  label="Connection Requests"
+                  value="Join & leave approvals"
+                  onPress={() => router.push("/connection-requests")}
+                  styles={styles}
+                  colors={colors}
+                />
+                <View style={styles.divider} />
+                <MenuRow
                   icon="wallet-outline"
                   label="Expenses"
                   value="Track hostel spending"
@@ -422,43 +463,67 @@ export default function Profile() {
               </>
             ) : (
               <>
-                <MenuRow
-                  icon="business-outline"
-                  label="My Hostel"
-                  value={residentHostelLabel}
-                  styles={styles}
-                  colors={colors}
-                />
-                <View style={styles.divider} />
-                <MenuRow
-                  icon="bed-outline"
-                  label="My Room"
-                  value={residentRoomLabel}
-                  styles={styles}
-                  colors={colors}
-                />
-                <View style={styles.divider} />
-                <MenuRow
-                  icon="receipt-outline"
-                  label="Payment History"
-                  value="View rent & download report"
-                  onPress={() => router.push("/(tabs)/rent")}
-                  styles={styles}
-                  colors={colors}
-                />
-                <View style={styles.divider} />
-                <MenuRow
-                  icon="chatbox-ellipses-outline"
-                  label="My Complaints"
-                  value="Report hostel issues"
-                  onPress={() =>
-                    guardFeature(PLAN_FEATURES.complaints, () =>
-                      router.push("/complaints"),
-                    )
-                  }
-                  styles={styles}
-                  colors={colors}
-                />
+                {isConnected ? (
+                  <>
+                    <MenuRow
+                      icon="business-outline"
+                      label="My Hostel"
+                      value={residentHostelLabel}
+                      styles={styles}
+                      colors={colors}
+                    />
+                    <View style={styles.divider} />
+                    <MenuRow
+                      icon="bed-outline"
+                      label="My Room"
+                      value={residentRoomLabel}
+                      styles={styles}
+                      colors={colors}
+                    />
+                    <View style={styles.divider} />
+                    <MenuRow
+                      icon="receipt-outline"
+                      label="Payment History"
+                      value="View rent & download report"
+                      onPress={() => router.push("/(tabs)/rent")}
+                      styles={styles}
+                      colors={colors}
+                    />
+                    <View style={styles.divider} />
+                    <MenuRow
+                      icon="chatbox-ellipses-outline"
+                      label="My Complaints"
+                      value="Report hostel issues"
+                      onPress={() =>
+                        guardFeature(PLAN_FEATURES.complaints, () =>
+                          router.push("/complaints"),
+                        )
+                      }
+                      styles={styles}
+                      colors={colors}
+                    />
+                    <View style={styles.divider} />
+                    <MenuRow
+                      icon="exit-outline"
+                      label="Leave Hostel"
+                      value="Submit a leave request"
+                      onPress={() => router.push("/leave-hostel")}
+                      styles={styles}
+                      colors={colors}
+                    />
+                  </>
+                ) : (
+                  <MenuRow
+                    icon="key-outline"
+                    label="Join Hostel"
+                    value={
+                      isPending ? "Approval pending" : "Enter your hostel code"
+                    }
+                    onPress={() => router.push("/join-hostel")}
+                    styles={styles}
+                    colors={colors}
+                  />
+                )}
               </>
             )}
           </SectionCard>
@@ -536,6 +601,39 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
     scrollContent: {
       paddingHorizontal: vs(20),
       paddingBottom: vs(110),
+    },
+    guestWrap: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: vs(32),
+      gap: vs(12),
+    },
+    guestIconWrap: {
+      width: vs(72),
+      height: vs(72),
+      borderRadius: vs(36),
+      backgroundColor: colors.primary100,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: vs(4),
+    },
+    guestTitle: {
+      fontSize: FONT_SIZES.xl,
+      fontFamily: fonts.bold,
+      color: colors.text,
+      textAlign: "center",
+    },
+    guestDescription: {
+      fontSize: FONT_SIZES.md,
+      fontFamily: fonts.regular,
+      color: colors.gray200,
+      textAlign: "center",
+      lineHeight: vs(22),
+      marginBottom: vs(8),
+    },
+    guestSecondaryBtn: {
+      marginTop: vs(4),
     },
     heroCard: {
       ...cardShadow,

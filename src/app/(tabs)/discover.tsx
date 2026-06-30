@@ -1,21 +1,18 @@
+import DiscoverHostelDirectoryCard from "@/components/DiscoverHostelDirectoryCard";
 import EmptyState from "@/components/EmptyState";
 import GradientBackground from "@/components/GradientBackground";
+import GuestLoginModal from "@/components/GuestLoginModal";
 import ScreenHeader from "@/components/ScreenHeader";
 import CustomLoading from "@/components/CustomLoading";
 import type { HostelDirectoryItem } from "@/types/hostelDirectory";
 import { useGetDiscoverHostelsQuery } from "../../../store/api";
-import {
-  formatPhoneForDisplay,
-  phoneToTelUri,
-} from "@/utils/phone";
 import type { AppColors } from "@constants/colors";
 import { useTheme } from "@constants/constant";
 import { FONT_SIZES, FONTS, vs } from "@constants/fonts";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -25,101 +22,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-type DiscoverStyles = ReturnType<typeof createStyles>;
-
-type HostelCardProps = {
-  hostel: HostelDirectoryItem;
-  styles: DiscoverStyles;
-  colors: AppColors;
-  onCall: (phone: string, label: string) => void;
-};
-
-function HostelCard({ hostel, styles, colors, onCall }: HostelCardProps) {
-  const vacancyLabel =
-    hostel.vacantBeds > 0
-      ? `${hostel.vacantRooms} vacant room${hostel.vacantRooms === 1 ? "" : "s"} · ${hostel.vacantBeds} bed${hostel.vacantBeds === 1 ? "" : "s"}`
-      : "Fully occupied";
-
-  const ownerName = hostel.owner?.name?.trim();
-  const ownerPhone = hostel.owner?.phone?.trim();
-  const contactPhone = hostel.contactPhone?.trim();
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={styles.cardIconWrap}>
-          <Ionicons name="business" size={vs(20)} color={colors.primary} />
-        </View>
-        <View style={styles.cardHeaderText}>
-          <Text style={styles.cardTitle}>{hostel.name}</Text>
-          <Text style={styles.cardSubtitle}>
-            {[hostel.city, hostel.address].filter(Boolean).join(" · ")}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.vacancyBadge,
-            hostel.hasVacancy ? styles.vacancyOpen : styles.vacancyFull,
-          ]}
-        >
-          <Text
-            style={[
-              styles.vacancyText,
-              hostel.hasVacancy ? styles.vacancyTextOpen : styles.vacancyTextFull,
-            ]}
-          >
-            {hostel.hasVacancy ? "Vacancy" : "Full"}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.detailRow}>
-        <Ionicons name="bed-outline" size={vs(16)} color={colors.gray200} />
-        <Text style={styles.detailText}>{vacancyLabel}</Text>
-      </View>
-
-      {ownerName ? (
-        <View style={styles.detailRow}>
-          <Ionicons name="person-outline" size={vs(16)} color={colors.gray200} />
-          <Text style={styles.detailText}>Owner: {ownerName}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.phoneRow}>
-        {contactPhone ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.phoneBtn,
-              pressed && styles.phoneBtnPressed,
-            ]}
-            onPress={() => onCall(contactPhone, hostel.name)}
-          >
-            <Ionicons name="call-outline" size={vs(16)} color={colors.primary} />
-            <Text style={styles.phoneBtnText}>
-              Hostel · {formatPhoneForDisplay(contactPhone)}
-            </Text>
-          </Pressable>
-        ) : null}
-
-        {ownerPhone && ownerPhone !== contactPhone ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.phoneBtn,
-              pressed && styles.phoneBtnPressed,
-            ]}
-            onPress={() => onCall(ownerPhone, ownerName ?? hostel.name)}
-          >
-            <Ionicons name="call-outline" size={vs(16)} color={colors.primary} />
-            <Text style={styles.phoneBtnText}>
-              Owner · {formatPhoneForDisplay(ownerPhone)}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-    </View>
-  );
-}
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../store/store";
 
 export default function DiscoverTabScreen() {
   const { colors, fonts, isDark } = useTheme();
@@ -127,11 +31,16 @@ export default function DiscoverTabScreen() {
     () => createStyles(colors, fonts, isDark),
     [colors, fonts, isDark],
   );
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
+  const isGuest = !isAuthenticated;
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [hostels, setHostels] = useState<HostelDirectoryItem[]>([]);
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -191,29 +100,22 @@ export default function DiscoverTabScreen() {
     setPage((current) => current + 1);
   };
 
-  const handleCall = async (phone: string, label: string) => {
-    const telUri = phoneToTelUri(phone);
-    if (!telUri) {
-      Alert.alert("Invalid number", "This phone number cannot be dialed.");
-      return;
-    }
-
-    try {
-      const canOpen = await Linking.canOpenURL(telUri);
-      if (!canOpen) {
-        Alert.alert("Cannot call", "Phone calls are not supported on this device.");
-        return;
-      }
-      await Linking.openURL(telUri);
-    } catch {
-      Alert.alert("Call failed", `Could not open the phone app for ${label}.`);
-    }
-  };
-
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <ScreenHeader title="Find a Hostel" />
+        <ScreenHeader
+          title="Discover Hostels"
+          rightSlot={
+            isGuest ? (
+              <Pressable
+                style={styles.signInBtn}
+                onPress={() => router.push("/auth/signin")}
+              >
+                <Text style={styles.signInText}>Sign In</Text>
+              </Pressable>
+            ) : null
+          }
+        />
 
         <ScrollView
           style={styles.scroll}
@@ -230,9 +132,10 @@ export default function DiscoverTabScreen() {
             />
           }
         >
-          <Text style={styles.introText}>
-            Browse registered hostels, check vacancy, and contact the owner to
-            ask about a room.
+          <Text style={styles.intro}>
+            {isGuest
+              ? "Browse hostels and vacancy. Sign in to view contact numbers and join your hostel."
+              : "Browse registered hostels, check vacancy, and contact owners."}
           </Text>
 
           <View style={styles.searchWrap}>
@@ -277,7 +180,6 @@ export default function DiscoverTabScreen() {
             </View>
           ) : isEmpty ? (
             <EmptyState
-              icon="business-outline"
               title={search ? "No hostels found" : "No hostels listed yet"}
               description={
                 search
@@ -289,12 +191,11 @@ export default function DiscoverTabScreen() {
           ) : (
             <>
               {hostels.map((hostel) => (
-                <HostelCard
+                <DiscoverHostelDirectoryCard
                   key={hostel.id}
                   hostel={hostel}
-                  styles={styles}
-                  colors={colors}
-                  onCall={handleCall}
+                  isGuest={isGuest}
+                  onContactLockedPress={() => setLoginModalVisible(true)}
                 />
               ))}
 
@@ -319,30 +220,26 @@ export default function DiscoverTabScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      <GuestLoginModal
+        visible={loginModalVisible}
+        onClose={() => setLoginModalVisible(false)}
+      />
     </GradientBackground>
   );
 }
 
 function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
   return StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    safeArea: {
-      flex: 1,
-      backgroundColor: "transparent",
-    },
-    scroll: {
-      flex: 1,
-    },
+    container: { flex: 1 },
+    safeArea: { flex: 1, backgroundColor: "transparent" },
+    scroll: { flex: 1 },
     scrollContent: {
       paddingHorizontal: vs(20),
       paddingBottom: vs(110),
     },
-    scrollContentEmpty: {
-      flexGrow: 1,
-    },
-    introText: {
+    scrollContentEmpty: { flexGrow: 1 },
+    intro: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.regular,
       color: colors.gray200,
@@ -360,9 +257,7 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       height: vs(48),
       marginBottom: vs(16),
     },
-    searchIcon: {
-      marginRight: vs(8),
-    },
+    searchIcon: { marginRight: vs(8) },
     searchInput: {
       flex: 1,
       fontSize: FONT_SIZES.md,
@@ -386,98 +281,6 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       color: colors.error,
       textAlign: "center",
     },
-    card: {
-      backgroundColor: colors.white,
-      borderRadius: vs(16),
-      borderWidth: 1,
-      borderColor: colors.white100,
-      padding: vs(14),
-      marginBottom: vs(12),
-    },
-    cardHeader: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: vs(10),
-      marginBottom: vs(12),
-    },
-    cardIconWrap: {
-      width: vs(40),
-      height: vs(40),
-      borderRadius: vs(12),
-      backgroundColor: isDark ? colors.primary100 : colors.primary100,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    cardHeaderText: {
-      flex: 1,
-    },
-    cardTitle: {
-      fontSize: FONT_SIZES.md,
-      fontFamily: fonts.semiBold,
-      color: colors.text,
-      marginBottom: vs(2),
-    },
-    cardSubtitle: {
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.regular,
-      color: colors.gray200,
-      lineHeight: vs(18),
-    },
-    vacancyBadge: {
-      paddingHorizontal: vs(8),
-      paddingVertical: vs(4),
-      borderRadius: vs(10),
-    },
-    vacancyOpen: {
-      backgroundColor: colors.successBg,
-    },
-    vacancyFull: {
-      backgroundColor: colors.white100,
-    },
-    vacancyText: {
-      fontSize: FONT_SIZES.xs,
-      fontFamily: fonts.semiBold,
-    },
-    vacancyTextOpen: {
-      color: colors.success,
-    },
-    vacancyTextFull: {
-      color: colors.gray200,
-    },
-    detailRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(8),
-      marginBottom: vs(8),
-    },
-    detailText: {
-      flex: 1,
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.regular,
-      color: colors.text,
-    },
-    phoneRow: {
-      gap: vs(8),
-      marginTop: vs(4),
-    },
-    phoneBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: vs(8),
-      backgroundColor: colors.primary100,
-      borderRadius: vs(12),
-      paddingHorizontal: vs(12),
-      paddingVertical: vs(10),
-    },
-    phoneBtnPressed: {
-      opacity: 0.85,
-    },
-    phoneBtnText: {
-      flex: 1,
-      fontSize: FONT_SIZES.sm,
-      fontFamily: fonts.semiBold,
-      color: colors.primary,
-    },
     loadMoreBtn: {
       alignItems: "center",
       justifyContent: "center",
@@ -489,16 +292,23 @@ function createStyles(colors: AppColors, fonts: typeof FONTS, isDark: boolean) {
       marginTop: vs(4),
       minHeight: vs(44),
     },
-    loadMoreBtnPressed: {
-      backgroundColor: colors.primary100,
-    },
-    loadMoreBtnDisabled: {
-      opacity: 0.7,
-    },
+    loadMoreBtnPressed: { backgroundColor: colors.primary100 },
+    loadMoreBtnDisabled: { opacity: 0.7 },
     loadMoreText: {
       fontSize: FONT_SIZES.sm,
       fontFamily: fonts.semiBold,
       color: colors.primary,
+    },
+    signInBtn: {
+      paddingHorizontal: vs(12),
+      paddingVertical: vs(8),
+      borderRadius: vs(20),
+      backgroundColor: colors.primary,
+    },
+    signInText: {
+      fontSize: FONT_SIZES.sm,
+      fontFamily: fonts.semiBold,
+      color: colors.onPrimary,
     },
   });
 }

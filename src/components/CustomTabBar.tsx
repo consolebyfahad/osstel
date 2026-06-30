@@ -25,6 +25,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
+import { useHostelConnection } from "@/hooks/useHostelConnection";
 import { useGetHostelsQuery } from "../../store/api";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store/store";
@@ -70,6 +71,14 @@ const RESIDENT_TABS = [
   },
   { name: "rent", icon: "credit-card" as const, activeIcon: "credit-card" as const },
   { name: "profile", icon: "person" as const, activeIcon: "person" as const },
+];
+
+const GUEST_TABS = [
+  {
+    name: "discover",
+    icon: "organization" as const,
+    activeIcon: "organization" as const,
+  },
 ];
 
 const QUICK_ACTIONS = [
@@ -244,7 +253,12 @@ export default function CustomTabBar({
   const tabBarFill = isDark ? colors.white100 : colors.white;
   const insets = useSafeAreaInsets();
   const user = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
   const isManager = user?.role === "manager";
+  const isGuest = !isAuthenticated;
+  const { isConnected } = useHostelConnection();
   const { guardAddTenant, guardAddRoom } = useSubscription();
   const { data: hostelsData } = useGetHostelsQuery(undefined, { skip: !isManager });
   const hostels = hostelsData?.hostels ?? [];
@@ -435,11 +449,17 @@ export default function CustomTabBar({
           </>
         ) : (
           state.routes
-            .filter((route) => route.name !== "hostels")
+            .filter((route) => {
+              if (route.name === "hostels") return false;
+              if (isGuest) return route.name === "discover";
+              if (route.name === "rent" && !isConnected) return false;
+              return true;
+            })
             .map((route) => {
               const tab =
-                RESIDENT_TABS.find((item) => item.name === route.name) ??
-                RESIDENT_TABS[0];
+                (isGuest ? GUEST_TABS : RESIDENT_TABS).find(
+                  (item) => item.name === route.name,
+                ) ?? (isGuest ? GUEST_TABS[0] : RESIDENT_TABS[0]);
               return renderTab(route, tab);
             })
         )}

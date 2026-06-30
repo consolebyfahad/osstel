@@ -1,5 +1,5 @@
-import HostelsList from "@/components/HostelsList";
+import { Redirect } from "expo-router";
 
-export default function HostelsScreen() {
-  return <HostelsList showBackButton />;
+export default function HostelsRedirect() {
+  return <Redirect href="/(tabs)/hostels" />;
 }

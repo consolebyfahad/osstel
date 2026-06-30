@@ -112,7 +112,7 @@ export const IMAGE_UPLOAD_PRESETS: Record<
 };
 
 export function getImageTooLargeMessage() {
-  return "Image is still too large after compression. Try another photo or ask admin to increase server upload limit.";
+  return "This photo is too large after compression (about 80KB limit). Try another image, crop closer, or use a lower-resolution photo.";
 }
 
 export function getUploadSizeKB(uploadValue: string) {

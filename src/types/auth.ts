@@ -1,3 +1,4 @@
+import type { HostelConnectionStatus, PendingJoinRequest } from "./connection";
 import type { UserRole } from "./role";
 import type { PlanFeature } from "@/constants/plans";
 import type {
@@ -54,8 +55,11 @@ export interface AuthUser {
   room?: UserRoom | null;
   checkInDate?: string | null;
   tenancyId?: string | null;
+  securityDeposit?: number | null;
   managerPlan?: SubscriptionPlanId;
   planFeatures?: Partial<Record<PlanFeature, boolean>>;
+  hostelConnectionStatus?: HostelConnectionStatus;
+  pendingJoinRequest?: PendingJoinRequest | null;
 }
 
 export interface MeResponse {
@@ -82,8 +86,11 @@ export interface MeResponse {
     room: UserRoom | null;
     checkInDate?: string | null;
     tenancyId?: string | null;
+    securityDeposit?: number | null;
     managerPlan?: SubscriptionPlanId;
     planFeatures?: Partial<Record<PlanFeature, boolean>>;
+    hostelConnectionStatus?: HostelConnectionStatus;
+    pendingJoinRequest?: PendingJoinRequest | null;
   };
 }
 
@@ -112,7 +119,7 @@ export interface AuthState {
 }
 
 export type ResidentLoginBody = {
-  userId: string;
+  phone: string;
   password: string;
 };
 
@@ -222,12 +229,23 @@ export function toAuthUser(response: unknown): AuthUser {
     room: (user.room as UserRoom | null) ?? undefined,
     checkInDate: user.checkInDate ? String(user.checkInDate) : undefined,
     tenancyId: user.tenancyId ? String(user.tenancyId) : undefined,
+    securityDeposit:
+      user.securityDeposit !== undefined && user.securityDeposit !== null
+        ? Number(user.securityDeposit)
+        : undefined,
     managerPlan: isSubscriptionPlan(user.managerPlan)
       ? user.managerPlan
       : undefined,
     planFeatures:
       user.planFeatures && typeof user.planFeatures === "object"
         ? (user.planFeatures as Partial<Record<PlanFeature, boolean>>)
+        : undefined,
+    hostelConnectionStatus: user.hostelConnectionStatus as
+      | HostelConnectionStatus
+      | undefined,
+    pendingJoinRequest:
+      user.pendingJoinRequest && typeof user.pendingJoinRequest === "object"
+        ? (user.pendingJoinRequest as PendingJoinRequest)
         : undefined,
   };
 }
@@ -256,8 +274,11 @@ export function meToAuthProfile(me: MeResponse["user"]): Partial<AuthUser> {
     room: me.room,
     checkInDate: me.checkInDate ?? undefined,
     tenancyId: me.tenancyId ?? undefined,
+    securityDeposit: me.securityDeposit ?? undefined,
     managerPlan: me.managerPlan,
     planFeatures: me.planFeatures,
+    hostelConnectionStatus: me.hostelConnectionStatus,
+    pendingJoinRequest: me.pendingJoinRequest ?? undefined,
   };
 }
 

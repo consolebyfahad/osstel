@@ -2,41 +2,80 @@ import {
   googleAuthConfig,
   isGoogleSignInConfigured,
 } from "@/config/googleAuth";
-import {
-  GoogleSignin,
-  isSuccessResponse,
-  statusCodes,
-  isErrorWithCode,
-} from "@react-native-google-signin/google-signin";
+import Constants from "expo-constants";
 import { useCallback, useEffect, useState } from "react";
+
+type GoogleSignInModule = typeof import("@react-native-google-signin/google-signin");
+
+const isExpoGo = Constants.appOwnership === "expo";
+
+function canUseNativeGoogleSignIn() {
+  return !isExpoGo && isGoogleSignInConfigured();
+}
+
+async function loadGoogleSignIn(): Promise<GoogleSignInModule | null> {
+  if (!canUseNativeGoogleSignIn()) {
+    return null;
+  }
+
+  try {
+    return await import("@react-native-google-signin/google-signin");
+  } catch {
+    return null;
+  }
+}
 
 export function useGoogleSignIn() {
   const [isReady, setIsReady] = useState(false);
+  const [googleSignIn, setGoogleSignIn] = useState<GoogleSignInModule | null>(
+    null,
+  );
 
   useEffect(() => {
-    if (!isGoogleSignInConfigured()) {
-      setIsReady(false);
-      return;
-    }
+    let cancelled = false;
 
-    GoogleSignin.configure({
-      webClientId: googleAuthConfig.webClientId,
-      offlineAccess: false,
-    });
-    setIsReady(true);
+    (async () => {
+      const module = await loadGoogleSignIn();
+      if (cancelled || !module) {
+        if (!cancelled) setIsReady(false);
+        return;
+      }
+
+      module.GoogleSignin.configure({
+        webClientId: googleAuthConfig.webClientId,
+        offlineAccess: false,
+      });
+
+      if (!cancelled) {
+        setGoogleSignIn(module);
+        setIsReady(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const signIn = useCallback(async () => {
-    if (!isGoogleSignInConfigured()) {
-      throw new Error("Google Sign-In is not configured.");
+    const module = googleSignIn ?? (await loadGoogleSignIn());
+
+    if (!module) {
+      throw new Error(
+        isExpoGo
+          ? "Google Sign-In is not available in Expo Go. Use a development build."
+          : "Google Sign-In is not configured.",
+      );
     }
+
+    const { GoogleSignin, isSuccessResponse, statusCodes, isErrorWithCode } =
+      module;
 
     try {
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
 
-      // Clear cached Google session so the account picker shows every time.
       try {
         await GoogleSignin.signOut();
       } catch {
@@ -85,11 +124,11 @@ export function useGoogleSignIn() {
 
       throw error;
     }
-  }, []);
+  }, [googleSignIn]);
 
   return {
     signIn,
     isReady,
-    isConfigured: isGoogleSignInConfigured(),
+    isConfigured: canUseNativeGoogleSignIn(),
   };
 }

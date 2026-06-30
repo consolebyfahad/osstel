@@ -32,9 +32,14 @@ export default function Welcome() {
     [colors, fonts, height, insets.bottom],
   );
 
-  const handlePress = () => {
+  const handleSignIn = () => {
     dispatch(setHasSeenWelcome());
     router.push("/auth/signin");
+  };
+
+  const handleBrowseGuest = () => {
+    dispatch(setHasSeenWelcome());
+    router.replace("/(tabs)/discover");
   };
 
   return (
@@ -63,11 +68,20 @@ export default function Welcome() {
             </View>
 
             <Text style={styles.tagline}>
-              Your hostel, fully automated. Manage rooms, guests, and daily
-              operations in one place.
+              Browse hostels as a guest, or sign in to manage your stay, pay
+              rent, and connect with your hostel.
             </Text>
 
-            <CustomButton title="Let's Go" onPress={handlePress} />
+            <CustomButton
+              title="Discover Hostels"
+              onPress={handleBrowseGuest}
+            />
+            <CustomButton
+              title="Sign In"
+              variant="outline"
+              onPress={handleSignIn}
+              style={styles.secondaryBtn}
+            />
           </GradientBackground>
         </View>
       </SafeAreaView>
@@ -146,6 +160,9 @@ function createStyles(
       fontFamily: fonts.regular,
       color: colors.text,
       marginBottom: vs(28),
+    },
+    secondaryBtn: {
+      marginTop: vs(12),
     },
   });
 }
